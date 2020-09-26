@@ -1,0 +1,57 @@
+plugins {
+    id 'org.jenkins-ci.jpi' version '0.39.0'
+}
+
+group = 'org.jenkins-ci.plugins'
+version = '0.0.1-SNAPSHOT'
+description = 'Monitor agents by deploying prometheus node exporter and display metrics by querying a pometheus server'
+
+jenkinsPlugin {
+    coreVersion = '2.235.1'
+
+    shortName = 'prometheus-monitoring'
+
+    displayName = 'Prometheus monitoring plugin'
+
+    // URL for plugin on Jenkins wiki or elsewhere
+    //url = 'http://wiki.jenkins-ci.org/display/JENKINS/SomePluginPage'
+
+    // plugin URL on GitHub, optional
+    gitHubUrl = 'https://github.com/jenkinsci/prometheus-monitoring'
+
+    // optional version number from which this plugin release is configuration-compatible
+    compatibleSinceVersion = '2.235.1'
+
+    // set the directory from which the development server will run, defaults to 'work'
+    workDir = file('/tmp/jenkins')
+
+    // the developers section is optional, and corresponds to the POM developers section
+    developers {
+        developer {
+            id 'ckamphaus'
+            name 'Christophe Kamphaus'
+            email 'christophe.kamphaus@gmail.com'
+        }
+    }
+
+    // the licenses section is optional, and corresponds to the POM licenses section
+    licenses {
+        license {
+            name 'MIT License'
+            url 'https://opensource.org/licenses/MIT'
+            //distribution 'repo'
+            //comments 'A business-friendly OSS license'
+        }
+    }
+}
+
+dependencies {
+    // This dependency is exported to consumers, that is to say found on their compile classpath.
+    //api 'org.apache.commons:commons-math3:3.6.1'
+
+    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
+    //implementation 'com.google.guava:guava:28.1-jre'
+
+    // Use JUnit test framework
+    //testImplementation 'junit:junit:4.12'
+}
