@@ -3,3 +3,26 @@
 
 # Ignore Gradle build output directory
 build
+
+#
+.sonarlint
+.DS_Store
+*~
+*.swp
+*.swo
+*.log
+.nb-gradle/
+.vscode/
+logs
+**/*.iml
+**/*.ipr
+**/*.iws
+**/.idea
+bin
+out
+**/.nb-gradle/
+**/.nb-gradle-properties
+*/.settings/
+*/.classpath
+*/.project
+*.eml
