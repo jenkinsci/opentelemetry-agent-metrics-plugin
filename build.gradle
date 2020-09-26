@@ -1,5 +1,6 @@
 plugins {
     id 'org.jenkins-ci.jpi' version '0.39.0'
+    id 'idea'
 }
 
 group = 'org.jenkins-ci.plugins'
