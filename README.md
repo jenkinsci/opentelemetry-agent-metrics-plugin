@@ -5,8 +5,6 @@ This plugin integrates with Prometheus time-series DB for monitoring of jobs.
 
 It does this by deploying the prometheus node exporter on job agents.
 
---The plugin automatically detects whether an agent is already running, in which case the job label is only added to the existing prometheus exporter.--
-
 A Prometheus server must be configured such as to scrape the exported metrics. This can be done in a way that Prometheus dynamically detects new agents, e.g. by annotating EC2 instances that are launched by Jenkin's [EC2 plugin](https://plugins.jenkins.io/ec2/).
 
 The captured metrics are then displayed on the job page.
