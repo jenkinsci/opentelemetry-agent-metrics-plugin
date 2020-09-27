@@ -25,21 +25,6 @@ Usage
 
 ## Installing the plugin:
 
-### Installation from the Jenkins plugin repository
-
-(The plugin is not yet published to the Jenkins repository)
-
-This is the preferred way to install this plugin, since it ensures that the plugin releases have passed the Jenkins build pipeline and tests. This also provides an easy way to upgrade the plugin.
-
-1. Log into your Jenkins web UI.
-2. On the left-hand side of the screen, click “Manage Jenkins”.
-3. Click “Manage Plugins”.
-4. Near the top of the screen, click on the “Advanced” tab.
-5. Search for “Prometheus monitoring”
-6. Select “Prometheus monitoring”
-7. Click “Download now and install after restart”
-8. Restart Jenkins.
-
 ### Manual install:
 
 1. Copy the `hpi` file to your Jenkins build server and place it in the Jenkins plugin directory (usually `/var/lib/jenkins/plugins`).
