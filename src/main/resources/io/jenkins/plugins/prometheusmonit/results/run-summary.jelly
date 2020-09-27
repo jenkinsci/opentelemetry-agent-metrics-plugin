@@ -1,0 +1,26 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:r="/io/jenkins/plugins/prometheusmonit/results">
+  <st:attribute name="result" use="required" />
+  <link rel="stylesheet" href="${resURL}/plugin/prometheus-monitoring/default.css"/>
+  <j:set var="result" value="${attrs.result}" />
+  <j:if test="${result != null}">
+    <table class="run-summary-table">
+      <tr>
+        <th>Status</th>
+        <th>Build Number</th>
+        <th>Pass/Warn/Skip/Fail/Error/Stop</th>
+        <th>Web Report</th>
+      </tr>
+      <tr>
+        <td align="center" class="run-status"><strong>Meh</strong></td>
+        <td align="center" class="build-number"><a href="."><strong>#42</strong></a></td>
+        <td align="left">
+          Ha
+        </td>
+        <td style="vertical-align: middle;" class="run-report">
+          <a style="color:white; text-decoration:none;" href="#" class="run-report" target="_blank">Full Report</a>
+        </td>
+      </tr>
+    </table>
+  </j:if>
+</j:jelly>
