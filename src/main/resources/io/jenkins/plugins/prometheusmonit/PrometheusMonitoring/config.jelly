@@ -1,0 +1,45 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+    <f:advanced>
+        <j:if test="${!empty(descriptor.installations)}">
+            <f:entry title="${%Prometheus node exporter installation}" field="installationName">
+                <select name="nexporter.installationName" class="setting-input">
+                    <j:forEach var="installation" items="${descriptor.installations}">
+                        <f:option selected="${installation.name == instance.installationName}" value="${installation.name}">
+                            ${installation.name}
+                        </f:option>
+                    </j:forEach>
+                </select>
+            </f:entry>
+        </j:if>
+
+        <f:entry title="${%Prometheus node exporter specific port}" field="port">
+            <f:textbox value="${instance.port}" />
+        </f:entry>
+
+        <f:entry title="${%Start only on nodes labeled}" field="assignedLabels">
+            <f:textbox autoCompleteDelimChar=" " value="${instance.assignedLabels}" />
+        </f:entry>
+
+        <f:entry title="${%I’m running this job in parallel on same node}" field="parallelBuild">
+            <f:checkbox value="${instance.parallelBuild}" />
+        </f:entry>
+
+        <f:entry title="${%Timeout in seconds}" field="timeout">
+            <f:textbox value="${instance.timeout}" />
+        </f:entry>
+
+        <f:entry title="${%Prometheus node exporter additional options}" field="additionalOptions">
+            <f:textbox value="${instance.additionalOptions}" />
+        </f:entry>
+
+        <f:entry title="${%Log Prometheus node exporter output}" field="debug">
+            <f:checkbox value="${instance.debug}" />
+        </f:entry>
+
+        <f:entry title="${%Shutdown Prometheus node exporter with whole job, not just with the main build action}" field="shutdownWithBuild">
+            <f:checkbox value="${instance.shutdownWithBuild}" />
+        </f:entry>
+    </f:advanced>
+
+</j:jelly>
