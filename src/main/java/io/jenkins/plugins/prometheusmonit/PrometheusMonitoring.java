@@ -184,25 +184,25 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         }
     }
 
-    private static final String JENKINS_XVFB_COOKIE = "_JENKINS_XVFB_COOKIE";
+    private static final String JENKINS_PM_NODE_EXPORTER_COOKIE = "_JENKINS_PM_NODE_EXPORTER_COOKIE";
 
     private static final String STDERR_FD = "2";
 
-/*    @SuppressWarnings("rawtypes")
+    @SuppressWarnings("rawtypes")
     @Extension
-    public static final RunListener<Run> xvfbShutdownListener = new RunListener<Run>() {
+    public static final RunListener<Run> nexporterShutdownListener = new RunListener<Run>() {
         @Override
         public void onCompleted(final Run r, final TaskListener listener) {
-            final XvfbEnvironment xvfbEnvironment = r.getAction(XvfbEnvironment.class);
+            final PrometheusMonitoringEnvironment pmEnvironment = r.getAction(PrometheusMonitoringEnvironment.class);
 
-            if (xvfbEnvironment != null && xvfbEnvironment.shutdownWithBuild) {
+            if (pmEnvironment != null && pmEnvironment.shutdownWithBuild) {
                 try {
                     final Executor executor = r.getExecutor();
                     final Computer computer = executor.getOwner();
                     final Node node = computer.getNode();
                     final Launcher launcher = node.createLauncher(listener);
 
-                    Xvfb.shutdownAndCleanup(xvfbEnvironment, launcher, listener);
+                    PrometheusMonitoring.shutdownAndCleanup(pmEnvironment, launcher, listener);
                 } catch (final IOException e) {
                     throw new RuntimeException(e);
                 } catch (final InterruptedException e) {
@@ -212,41 +212,41 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         }
     };
 
-    private static final Map<String, List<XvfbEnvironment>> zombies = createOrLoadZombiesMap();
+    private static final Map<String, List<PrometheusMonitoringEnvironment>> zombies = createOrLoadZombiesMap();
 
     @Extension
     public static final ComputerListener nodeListener = new ComputerListener() {
         @Override
         public void preOnline(final Computer c, final Channel channel, final FilePath root, final TaskListener listener) throws IOException, InterruptedException {
-            final List<XvfbEnvironment> zombiesAtComputer = zombies.get(c.getName());
+            final List<PrometheusMonitoringEnvironment> zombiesAtComputer = zombies.get(c.getName());
 
             if (zombiesAtComputer == null) {
                 return;
             }
 
-            final List<XvfbEnvironment> slained = new ArrayList<XvfbEnvironment>();
-            for (final XvfbEnvironment zombie : zombiesAtComputer) {
+            final List<PrometheusMonitoringEnvironment> slaied = new ArrayList<PrometheusMonitoringEnvironment>();
+            for (final PrometheusMonitoringEnvironment zombie : zombiesAtComputer) {
                 shutdownAndCleanupZombie(channel, zombie, listener);
 
-                slained.add(zombie);
+                slaied.add(zombie);
             }
 
-            zombiesAtComputer.removeAll(slained);
+            zombiesAtComputer.removeAll(slaied);
         }
 
     };
 
     private static final int MILLIS_IN_SECOND = 1000;
 
-    private static ConcurrentHashMap<String, List<XvfbEnvironment>> createOrLoadZombiesMap() {
-        Jenkins.XSTREAM.registerConverter(new XvfbEnvironmentConverter());
+    private static ConcurrentHashMap<String, List<PrometheusMonitoringEnvironment>> createOrLoadZombiesMap() {
+        Jenkins.XSTREAM.registerConverter(new PrometheusMonitoringEnvironmentConverter());
 
         final XmlFile fileOfZombies = zombiesFile();
 
         if (fileOfZombies.exists()) {
             try {
                 @SuppressWarnings("unchecked")
-                final ConcurrentHashMap<String, List<XvfbEnvironment>> oldZombies = (ConcurrentHashMap<String, List<XvfbEnvironment>>) fileOfZombies.read();
+                final ConcurrentHashMap<String, List<PrometheusMonitoringEnvironment>> oldZombies = (ConcurrentHashMap<String, List<PrometheusMonitoringEnvironment>>) fileOfZombies.read();
 
                 return oldZombies;
             } catch (final IOException ignore) {
@@ -255,30 +255,30 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
             }
         }
 
-        return new ConcurrentHashMap<String, List<XvfbEnvironment>>();
+        return new ConcurrentHashMap<String, List<PrometheusMonitoringEnvironment>>();
     }
 
-    static void shutdownAndCleanup(final XvfbEnvironment xvfbEnvironment, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
+    static void shutdownAndCleanup(final PrometheusMonitoringEnvironment pmEnvironment, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
 
-        listener.getLogger().println(Messages.XvfbBuildWrapper_Stopping());
+        listener.getLogger().println(Messages.PrometheusMonitoringBuildWrapper_Stopping());
 
         try {
-            launcher.kill(Collections.singletonMap(JENKINS_XVFB_COOKIE, xvfbEnvironment.cookie));
-            final FilePath frameBufferPath = new FilePath(launcher.getChannel(), xvfbEnvironment.frameBufferDir);
-            frameBufferPath.deleteRecursive();
+            launcher.kill(Collections.singletonMap(JENKINS_PM_NODE_EXPORTER_COOKIE, pmEnvironment.cookie));
+            final FilePath configPath = new FilePath(launcher.getChannel(), pmEnvironment.configDir);
+            configPath.deleteRecursive();
         } catch (final ChannelClosedException e) {
             synchronized (zombies) {
                 final Computer currentComputer = Computer.currentComputer();
                 final String computerName = currentComputer.getName();
 
-                List<XvfbEnvironment> zombiesAtComputer = zombies.get(computerName);
+                List<PrometheusMonitoringEnvironment> zombiesAtComputer = zombies.get(computerName);
 
                 if (zombiesAtComputer == null) {
-                    zombiesAtComputer = new CopyOnWriteArrayList<XvfbEnvironment>();
+                    zombiesAtComputer = new CopyOnWriteArrayList<PrometheusMonitoringEnvironment>();
                     zombies.put(computerName, zombiesAtComputer);
                 }
 
-                zombiesAtComputer.add(new XvfbEnvironment(xvfbEnvironment.cookie, xvfbEnvironment.frameBufferDir, xvfbEnvironment.displayName, false));
+                zombiesAtComputer.add(new PrometheusMonitoringEnvironment(pmEnvironment.cookie, pmEnvironment.configDir, pmEnvironment.port, false));
 
                 final XmlFile fileOfZombies = zombiesFile();
                 fileOfZombies.write(zombies);
@@ -286,9 +286,9 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         }
     }
 
-    private static void shutdownAndCleanupZombie(final Channel channel, final XvfbEnvironment zombie, final TaskListener listener) throws IOException, InterruptedException {
+    private static void shutdownAndCleanupZombie(final Channel channel, final PrometheusMonitoringEnvironment zombie, final TaskListener listener) throws IOException, InterruptedException {
 
-        listener.getLogger().println(Messages.XvfbBuildWrapper_KillingZombies(zombie.displayName, zombie.frameBufferDir));
+        listener.getLogger().println(Messages.PrometheusMonitoringBuildWrapper_KillingZombies(zombie.port, zombie.configDir));
 
         try {
             channel.call(new MasterToSlaveCallable<Void, InterruptedException>() {
@@ -303,11 +303,11 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
 
                         final EnvVars environment = osProcess.getEnvironmentVariables();
 
-                        final String processCookie = environment.get(JENKINS_XVFB_COOKIE);
+                        final String processCookie = environment.get(JENKINS_PM_NODE_EXPORTER_COOKIE);
 
                         if (processCookie != null && processCookie.equals(zombie.cookie)) {
                             osProcess.kill();
-                            new File(zombie.frameBufferDir).delete();
+                            new File(zombie.configDir).delete();
                         }
                     }
 
@@ -316,44 +316,44 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
             });
         } catch (final InterruptedException e) {
             // if we propagate the exception, slave will be obstructed from going online
-            listener.getLogger().println(Messages.XvfbBuildWrapper_ZombieSlainFailed());
+            listener.getLogger().println(Messages.PrometheusMonitoringBuildWrapper_ZombieSlainFailed());
             e.printStackTrace(listener.getLogger());
         }
     }
 
     private static XmlFile zombiesFile() {
-        return new XmlFile(Jenkins.XSTREAM, new File(Jenkins.getInstance().getRootDir(), XvfbEnvironment.class.getName() + "-zombies.xml"));
+        return new XmlFile(Jenkins.XSTREAM, new File(Jenkins.getInstance().getRootDir(), PrometheusMonitoringEnvironment.class.getName() + "-zombies.xml"));
     };
-*/
+
     /** Name of the installation used in a configured job. */
     private String installationName;
 
     /** Prometheus node exporter port. */
     private int port = 9100;
 
-    /** Should the Xvfb output be displayed in job output. */
+    /** Should the Prometheus node exporter output be displayed in job output. */
     private boolean debug = false;
 
-    /** Time in milliseconds to wait for Xvfb initialization, by default 1 second. */
+    /** Time in milliseconds to wait for Prometheus node exporter initialization, by default 1 second. */
     private long timeout = 1;
 
     /** Additional options to be passed to the Prometheus node exporter */
     private String additionalOptions;
 
-    /** Should the Xvfb display be around for post build actions, i.e. should it terminate with the whole build */
+    /** Should the Prometheus node exporter be around for post build actions, i.e. should it terminate with the whole build */
     private boolean shutdownWithBuild = false;
 
     /** Run only on nodes labeled */
     private String assignedLabels;
 
     /** Run on same node in parallel */
-    private boolean parallelBuild = false;
+    //private boolean parallelBuild = false;
 
     @DataBoundConstructor
     public PrometheusMonitoring() {
     }
 
-    protected ArgumentListBuilder createCommandArguments(final NExporterInstallation installation, final FilePath frameBufferDir, final int displayNameUsed) {
+    protected ArgumentListBuilder createCommandArguments(final NExporterInstallation installation, final FilePath configDir, final int portUsed) {
         final String path = installation.getHome();
 
         final ArgumentListBuilder cmd;
@@ -364,7 +364,9 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
             cmd = new ArgumentListBuilder(path + "/node_exporter");
         }
 
-        cmd.add("--web.listen-address=" + port);
+        cmd.add("--web.listen-address=:" + portUsed);
+
+        cmd.add("--collector.textfile.directory=" + configDir);
 
         if (additionalOptions != null) {
             cmd.addTokenized(additionalOptions);
@@ -427,39 +429,16 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         return debug;
     }
 
-    public boolean isParallelBuild() {
-        return parallelBuild;
-    }
+    //public boolean isParallelBuild() {
+    //    return parallelBuild;
+    //}
 
     public boolean isShutdownWithBuild() {
         return shutdownWithBuild;
     }
 
-    /*private NExporterEnvironment launchNExporter(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
+    private PrometheusMonitoringEnvironment launchPMEnvironment(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
         final Computer currentComputer = workspace.toComputer();
-
-        int displayNameUsed;
-
-        if (displayName == null) {
-            if (!autoDisplayName) {
-                final Executor executor = run.getExecutor();
-                if (parallelBuild) {
-                    final Computer[] computers = Jenkins.getInstance().getComputers();
-                    final int nodeIndex = Arrays.binarySearch(computers, currentComputer, ComputerNameComparator.INSTANCE);
-
-                    displayNameUsed = nodeIndex * 100 + executor.getNumber() + displayNameOffset;
-                }
-                else {
-                    displayNameUsed = executor.getNumber() + displayNameOffset;
-                }
-            }
-            else {
-                displayNameUsed = -1;
-            }
-        }
-        else {
-            displayNameUsed = displayName;
-        }
 
         final Node currentNode = currentComputer.getNode();
 
@@ -467,7 +446,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
             workspace.mkdirs();
         }
 
-        final FilePath frameBufferDir = workspace.createTempDir(".xvfb-" + run.getId() + "-", ".fbdir");
+        final FilePath configDir = workspace.createTempDir(".pm-nexporter-" + port + "-", ".confdir");
 
         final EnvVars environment = currentComputer.getEnvironment();
         final NExporterInstallation installation = getInstallation(environment, currentNode, listener);
@@ -478,7 +457,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
             throw new RunnerAbortedException();
         }
 
-        final ArgumentListBuilder cmd = createCommandArguments(installation, frameBufferDir, displayNameUsed);
+        final ArgumentListBuilder cmd = createCommandArguments(installation, configDir, port);
 
         final ProcStarter procStarter = launcher.launch().cmds(cmd);
 
@@ -486,13 +465,13 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         final OutputStream stdout = debug ? listener.getLogger() : stdoutStream;
 
         final ByteArrayOutputStream stderrStream = new ByteArrayOutputStream();
-        final AutoDisplayNameFilterStream stderr = new AutoDisplayNameFilterStream(debug ? listener.getLogger() : stderrStream);
+        final OutputStream stderr = debug ? listener.getLogger() : stderrStream;
 
         listener.getLogger().print(Messages.PrometheusMonitoringBuildWrapper_Starting());
         procStarter.stdout(stdout).stderr(stderr);
 
         final String cookie = UUID.randomUUID().toString();
-        procStarter.envs(Collections.singletonMap(JENKINS_XVFB_COOKIE, cookie));
+        procStarter.envs(Collections.singletonMap(JENKINS_PM_NODE_EXPORTER_COOKIE, cookie));
 
         final Proc process = procStarter.start();
 
@@ -506,19 +485,15 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
 
             listener.getLogger().println();
 
-            listener.error(Messages.XvfbBuildWrapper_FailedToStart());
+            listener.error(Messages.PrometheusMonitoringBuildWrapper_FailedToStart());
 
             throw new RunnerAbortedException();
         }
 
-        if (autoDisplayName) {
-            displayNameUsed = stderr.getDisplayNumber();
-        }
+        final PrometheusMonitoringEnvironment pmEnvironment = new PrometheusMonitoringEnvironment(cookie, configDir.getRemote(), port, shutdownWithBuild);
 
-        final NExporterEnvironment nexporterEnvironment = new NExporterEnvironment(cookie, frameBufferDir.getRemote(), displayNameUsed, shutdownWithBuild);
-
-        return nexporterEnvironment;
-    }*/
+        return pmEnvironment;
+    }
 
     @DataBoundSetter
     public void setAdditionalOptions(final String additionalOptions) {
@@ -540,10 +515,10 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         this.installationName = installationName;
     }
 
-    @DataBoundSetter
-    public void setParallelBuild(final boolean parallelBuild) {
-        this.parallelBuild = parallelBuild;
-    }
+    //@DataBoundSetter
+    //public void setParallelBuild(final boolean parallelBuild) {
+    //    this.parallelBuild = parallelBuild;
+    //}
 
     @DataBoundSetter
     public void setPort(final int port) {
@@ -587,11 +562,11 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
             return;
         }
 
-        /*@SuppressWarnings("rawtypes")
+        @SuppressWarnings("rawtypes")
         final Run rawRun = run;
-        final NExporterEnvironment nexporterEnvironment = launchNExporter(rawRun, workspace, launcher, listener);
-        run.addAction(nexporterEnvironment);
+        final PrometheusMonitoringEnvironment pmEnvironment = launchPMEnvironment(rawRun, workspace, launcher, listener);
+        run.addAction(pmEnvironment);
 
-        context.setDisposer(new NExporterDisposer(nexporterEnvironment));*/
+        context.setDisposer(new NExporterDisposer(pmEnvironment));
     }
 }

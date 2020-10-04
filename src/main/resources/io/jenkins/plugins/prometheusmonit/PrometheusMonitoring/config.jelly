@@ -21,9 +21,9 @@
             <f:textbox autoCompleteDelimChar=" " value="${instance.assignedLabels}" />
         </f:entry>
 
-        <f:entry title="${%I’m running this job in parallel on same node}" field="parallelBuild">
+        <!--<f:entry title="${%I’m running this job in parallel on same node}" field="parallelBuild">
             <f:checkbox value="${instance.parallelBuild}" />
-        </f:entry>
+        </f:entry>-->
 
         <f:entry title="${%Timeout in seconds}" field="timeout">
             <f:textbox value="${instance.timeout}" />
