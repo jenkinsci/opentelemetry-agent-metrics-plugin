@@ -131,11 +131,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
             return FormValidation.okWithMarkup(Messages.PrometheusMonitoringBuildWrapper_LabelLink(jenkins.getRootUrl(), label.getUrl(), label.getNodes().size() + label.getClouds().size()));
         }
 
-        public FormValidation doCheckDisplayName(@QueryParameter final String value) throws IOException {
-            return validateOptionalNonNegativeInteger(value);
-        }
-
-        public FormValidation doCheckDisplayNameOffset(@QueryParameter final String value) throws IOException {
+        public FormValidation doCheckPort(@QueryParameter final String value) throws IOException {
             return validateOptionalPositiveInteger(value);
         }
 
