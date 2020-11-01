@@ -357,11 +357,11 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         final String path = installation.getHome();
 
         final ArgumentListBuilder cmd;
+        final String executable = isWindows() ? "windows_exporter.exe" : "node_exporter";
         if ("".equals(path)) {
-            cmd = new ArgumentListBuilder("node_exporter");
-        }
-        else {
-            cmd = new ArgumentListBuilder(path + "/node_exporter");
+            cmd = new ArgumentListBuilder(executable);
+        } else {
+            cmd = new ArgumentListBuilder(path + File.separator + executable);
         }
 
         cmd.add("--web.listen-address=:" + portUsed);
@@ -568,5 +568,9 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         run.addAction(pmEnvironment);
 
         context.setDisposer(new NExporterDisposer(pmEnvironment));
+    }
+
+    private boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().contains("win");
     }
 }
