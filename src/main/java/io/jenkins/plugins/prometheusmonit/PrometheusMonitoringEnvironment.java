@@ -8,7 +8,7 @@ public class PrometheusMonitoringEnvironment extends InvisibleAction implements 
 
     private static final long serialVersionUID = 1L;
 
-    /** Remote path of the textfile collector dir */
+    /** Remote path of the opentelemetry config dir */
     public final String configDir;
 
     /** Port used */
