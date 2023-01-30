@@ -84,11 +84,11 @@ public class OtelCollectorInstallation extends ToolInstallation implements NodeS
 
             final File nexporterExecutable = new File(value, "node_exporter");
             if (!nexporterExecutable.exists()) {
-                return FormValidation.error(Messages.ONMonitoringInstallation_HomeDoesntContainNExporter(value));
+                return FormValidation.error(Messages.OCMonitoringInstallation_HomeDoesntContainOtelCollector(value));
             }
 
             if (!nexporterExecutable.canExecute()) {
-                return FormValidation.error(Messages.ONMonitoringInstallation_NExporterIsNotExecutable(value));
+                return FormValidation.error(Messages.OCMonitoringInstallation_OtelCollectorIsNotExecutable(value));
             }
 
             return FormValidation.ok();
@@ -101,7 +101,7 @@ public class OtelCollectorInstallation extends ToolInstallation implements NodeS
 
         @Override
         public String getDisplayName() {
-            return Messages.ONMonitoringInstallation_DisplayName();
+            return Messages.OCMonitoringInstallation_DisplayName();
         }
 
         @Override

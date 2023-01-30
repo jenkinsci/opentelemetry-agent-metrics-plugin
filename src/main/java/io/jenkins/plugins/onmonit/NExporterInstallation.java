@@ -84,11 +84,11 @@ public class NExporterInstallation extends ToolInstallation implements NodeSpeci
 
             final File nexporterExecutable = new File(value, "node_exporter");
             if (!nexporterExecutable.exists()) {
-                return FormValidation.error(Messages.ONMonitoringInstallation_HomeDoesntContainNExporter(value));
+                return FormValidation.error(Messages.NEMonitoringInstallation_HomeDoesntContainNExporter(value));
             }
 
             if (!nexporterExecutable.canExecute()) {
-                return FormValidation.error(Messages.ONMonitoringInstallation_NExporterIsNotExecutable(value));
+                return FormValidation.error(Messages.NEMonitoringInstallation_NExporterIsNotExecutable(value));
             }
 
             return FormValidation.ok();
@@ -101,7 +101,7 @@ public class NExporterInstallation extends ToolInstallation implements NodeSpeci
 
         @Override
         public String getDisplayName() {
-            return Messages.ONMonitoringInstallation_DisplayName();
+            return Messages.NEMonitoringInstallation_DisplayName();
         }
 
         @Override
