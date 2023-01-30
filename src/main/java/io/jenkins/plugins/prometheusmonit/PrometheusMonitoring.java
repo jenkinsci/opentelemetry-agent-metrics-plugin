@@ -4,6 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -374,6 +377,20 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         return cmd;
     }
 
+    protected void writePMTextfileCollectorFile(final Run<?, ?> run, final TaskListener listener, FilePath configDir) {
+        FilePath configFile = configDir.child("jenkins_job.prom");
+        String pageUrl = Jenkins.getInstance().getRootUrl() + run.getUrl();
+
+        try (Writer w = new OutputStreamWriter(configFile.write(), StandardCharsets.UTF_8)) {
+            w.write("jenkins_job_url{url=\"" + pageUrl + "\"} 1\n");
+        } catch (InterruptedException e) {
+            listener.fatalError("InterruptedException while writing textfile collector file", e);
+            Thread.currentThread().interrupt();
+        } catch (IOException e) {
+            listener.fatalError("IOException while writing textfile collector file", e);
+        }
+    }
+
     public String getAdditionalOptions() {
         return additionalOptions;
     }
@@ -406,6 +423,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
                     listener.fatalError("IOException while locating installation", e);
                 } catch (final InterruptedException e) {
                     listener.fatalError("InterruptedException while locating installation", e);
+                    Thread.currentThread().interrupt();
                 }
             }
         }
@@ -456,6 +474,8 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
 
             throw new RunnerAbortedException();
         }
+
+        writePMTextfileCollectorFile(run, listener, configDir);
 
         final ArgumentListBuilder cmd = createCommandArguments(installation, configDir, port);
 
