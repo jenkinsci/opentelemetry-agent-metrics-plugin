@@ -1,2 +1,2 @@
 <?jelly escape-by-default='true'?>
-<div>This plugin allows monitoring of Jenkins agents by deploying prometheus exporters to them and querying prometheus from a job page.</div>
+<div>This plugin allows monitoring of Jenkins agents by deploying Prometheus node exporters and Otel collectors to them and linking to a Grafana dashboard displaying those gathered metrics.</div>
