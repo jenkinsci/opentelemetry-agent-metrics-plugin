@@ -86,7 +86,11 @@ public class ONMonitoring extends SimpleBuildWrapper {
 
         /** NExporter installations, this descriptor persists all installations configured. */
         @CopyOnWrite
-        private volatile NExporterInstallation[] installations = new NExporterInstallation[0];
+        private volatile NExporterInstallation[] neInstallations = new NExporterInstallation[0];
+
+        /** Otel collector installations, this descriptor persists all installations configured. */
+        @CopyOnWrite
+        private volatile OtelCollectorInstallation[] ocInstallations = new OtelCollectorInstallation[0];
 
         public ONMonitoringBuildWrapperDescriptor() {
             load();
@@ -147,8 +151,12 @@ public class ONMonitoring extends SimpleBuildWrapper {
             return Messages.ONMonitoringBuildWrapper_DisplayName();
         }
 
-        public NExporterInstallation[] getInstallations() {
-            return installations;
+        public NExporterInstallation[] getNeInstallations() {
+            return neInstallations;
+        }
+
+        public OtelCollectorInstallation[] getOcInstallations() {
+            return ocInstallations;
         }
 
         public NExporterInstallation.DescriptorImpl getToolDescriptor() {
@@ -165,8 +173,13 @@ public class ONMonitoring extends SimpleBuildWrapper {
             return req.bindJSON(ONMonitoring.class, formData);
         }
 
-        public void setInstallations(final NExporterInstallation... installations) {
-            this.installations = installations;
+        public void setNEInstallations(final NExporterInstallation... neInstallations) {
+            this.neInstallations = neInstallations;
+            save();
+        }
+
+        public void setOCInstallations(final OtelCollectorInstallation... ocInstallations) {
+            this.ocInstallations = ocInstallations;
             save();
         }
 
@@ -407,7 +420,7 @@ public class ONMonitoring extends SimpleBuildWrapper {
     }
 
     public NExporterInstallation getInstallation(final EnvVars env, final Node node, final TaskListener listener) {
-        final NExporterInstallation[] installations = getDescriptor().getInstallations();
+        final NExporterInstallation[] installations = getDescriptor().getNeInstallations();
 
         // if there is only one installation and no name specified use that
         if (installationName == null && installations.length == 1) {

@@ -105,8 +105,8 @@ public class OtelCollectorInstallation extends ToolInstallation implements NodeS
         }
 
         @Override
-        public NExporterInstallation[] getInstallations() {
-            return Jenkins.getInstance().getDescriptorByType(ONMonitoring.ONMonitoringBuildWrapperDescriptor.class).getInstallations();
+        public OtelCollectorInstallation[] getInstallations() {
+            return Jenkins.getInstance().getDescriptorByType(ONMonitoring.ONMonitoringBuildWrapperDescriptor.class).getOcInstallations();
         }
 
         public DescriptorImpl getToolDescriptor() {
@@ -114,23 +114,23 @@ public class OtelCollectorInstallation extends ToolInstallation implements NodeS
         }
 
         @Override
-        public void setInstallations(final NExporterInstallation... installations) {
-            Jenkins.getInstance().getDescriptorByType(ONMonitoring.ONMonitoringBuildWrapperDescriptor.class).setInstallations(installations);
+        public void setInstallations(final OtelCollectorInstallation... installations) {
+            Jenkins.getInstance().getDescriptorByType(ONMonitoring.ONMonitoringBuildWrapperDescriptor.class).setOCInstallations(installations);
         }
     }
 
     @DataBoundConstructor
-    public NExporterInstallation(final String name, final String home, final List<? extends ToolProperty<?>> properties) {
+    public OtelCollectorInstallation(final String name, final String home, final List<? extends ToolProperty<?>> properties) {
         super(name, home, properties);
     }
 
     @Override
-    public NExporterInstallation forEnvironment(final EnvVars environment) {
-        return new NExporterInstallation(getName(), environment.expand(getHome()), getProperties().toList());
+    public OtelCollectorInstallation forEnvironment(final EnvVars environment) {
+        return new OtelCollectorInstallation(getName(), environment.expand(getHome()), getProperties().toList());
     }
 
     @Override
-    public NExporterInstallation forNode(final Node node, final TaskListener log) throws IOException, InterruptedException {
-        return new NExporterInstallation(getName(), translateFor(node, log), getProperties().toList());
+    public OtelCollectorInstallation forNode(final Node node, final TaskListener log) throws IOException, InterruptedException {
+        return new OtelCollectorInstallation(getName(), translateFor(node, log), getProperties().toList());
     }
 }

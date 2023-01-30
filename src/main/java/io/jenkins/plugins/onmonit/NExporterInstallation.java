@@ -106,7 +106,7 @@ public class NExporterInstallation extends ToolInstallation implements NodeSpeci
 
         @Override
         public NExporterInstallation[] getInstallations() {
-            return Jenkins.getInstance().getDescriptorByType(ONMonitoring.ONMonitoringBuildWrapperDescriptor.class).getInstallations();
+            return Jenkins.getInstance().getDescriptorByType(ONMonitoring.ONMonitoringBuildWrapperDescriptor.class).getNeInstallations();
         }
 
         public DescriptorImpl getToolDescriptor() {
@@ -115,7 +115,7 @@ public class NExporterInstallation extends ToolInstallation implements NodeSpeci
 
         @Override
         public void setInstallations(final NExporterInstallation... installations) {
-            Jenkins.getInstance().getDescriptorByType(ONMonitoring.ONMonitoringBuildWrapperDescriptor.class).setInstallations(installations);
+            Jenkins.getInstance().getDescriptorByType(ONMonitoring.ONMonitoringBuildWrapperDescriptor.class).setNEInstallations(installations);
         }
     }
 
