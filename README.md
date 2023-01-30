@@ -1,13 +1,12 @@
-Prometheus monitoring of agents
+Otel + Node exporter monitoring of agents
 -------------------------------
 
-This plugin integrates with Prometheus time-series DB for monitoring of jobs.
+This plugin integrates with the Opentelemetry Collector and Node exporter for monitoring of build agents.
 
-It does this by deploying the prometheus node exporter on job agents.
+It does this by deploying the Prometheus node exporter and Opentelemetry (Otel) Collector on job agents.
+The Otel Collector will scrape the metrics from node exporter.
 
-A Prometheus server must be configured such as to scrape the exported metrics. This can be done in a way that Prometheus dynamically detects new agents, e.g. by annotating EC2 instances that are launched by Jenkin's [EC2 plugin](https://plugins.jenkins.io/ec2/).
-
-The captured metrics are then displayed on the job page.
+On the job page a link will be displayed to a Grafana dashboard displaying the metrics of any build agents for a given build.
 
 ![main-job-page](images/main-page.png)
 
@@ -21,7 +20,7 @@ Usage
 1. Clone the GitHub repository.
 2. Import the Maven project into your favorite IDE (IntelliJ, Eclipse, etc.).
 3. Build the plugin using the gradle script (`./gradlew build` or `gradlew.bat build` on Windows).
-4. The plugin is created at `build/libs/prometheus-monitoring.hpi`.
+4. The plugin is created at `build/libs/otel-monitoring.hpi`.
 
 ## Installing the plugin:
 
@@ -37,7 +36,7 @@ Usage
 2. On the left-hand side of the screen, click “Manage Jenkins”.
 3. Click “Manage Plugins”.
 4. Near the top of the screen, click on the “Advanced” tab.
-5. Under the “Upload Plugin”, click “Choose File” and select the Prometheus monitoring plugin that you previously downloaded.
+5. Under the “Upload Plugin”, click “Choose File” and select the Otel monitoring plugin that you previously downloaded.
 6. Click “Upload”.
 7. Check the “Restart Jenkins when installation is complete and no jobs are running” checkbox.
 8. Wait for Jenkins to restart.
@@ -47,8 +46,8 @@ Usage
 1. Log into your Jenkins web UI.
 2. On the left-hand side of the screen, click “Manage Jenkins”
 3. Click “Configure System”.
-4. Scroll down to the “Prometheus monitoring” header.
-5. Enter the URL of the prometheus server which will scrape the agent metrics.
+4. Scroll down to the “Otel monitoring” header.
+5. Enter the URL of the Grafana dashboard which will display the agent metrics.
 6. Click “Save”.
 
 ## Using the plugin in Jenkins job:
@@ -57,14 +56,14 @@ Usage
 2. Click on the job you wish to edit.
 3. On the left-hand side of the screen, click “Configure”.
 4. Scroll down to the “Post-build Actions” header.
-5. Click “Add post-build action” and select “Monitor agent with Prometheus”.
+5. Click “Add post-build action” and select “Monitor agent with Otel.
 6.  Click “Save”.
 
 ## Using the plugin in Jenkins Pipeline
 
 1. Go to Job > Pipeline Syntax > Snippet Generator
-2. Select "prometheusmonit" sample step or "step: General Build Step" > "Monitor agent with Prometheus"
+2. Select "onmonit" sample step or "step: General Build Step" > "Monitor agent with Otel"
 3. Click "Generate Pipeline Script"
 
-## Configuration of Prometheus
+## Configuration of Grafana
 

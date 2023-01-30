@@ -1,4 +1,4 @@
-package io.jenkins.plugins.prometheusmonit;
+package io.jenkins.plugins.onmonit;
 
 import java.io.IOException;
 
@@ -12,16 +12,16 @@ public class NExporterDisposer extends Disposer {
 
     private static final long serialVersionUID = 1L;
 
-    private final PrometheusMonitoringEnvironment pmEnvironment;
+    private final ONMonitoringEnvironment pmEnvironment;
 
-    public NExporterDisposer(final PrometheusMonitoringEnvironment pmEnvironment) {
+    public NExporterDisposer(final ONMonitoringEnvironment pmEnvironment) {
         this.pmEnvironment = pmEnvironment;
     }
 
     @Override
     public void tearDown(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
         if (!pmEnvironment.shutdownWithBuild) {
-            PrometheusMonitoring.shutdownAndCleanup(pmEnvironment, launcher, listener);
+            ONMonitoring.shutdownAndCleanup(pmEnvironment, launcher, listener);
         }
     }
 

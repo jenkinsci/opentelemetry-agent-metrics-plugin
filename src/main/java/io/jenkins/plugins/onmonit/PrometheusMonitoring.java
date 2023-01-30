@@ -1,4 +1,4 @@
-package io.jenkins.plugins.prometheusmonit;
+package io.jenkins.plugins.onmonit;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -68,7 +68,7 @@ import jenkins.security.MasterToSlaveCallable;
 import jenkins.tasks.SimpleBuildWrapper;
 import net.sf.json.JSONObject;
 
-public class PrometheusMonitoring extends SimpleBuildWrapper {
+public class ONMonitoring extends SimpleBuildWrapper {
 
     private static final class ComputerNameComparator implements Comparator<Computer> {
 
@@ -82,13 +82,13 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
     }
 
     @Extension(ordinal = Double.MAX_VALUE)
-    public static class PrometheusMonitoringBuildWrapperDescriptor extends BuildWrapperDescriptor {
+    public static class ONMonitoringBuildWrapperDescriptor extends BuildWrapperDescriptor {
 
         /** NExporter installations, this descriptor persists all installations configured. */
         @CopyOnWrite
         private volatile NExporterInstallation[] installations = new NExporterInstallation[0];
 
-        public PrometheusMonitoringBuildWrapperDescriptor() {
+        public ONMonitoringBuildWrapperDescriptor() {
             load();
         }
 
@@ -115,7 +115,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
             try {
                 Label.parseExpression(value);
             } catch (final ANTLRException e) {
-                return FormValidation.error(e, Messages.PrometheusMonitoringBuildWrapper_AssignedLabelString_InvalidBooleanExpression(e.getMessage()));
+                return FormValidation.error(e, Messages.ONMonitoringBuildWrapper_AssignedLabelString_InvalidBooleanExpression(e.getMessage()));
             }
 
             final Jenkins jenkins = Jenkins.getInstance();
@@ -125,13 +125,13 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
                 for (final LabelAtom labelAtom : label.listAtoms()) {
                     if (labelAtom.isEmpty()) {
                         final LabelAtom nearest = LabelAtom.findNearest(labelAtom.getName());
-                        return FormValidation.warning(Messages.PrometheusMonitoringBuildWrapper_AssignedLabelString_NoMatch_DidYouMean(labelAtom.getName(), nearest.getDisplayName()));
+                        return FormValidation.warning(Messages.ONMonitoringBuildWrapper_AssignedLabelString_NoMatch_DidYouMean(labelAtom.getName(), nearest.getDisplayName()));
                     }
                 }
-                return FormValidation.warning(Messages.PrometheusMonitoringBuildWrapper_AssignedLabelString_NoMatch());
+                return FormValidation.warning(Messages.ONMonitoringBuildWrapper_AssignedLabelString_NoMatch());
             }
 
-            return FormValidation.okWithMarkup(Messages.PrometheusMonitoringBuildWrapper_LabelLink(jenkins.getRootUrl(), label.getUrl(), label.getNodes().size() + label.getClouds().size()));
+            return FormValidation.okWithMarkup(Messages.ONMonitoringBuildWrapper_LabelLink(jenkins.getRootUrl(), label.getUrl(), label.getNodes().size() + label.getClouds().size()));
         }
 
         public FormValidation doCheckPort(@QueryParameter final String value) throws IOException {
@@ -144,7 +144,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
 
         @Override
         public String getDisplayName() {
-            return Messages.PrometheusMonitoringBuildWrapper_DisplayName();
+            return Messages.ONMonitoringBuildWrapper_DisplayName();
         }
 
         public NExporterInstallation[] getInstallations() {
@@ -162,7 +162,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
 
         @Override
         public BuildWrapper newInstance(final StaplerRequest req, final JSONObject formData) throws hudson.model.Descriptor.FormException {
-            return req.bindJSON(PrometheusMonitoring.class, formData);
+            return req.bindJSON(ONMonitoring.class, formData);
         }
 
         public void setInstallations(final NExporterInstallation... installations) {
@@ -188,6 +188,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
     }
 
     private static final String JENKINS_PM_NODE_EXPORTER_COOKIE = "_JENKINS_PM_NODE_EXPORTER_COOKIE";
+    private static final String JENKINS_PM_OTEL_COLLECTOR_COOKIE = "_JENKINS_PM_OTEL_COLLECTOR_COOKIE";
 
     private static final String STDERR_FD = "2";
 
@@ -196,7 +197,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
     public static final RunListener<Run> nexporterShutdownListener = new RunListener<Run>() {
         @Override
         public void onCompleted(final Run r, final TaskListener listener) {
-            final PrometheusMonitoringEnvironment pmEnvironment = r.getAction(PrometheusMonitoringEnvironment.class);
+            final ONMonitoringEnvironment pmEnvironment = r.getAction(ONMonitoringEnvironment.class);
 
             if (pmEnvironment != null && pmEnvironment.shutdownWithBuild) {
                 try {
@@ -205,7 +206,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
                     final Node node = computer.getNode();
                     final Launcher launcher = node.createLauncher(listener);
 
-                    PrometheusMonitoring.shutdownAndCleanup(pmEnvironment, launcher, listener);
+                    ONMonitoring.shutdownAndCleanup(pmEnvironment, launcher, listener);
                 } catch (final IOException e) {
                     throw new RuntimeException(e);
                 } catch (final InterruptedException e) {
@@ -215,20 +216,20 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         }
     };
 
-    private static final Map<String, List<PrometheusMonitoringEnvironment>> zombies = createOrLoadZombiesMap();
+    private static final Map<String, List<ONMonitoringEnvironment>> zombies = createOrLoadZombiesMap();
 
     @Extension
     public static final ComputerListener nodeListener = new ComputerListener() {
         @Override
         public void preOnline(final Computer c, final Channel channel, final FilePath root, final TaskListener listener) throws IOException, InterruptedException {
-            final List<PrometheusMonitoringEnvironment> zombiesAtComputer = zombies.get(c.getName());
+            final List<ONMonitoringEnvironment> zombiesAtComputer = zombies.get(c.getName());
 
             if (zombiesAtComputer == null) {
                 return;
             }
 
-            final List<PrometheusMonitoringEnvironment> slaied = new ArrayList<PrometheusMonitoringEnvironment>();
-            for (final PrometheusMonitoringEnvironment zombie : zombiesAtComputer) {
+            final List<ONMonitoringEnvironment> slaied = new ArrayList<ONMonitoringEnvironment>();
+            for (final ONMonitoringEnvironment zombie : zombiesAtComputer) {
                 shutdownAndCleanupZombie(channel, zombie, listener);
 
                 slaied.add(zombie);
@@ -241,15 +242,15 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
 
     private static final int MILLIS_IN_SECOND = 1000;
 
-    private static ConcurrentHashMap<String, List<PrometheusMonitoringEnvironment>> createOrLoadZombiesMap() {
-        Jenkins.XSTREAM.registerConverter(new PrometheusMonitoringEnvironmentConverter());
+    private static ConcurrentHashMap<String, List<ONMonitoringEnvironment>> createOrLoadZombiesMap() {
+        Jenkins.XSTREAM.registerConverter(new ONMonitoringEnvironmentConverter());
 
         final XmlFile fileOfZombies = zombiesFile();
 
         if (fileOfZombies.exists()) {
             try {
                 @SuppressWarnings("unchecked")
-                final ConcurrentHashMap<String, List<PrometheusMonitoringEnvironment>> oldZombies = (ConcurrentHashMap<String, List<PrometheusMonitoringEnvironment>>) fileOfZombies.read();
+                final ConcurrentHashMap<String, List<ONMonitoringEnvironment>> oldZombies = (ConcurrentHashMap<String, List<ONMonitoringEnvironment>>) fileOfZombies.read();
 
                 return oldZombies;
             } catch (final IOException ignore) {
@@ -258,15 +259,16 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
             }
         }
 
-        return new ConcurrentHashMap<String, List<PrometheusMonitoringEnvironment>>();
+        return new ConcurrentHashMap<String, List<ONMonitoringEnvironment>>();
     }
 
-    static void shutdownAndCleanup(final PrometheusMonitoringEnvironment pmEnvironment, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
+    static void shutdownAndCleanup(final ONMonitoringEnvironment pmEnvironment, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
 
-        listener.getLogger().println(Messages.PrometheusMonitoringBuildWrapper_Stopping());
+        listener.getLogger().println(Messages.ONMonitoringBuildWrapper_Stopping());
 
         try {
-            launcher.kill(Collections.singletonMap(JENKINS_PM_NODE_EXPORTER_COOKIE, pmEnvironment.cookie));
+            launcher.kill(Collections.singletonMap(JENKINS_PM_NODE_EXPORTER_COOKIE, pmEnvironment.neCookie));
+            launcher.kill(Collections.singletonMap(JENKINS_PM_OTEL_COLLECTOR_COOKIE, pmEnvironment.ocCookie));
             final FilePath configPath = new FilePath(launcher.getChannel(), pmEnvironment.configDir);
             configPath.deleteRecursive();
         } catch (final ChannelClosedException e) {
@@ -274,14 +276,14 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
                 final Computer currentComputer = Computer.currentComputer();
                 final String computerName = currentComputer.getName();
 
-                List<PrometheusMonitoringEnvironment> zombiesAtComputer = zombies.get(computerName);
+                List<ONMonitoringEnvironment> zombiesAtComputer = zombies.get(computerName);
 
                 if (zombiesAtComputer == null) {
-                    zombiesAtComputer = new CopyOnWriteArrayList<PrometheusMonitoringEnvironment>();
+                    zombiesAtComputer = new CopyOnWriteArrayList<ONMonitoringEnvironment>();
                     zombies.put(computerName, zombiesAtComputer);
                 }
 
-                zombiesAtComputer.add(new PrometheusMonitoringEnvironment(pmEnvironment.cookie, pmEnvironment.configDir, pmEnvironment.port, false));
+                zombiesAtComputer.add(new ONMonitoringEnvironment(pmEnvironment.neCookie, pmEnvironment.ocCookie, pmEnvironment.configDir, pmEnvironment.port, false));
 
                 final XmlFile fileOfZombies = zombiesFile();
                 fileOfZombies.write(zombies);
@@ -289,9 +291,9 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         }
     }
 
-    private static void shutdownAndCleanupZombie(final Channel channel, final PrometheusMonitoringEnvironment zombie, final TaskListener listener) throws IOException, InterruptedException {
+    private static void shutdownAndCleanupZombie(final Channel channel, final ONMonitoringEnvironment zombie, final TaskListener listener) throws IOException, InterruptedException {
 
-        listener.getLogger().println(Messages.PrometheusMonitoringBuildWrapper_KillingZombies(zombie.port, zombie.configDir));
+        listener.getLogger().println(Messages.ONMonitoringBuildWrapper_KillingZombies(zombie.port, zombie.configDir));
 
         try {
             channel.call(new MasterToSlaveCallable<Void, InterruptedException>() {
@@ -308,7 +310,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
 
                         final String processCookie = environment.get(JENKINS_PM_NODE_EXPORTER_COOKIE);
 
-                        if (processCookie != null && processCookie.equals(zombie.cookie)) {
+                        if (processCookie != null && processCookie.equals(zombie.neCookie)) {
                             osProcess.kill();
                             new File(zombie.configDir).delete();
                         }
@@ -319,13 +321,13 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
             });
         } catch (final InterruptedException e) {
             // if we propagate the exception, slave will be obstructed from going online
-            listener.getLogger().println(Messages.PrometheusMonitoringBuildWrapper_ZombieSlainFailed());
+            listener.getLogger().println(Messages.ONMonitoringBuildWrapper_ZombieSlainFailed());
             e.printStackTrace(listener.getLogger());
         }
     }
 
     private static XmlFile zombiesFile() {
-        return new XmlFile(Jenkins.XSTREAM, new File(Jenkins.getInstance().getRootDir(), PrometheusMonitoringEnvironment.class.getName() + "-zombies.xml"));
+        return new XmlFile(Jenkins.XSTREAM, new File(Jenkins.getInstance().getRootDir(), ONMonitoringEnvironment.class.getName() + "-zombies.xml"));
     };
 
     /** Name of the installation used in a configured job. */
@@ -353,7 +355,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
     //private boolean parallelBuild = false;
 
     @DataBoundConstructor
-    public PrometheusMonitoring() {
+    public ONMonitoring() {
     }
 
     protected ArgumentListBuilder createCommandArguments(final NExporterInstallation installation, final FilePath configDir, final int portUsed) {
@@ -377,8 +379,8 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         return cmd;
     }
 
-    protected void writePMTextfileCollectorFile(final Run<?, ?> run, final TaskListener listener, FilePath configDir) {
-        FilePath configFile = configDir.child("jenkins_job.prom");
+    protected void writePMOtelConfigFile(final Run<?, ?> run, final TaskListener listener, FilePath configDir) {
+        FilePath configFile = configDir.child("otel.yaml");
         String pageUrl = Jenkins.getInstance().getRootUrl() + run.getUrl();
 
         try (Writer w = new OutputStreamWriter(configFile.write(), StandardCharsets.UTF_8)) {
@@ -400,8 +402,8 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
     }
 
     @Override
-    public PrometheusMonitoringBuildWrapperDescriptor getDescriptor() {
-        return (PrometheusMonitoringBuildWrapperDescriptor) super.getDescriptor();
+    public ONMonitoringBuildWrapperDescriptor getDescriptor() {
+        return (ONMonitoringBuildWrapperDescriptor) super.getDescriptor();
     }
 
     public NExporterInstallation getInstallation(final EnvVars env, final Node node, final TaskListener listener) {
@@ -455,7 +457,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         return shutdownWithBuild;
     }
 
-    private PrometheusMonitoringEnvironment launchPMEnvironment(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
+    private ONMonitoringEnvironment launchPMEnvironment(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
         final Computer currentComputer = workspace.toComputer();
 
         final Node currentNode = currentComputer.getNode();
@@ -470,12 +472,12 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         final NExporterInstallation installation = getInstallation(environment, currentNode, listener);
 
         if (installation == null) {
-            listener.error(Messages.PrometheusMonitoringBuildWrapper_NoInstallationsConfigured());
+            listener.error(Messages.ONMonitoringBuildWrapper_NoInstallationsConfigured());
 
             throw new RunnerAbortedException();
         }
 
-        writePMTextfileCollectorFile(run, listener, configDir);
+        writePMOtelConfigFile(run, listener, configDir);
 
         final ArgumentListBuilder cmd = createCommandArguments(installation, configDir, port);
 
@@ -487,11 +489,12 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         final ByteArrayOutputStream stderrStream = new ByteArrayOutputStream();
         final OutputStream stderr = debug ? listener.getLogger() : stderrStream;
 
-        listener.getLogger().print(Messages.PrometheusMonitoringBuildWrapper_Starting());
+        listener.getLogger().print(Messages.ONMonitoringBuildWrapper_Starting());
         procStarter.stdout(stdout).stderr(stderr);
 
-        final String cookie = UUID.randomUUID().toString();
-        procStarter.envs(Collections.singletonMap(JENKINS_PM_NODE_EXPORTER_COOKIE, cookie));
+        final String neCookie = UUID.randomUUID().toString();
+        final String ocCookie = UUID.randomUUID().toString();
+        procStarter.envs(Collections.singletonMap(JENKINS_PM_NODE_EXPORTER_COOKIE, neCookie));
 
         final Proc process = procStarter.start();
 
@@ -505,12 +508,12 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
 
             listener.getLogger().println();
 
-            listener.error(Messages.PrometheusMonitoringBuildWrapper_FailedToStart());
+            listener.error(Messages.ONMonitoringBuildWrapper_FailedToStart());
 
             throw new RunnerAbortedException();
         }
 
-        final PrometheusMonitoringEnvironment pmEnvironment = new PrometheusMonitoringEnvironment(cookie, configDir.getRemote(), port, shutdownWithBuild);
+        final ONMonitoringEnvironment pmEnvironment = new ONMonitoringEnvironment(neCookie, ocCookie, configDir.getRemote(), port, shutdownWithBuild);
 
         return pmEnvironment;
     }
@@ -576,7 +579,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
         }
 
         if (!launcher.isUnix()) {
-            listener.getLogger().println(Messages.PrometheusMonitoringBuildWrapper_NotUnix());
+            listener.getLogger().println(Messages.ONMonitoringBuildWrapper_NotUnix());
 
             // we will not run on non Unix machines
             return;
@@ -584,7 +587,7 @@ public class PrometheusMonitoring extends SimpleBuildWrapper {
 
         @SuppressWarnings("rawtypes")
         final Run rawRun = run;
-        final PrometheusMonitoringEnvironment pmEnvironment = launchPMEnvironment(rawRun, workspace, launcher, listener);
+        final ONMonitoringEnvironment pmEnvironment = launchPMEnvironment(rawRun, workspace, launcher, listener);
         run.addAction(pmEnvironment);
 
         context.setDisposer(new NExporterDisposer(pmEnvironment));

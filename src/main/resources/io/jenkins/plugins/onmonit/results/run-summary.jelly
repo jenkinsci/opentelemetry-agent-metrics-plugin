@@ -1,5 +1,5 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:r="/io/jenkins/plugins/prometheusmonit/results">
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:r="/io/jenkins/plugins/onmonit/results">
   <st:attribute name="result" use="required" />
   <link rel="stylesheet" href="${resURL}/plugin/prometheus-monitoring/default.css"/>
   <j:set var="result" value="${attrs.result}" />

@@ -26,7 +26,7 @@
  * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the FreeBSD Project.
  */
-package io.jenkins.plugins.prometheusmonit;
+package io.jenkins.plugins.onmonit;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,17 +51,17 @@ import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 
 @SuppressWarnings("serial")
-public class NExporterInstallation extends ToolInstallation implements NodeSpecific<NExporterInstallation>, EnvironmentSpecific<NExporterInstallation> {
+public class OtelCollectorInstallation extends ToolInstallation implements NodeSpecific<OtelCollectorInstallation>, EnvironmentSpecific<OtelCollectorInstallation> {
 
     @Extension
     @Symbol("nexporter")
-    public static class DescriptorImpl extends ToolDescriptor<NExporterInstallation> {
+    public static class DescriptorImpl extends ToolDescriptor<OtelCollectorInstallation> {
 
         @Override
         public boolean configure(final StaplerRequest req, final JSONObject json) throws FormException {
-            final List<NExporterInstallation> boundList = req.bindJSONToList(NExporterInstallation.class, json.get("tool"));
+            final List<OtelCollectorInstallation> boundList = req.bindJSONToList(OtelCollectorInstallation.class, json.get("tool"));
 
-            setInstallations(boundList.toArray(new NExporterInstallation[boundList.size()]));
+            setInstallations(boundList.toArray(new OtelCollectorInstallation[boundList.size()]));
 
             return true;
         }
@@ -72,23 +72,23 @@ public class NExporterInstallation extends ToolInstallation implements NodeSpeci
             if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
                 return FormValidation.ok();
             }
-
+ 
             if ("".equals(value.getPath())) {
                 // will try path
                 return FormValidation.ok();
             }
 
             if (!value.isDirectory()) {
-                return FormValidation.error(Messages.PrometheusMonitoringInstallation_HomeNotDirectory(value));
+                return FormValidation.error(Messages.ONMonitoringInstallation_HomeNotDirectory(value));
             }
 
             final File nexporterExecutable = new File(value, "node_exporter");
             if (!nexporterExecutable.exists()) {
-                return FormValidation.error(Messages.PrometheusMonitoringInstallation_HomeDoesntContainNExporter(value));
+                return FormValidation.error(Messages.ONMonitoringInstallation_HomeDoesntContainNExporter(value));
             }
 
             if (!nexporterExecutable.canExecute()) {
-                return FormValidation.error(Messages.PrometheusMonitoringInstallation_NExporterIsNotExecutable(value));
+                return FormValidation.error(Messages.ONMonitoringInstallation_NExporterIsNotExecutable(value));
             }
 
             return FormValidation.ok();
@@ -101,12 +101,12 @@ public class NExporterInstallation extends ToolInstallation implements NodeSpeci
 
         @Override
         public String getDisplayName() {
-            return Messages.PrometheusMonitoringInstallation_DisplayName();
+            return Messages.ONMonitoringInstallation_DisplayName();
         }
 
         @Override
         public NExporterInstallation[] getInstallations() {
-            return Jenkins.getInstance().getDescriptorByType(PrometheusMonitoring.PrometheusMonitoringBuildWrapperDescriptor.class).getInstallations();
+            return Jenkins.getInstance().getDescriptorByType(ONMonitoring.ONMonitoringBuildWrapperDescriptor.class).getInstallations();
         }
 
         public DescriptorImpl getToolDescriptor() {
@@ -115,7 +115,7 @@ public class NExporterInstallation extends ToolInstallation implements NodeSpeci
 
         @Override
         public void setInstallations(final NExporterInstallation... installations) {
-            Jenkins.getInstance().getDescriptorByType(PrometheusMonitoring.PrometheusMonitoringBuildWrapperDescriptor.class).setInstallations(installations);
+            Jenkins.getInstance().getDescriptorByType(ONMonitoring.ONMonitoringBuildWrapperDescriptor.class).setInstallations(installations);
         }
     }
 
