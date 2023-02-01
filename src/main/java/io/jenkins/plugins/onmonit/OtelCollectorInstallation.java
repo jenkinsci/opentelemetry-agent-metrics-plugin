@@ -54,7 +54,7 @@ import net.sf.json.JSONObject;
 public class OtelCollectorInstallation extends ToolInstallation implements NodeSpecific<OtelCollectorInstallation>, EnvironmentSpecific<OtelCollectorInstallation> {
 
     @Extension
-    @Symbol("nexporter")
+    @Symbol("otelCollector")
     public static class DescriptorImpl extends ToolDescriptor<OtelCollectorInstallation> {
 
         @Override

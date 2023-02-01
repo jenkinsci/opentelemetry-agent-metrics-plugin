@@ -54,7 +54,7 @@ import net.sf.json.JSONObject;
 public class NExporterInstallation extends ToolInstallation implements NodeSpecific<NExporterInstallation>, EnvironmentSpecific<NExporterInstallation> {
 
     @Extension
-    @Symbol("nexporter")
+    @Symbol("nodeExporter")
     public static class DescriptorImpl extends ToolDescriptor<NExporterInstallation> {
 
         @Override
