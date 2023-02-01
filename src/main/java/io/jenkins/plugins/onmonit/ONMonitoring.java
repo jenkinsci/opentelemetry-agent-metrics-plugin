@@ -343,14 +343,17 @@ public class ONMonitoring extends SimpleBuildWrapper {
         return new XmlFile(Jenkins.XSTREAM, new File(Jenkins.getInstance().getRootDir(), ONMonitoringEnvironment.class.getName() + "-zombies.xml"));
     };
 
-    /** Name of the installation used in a configured job. */
-    private String installationName;
+    /** Name of the nodeExporter installation used in a configured job. */
+    private String nodeExporterInstallationName;
+
+    /** Name of the otelCollector installation used in a configured job. */
+    private String otelCollectorInstallationName;
 
     /** Prometheus node exporter port. */
     private int port = 9100;
 
     /** Should the Prometheus node exporter output be displayed in job output. */
-    private boolean debug = false;
+    private boolean debug = true;
 
     /** Time in milliseconds to wait for Prometheus node exporter initialization, by default 1 second. */
     private long timeout = 1;
@@ -371,7 +374,7 @@ public class ONMonitoring extends SimpleBuildWrapper {
     public ONMonitoring() {
     }
 
-    protected ArgumentListBuilder createCommandArguments(final NExporterInstallation installation, final FilePath configDir, final int portUsed) {
+    protected ArgumentListBuilder createNeCommandArguments(final NExporterInstallation installation, final FilePath configDir, final int portUsed) {
         final String path = installation.getHome();
 
         final ArgumentListBuilder cmd;
@@ -384,7 +387,7 @@ public class ONMonitoring extends SimpleBuildWrapper {
 
         cmd.add("--web.listen-address=:" + portUsed);
 
-        cmd.add("--collector.textfile.directory=" + configDir);
+        //cmd.add("--collector.textfile.directory=" + configDir);
 
         if (additionalOptions != null) {
             cmd.addTokenized(additionalOptions);
@@ -392,17 +395,37 @@ public class ONMonitoring extends SimpleBuildWrapper {
         return cmd;
     }
 
-    protected void writePMOtelConfigFile(final Run<?, ?> run, final TaskListener listener, FilePath configDir) {
+    protected ArgumentListBuilder createOcCommandArguments(final OtelCollectorInstallation installation, final FilePath configDir, final int portUsed) {
+        final String path = installation.getHome();
+
+        final ArgumentListBuilder cmd;
+
+        final String executable = isWindows() ? "otelcol-contrib.exe" : "otelcol-contrib";
+        if ("".equals(path)) {
+            cmd = new ArgumentListBuilder(executable);
+        } else {
+            cmd = new ArgumentListBuilder(path + File.separator + executable);
+        }
+
+        cmd.add("--config=file:" + configDir + File.separator + "otel.yaml");
+
+        if (additionalOptions != null) {
+            cmd.addTokenized(additionalOptions);
+        }
+        return cmd;
+    }
+
+    protected void writeOtelConfigFile(final Run<?, ?> run, final TaskListener listener, FilePath configDir) {
         FilePath configFile = configDir.child("otel.yaml");
         String pageUrl = Jenkins.getInstance().getRootUrl() + run.getUrl();
 
         try (Writer w = new OutputStreamWriter(configFile.write(), StandardCharsets.UTF_8)) {
             w.write("jenkins_job_url{url=\"" + pageUrl + "\"} 1\n");
         } catch (InterruptedException e) {
-            listener.fatalError("InterruptedException while writing textfile collector file", e);
+            listener.fatalError("InterruptedException while writing yaml config file", e);
             Thread.currentThread().interrupt();
         } catch (IOException e) {
-            listener.fatalError("IOException while writing textfile collector file", e);
+            listener.fatalError("IOException while writing yaml config file", e);
         }
     }
 
@@ -419,18 +442,18 @@ public class ONMonitoring extends SimpleBuildWrapper {
         return (ONMonitoringBuildWrapperDescriptor) super.getDescriptor();
     }
 
-    public NExporterInstallation getInstallation(final EnvVars env, final Node node, final TaskListener listener) {
-        final NExporterInstallation[] installations = getDescriptor().getNeInstallations();
+    public NExporterInstallation getNeInstallation(final EnvVars env, final Node node, final TaskListener listener) {
+        final NExporterInstallation[] neInstallations = getDescriptor().getNeInstallations();
 
         // if there is only one installation and no name specified use that
-        if (installationName == null && installations.length == 1) {
-            return installations[0];
+        if (nodeExporterInstallationName == null && neInstallations.length == 1) {
+            return neInstallations[0];
         }
 
         // if no installation name specified use 'default'
-        final String installationNameToUse = Optional.fromNullable(installationName).or("default");
+        final String installationNameToUse = Optional.fromNullable(nodeExporterInstallationName).or("default");
 
-        for (final NExporterInstallation installation : installations) {
+        for (final NExporterInstallation installation : neInstallations) {
             if (installationNameToUse.equals(installation.getName())) {
                 try {
                     return installation.forEnvironment(env).forNode(node, TaskListener.NULL);
@@ -446,8 +469,39 @@ public class ONMonitoring extends SimpleBuildWrapper {
         return null;
     }
 
-    public String getInstallationName() {
-        return installationName;
+    public OtelCollectorInstallation getOcInstallation(final EnvVars env, final Node node, final TaskListener listener) {
+        final OtelCollectorInstallation[] ocInstallations = getDescriptor().getOcInstallations();
+
+        // if there is only one installation and no name specified use that
+        if (otelCollectorInstallationName == null && ocInstallations.length == 1) {
+            return ocInstallations[0];
+        }
+
+        // if no installation name specified use 'default'
+        final String installationNameToUse = Optional.fromNullable(otelCollectorInstallationName).or("default");
+
+        for (final OtelCollectorInstallation installation : ocInstallations) {
+            if (installationNameToUse.equals(installation.getName())) {
+                try {
+                    return installation.forEnvironment(env).forNode(node, TaskListener.NULL);
+                } catch (final IOException e) {
+                    listener.fatalError("IOException while locating installation", e);
+                } catch (final InterruptedException e) {
+                    listener.fatalError("InterruptedException while locating installation", e);
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public String getNodeExporterInstallationName() {
+        return nodeExporterInstallationName;
+    }
+
+    public String getOtelCollectorInstallationName() {
+        return otelCollectorInstallationName;
     }
 
     public int getPort() {
@@ -470,7 +524,7 @@ public class ONMonitoring extends SimpleBuildWrapper {
         return shutdownWithBuild;
     }
 
-    private ONMonitoringEnvironment launchPMEnvironment(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
+    private ONMonitoringEnvironment launchONEnvironment(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
         final Computer currentComputer = workspace.toComputer();
 
         final Node currentNode = currentComputer.getNode();
@@ -479,44 +533,64 @@ public class ONMonitoring extends SimpleBuildWrapper {
             workspace.mkdirs();
         }
 
-        final FilePath configDir = workspace.createTempDir(".pm-nexporter-" + port + "-", ".confdir");
+        final FilePath configDir = workspace.createTempDir(".otel-nexporter-" + port + "-", ".confdir");
 
         final EnvVars environment = currentComputer.getEnvironment();
-        final NExporterInstallation installation = getInstallation(environment, currentNode, listener);
+        final NExporterInstallation neInstallation = getNeInstallation(environment, currentNode, listener);
+        final OtelCollectorInstallation ocInstallation = getOcInstallation(environment, currentNode, listener);
 
-        if (installation == null) {
+        if (neInstallation == null) {
             listener.error(Messages.ONMonitoringBuildWrapper_NoInstallationsConfigured());
 
             throw new RunnerAbortedException();
         }
 
-        writePMOtelConfigFile(run, listener, configDir);
+        writeOtelConfigFile(run, listener, configDir);
 
-        final ArgumentListBuilder cmd = createCommandArguments(installation, configDir, port);
+        final ArgumentListBuilder neCmd = createNeCommandArguments(neInstallation, configDir, port);
+        final ArgumentListBuilder ocCmd = createOcCommandArguments(ocInstallation, configDir, port);
+        listener.getLogger().println("Working with installation " + neInstallation.toString() + " with home " + neInstallation.getHome());
+        listener.getLogger().println("Working with installation " + ocInstallation.toString() + " with home " + ocInstallation.getHome());
+        listener.getLogger().println("Trying to start " + neCmd.toString());
+        listener.getLogger().println("Trying to start " + ocCmd.toString());
 
-        final ProcStarter procStarter = launcher.launch().cmds(cmd);
+        final ProcStarter neProcStarter = launcher.launch().cmds(neCmd);
+        final ProcStarter ocProcStarter = launcher.launch().cmds(ocCmd);
 
-        final ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
-        final OutputStream stdout = debug ? listener.getLogger() : stdoutStream;
+        final ByteArrayOutputStream neStdoutStream = new ByteArrayOutputStream();
+        final OutputStream neStdout = debug ? listener.getLogger() : neStdoutStream;
 
-        final ByteArrayOutputStream stderrStream = new ByteArrayOutputStream();
-        final OutputStream stderr = debug ? listener.getLogger() : stderrStream;
+        final ByteArrayOutputStream neStderrStream = new ByteArrayOutputStream();
+        final OutputStream neStderr = debug ? listener.getLogger() : neStderrStream;
+
+        final ByteArrayOutputStream ocStdoutStream = new ByteArrayOutputStream();
+        final OutputStream ocStdout = debug ? listener.getLogger() : ocStdoutStream;
+
+        final ByteArrayOutputStream ocStderrStream = new ByteArrayOutputStream();
+        final OutputStream ocStderr = debug ? listener.getLogger() : ocStderrStream;
 
         listener.getLogger().print(Messages.ONMonitoringBuildWrapper_Starting());
-        procStarter.stdout(stdout).stderr(stderr);
+        neProcStarter.stdout(neStdout).stderr(neStderr);
+        ocProcStarter.stdout(ocStdout).stderr(ocStderr);
 
         final String neCookie = UUID.randomUUID().toString();
         final String ocCookie = UUID.randomUUID().toString();
-        procStarter.envs(Collections.singletonMap(JENKINS_PM_NODE_EXPORTER_COOKIE, neCookie));
+        neProcStarter.envs(Collections.singletonMap(JENKINS_PM_NODE_EXPORTER_COOKIE, neCookie));
+        ocProcStarter.envs(Collections.singletonMap(JENKINS_PM_OTEL_COLLECTOR_COOKIE, ocCookie));
 
-        final Proc process = procStarter.start();
+        final Proc neProcess = neProcStarter.start();
+        final Proc ocProcess = ocProcStarter.start();
 
         Thread.sleep(timeout * MILLIS_IN_SECOND);
 
-        if (!process.isAlive()) {
+        if (!neProcess.isAlive() || !ocProcess.isAlive()) {
             if (!debug) {
-                listener.getLogger().write(stdoutStream.toByteArray());
-                listener.getLogger().write(stderrStream.toByteArray());
+                listener.getLogger().println("Stdout / Stderr of node_exporter:");
+                listener.getLogger().write(neStdoutStream.toByteArray());
+                listener.getLogger().write(neStderrStream.toByteArray());
+                listener.getLogger().println("Stdout / Stderr of otelcol-contrib:");
+                listener.getLogger().write(ocStdoutStream.toByteArray());
+                listener.getLogger().write(ocStderrStream.toByteArray());
             }
 
             listener.getLogger().println();
@@ -526,9 +600,9 @@ public class ONMonitoring extends SimpleBuildWrapper {
             throw new RunnerAbortedException();
         }
 
-        final ONMonitoringEnvironment pmEnvironment = new ONMonitoringEnvironment(neCookie, ocCookie, configDir.getRemote(), port, shutdownWithBuild);
+        final ONMonitoringEnvironment onEnvironment = new ONMonitoringEnvironment(neCookie, ocCookie, configDir.getRemote(), port, shutdownWithBuild);
 
-        return pmEnvironment;
+        return onEnvironment;
     }
 
     @DataBoundSetter
@@ -547,8 +621,13 @@ public class ONMonitoring extends SimpleBuildWrapper {
     }
 
     @DataBoundSetter
-    public void setInstallationName(final String installationName) {
-        this.installationName = installationName;
+    public void setNodeExporterInstallationName(final String neInstallationName) {
+        this.nodeExporterInstallationName = neInstallationName;
+    }
+
+    @DataBoundSetter
+    public void setOtelCollectorInstallationName(final String ocInstallationName) {
+        this.otelCollectorInstallationName = ocInstallationName;
     }
 
     //@DataBoundSetter
@@ -600,10 +679,10 @@ public class ONMonitoring extends SimpleBuildWrapper {
 
         @SuppressWarnings("rawtypes")
         final Run rawRun = run;
-        final ONMonitoringEnvironment pmEnvironment = launchPMEnvironment(rawRun, workspace, launcher, listener);
-        run.addAction(pmEnvironment);
+        final ONMonitoringEnvironment onEnvironment = launchONEnvironment(rawRun, workspace, launcher, listener);
+        run.addAction(onEnvironment);
 
-        context.setDisposer(new NExporterDisposer(pmEnvironment));
+        context.setDisposer(new ONDisposer(onEnvironment));
     }
 
     private boolean isWindows() {

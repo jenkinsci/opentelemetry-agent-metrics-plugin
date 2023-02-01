@@ -8,20 +8,20 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import jenkins.tasks.SimpleBuildWrapper.Disposer;
 
-public class NExporterDisposer extends Disposer {
+public class ONDisposer extends Disposer {
 
     private static final long serialVersionUID = 1L;
 
-    private final ONMonitoringEnvironment pmEnvironment;
+    private final ONMonitoringEnvironment onEnvironment;
 
-    public NExporterDisposer(final ONMonitoringEnvironment pmEnvironment) {
-        this.pmEnvironment = pmEnvironment;
+    public ONDisposer(final ONMonitoringEnvironment onEnvironment) {
+        this.onEnvironment = onEnvironment;
     }
 
     @Override
     public void tearDown(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
-        if (!pmEnvironment.shutdownWithBuild) {
-            ONMonitoring.shutdownAndCleanup(pmEnvironment, launcher, listener);
+        if (!onEnvironment.shutdownWithBuild) {
+            ONMonitoring.shutdownAndCleanup(onEnvironment, launcher, listener);
         }
     }
 
