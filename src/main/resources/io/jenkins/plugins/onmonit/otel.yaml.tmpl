@@ -13,9 +13,9 @@ exporters:
   logging:
     loglevel: debug
   otlp:
-    endpoint: "https://otlp-ci.eks.jemmic.com:443" # "${env.OTEL_EXPORTER_OTLP_ENDPOINT}"
+    endpoint: "[[${otlpEndpoint}]]"
     headers:
-      Authorization: "${env.OTEL_EXPORTER_OTLP_HEADERS.substring(env.OTEL_EXPORTER_OTLP_HEADERS.indexOf("=") + 1)}"
+      Authorization: "[[${otlpAuthHeader}]]"
 
 processors:
   resourcedetection:
@@ -26,16 +26,16 @@ processors:
     attributes:
     - action: insert
       key: ci.url
-      value: [[${JENKINS_URL}]]
+      value: "[[${JENKINS_URL}]]"
     - action: insert
       key: ci.job.name
-      value: ${JOB_NAME}
+      value: "[[${env.JOB_NAME}]]"
     - action: insert
       key: ci.job.id
-      value: ${BUILD_ID}
+      value: "[[${env.BUILD_ID}]]"
     - action: insert
       key: service.name
-      value: ci_jemmic_com
+      value: "[[${serviceName}]]"
   batch:
     send_batch_size: 10000
     timeout: 10s

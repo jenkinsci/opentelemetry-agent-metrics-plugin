@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -418,19 +420,40 @@ public class ONMonitoring extends SimpleBuildWrapper {
         return cmd;
     }
 
-    private org.thymeleaf.context.Context getJobContext(final Run<?, ?> run) {
+    private String toOtelCompatibleUrl(String urlStr) {
+        try {
+            URL url = new URL(urlStr);
+            if (url.getPort() == -1) {
+                url = new URL(url.getProtocol(), url.getHost(), url.getDefaultPort(), url.getFile());
+            }
+            if ("/".equals(url.getFile())) {
+                url = new URL(url.getProtocol(), url.getHost(), url.getPort(), "");
+            }
+            return url.toString();
+        } catch(MalformedURLException e) {
+            return urlStr;
+        }
+    }
+
+    private org.thymeleaf.context.Context getJobContext(final Run<?, ?> run, EnvVars environment) {
         org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
         String pageUrl = Jenkins.getInstance().getRootUrl() + run.getUrl();
+        String otlpEndpoint = environment.get("OTEL_EXPORTER_OTLP_ENDPOINT");
+        String otlpHeader = environment.get("OTEL_EXPORTER_OTLP_HEADERS");
         context.setVariable("JENKINS_URL", Jenkins.getInstance().getRootUrl());
         context.setVariable("pageUrl", pageUrl);
+        context.setVariable("env", environment);
+        context.setVariable("serviceName", "ci_jemmic_com");
+        context.setVariable("otlpEndpoint", toOtelCompatibleUrl(otlpEndpoint));
+        context.setVariable("otlpAuthHeader", otlpHeader.substring(otlpHeader.indexOf("=") + 1));
         return context;
     }
 
-    protected void writeOtelConfigFile(final Run<?, ?> run, final TaskListener listener, FilePath configDir) {
+    protected void writeOtelConfigFile(final Run<?, ?> run, final TaskListener listener, FilePath configDir, EnvVars environment) {
         FilePath configFile = configDir.child("otel.yaml");
 
         try (Writer w = new OutputStreamWriter(configFile.write(), StandardCharsets.UTF_8)) {
-            String content = templating.renderTemplate(getJobContext(run));
+            String content = templating.renderTemplate(getJobContext(run, environment));
             listener.getLogger().println("otel.yaml content:\n" + content);
             w.write(content);
         } catch (InterruptedException e) {
@@ -557,7 +580,7 @@ public class ONMonitoring extends SimpleBuildWrapper {
             throw new RunnerAbortedException();
         }
 
-        writeOtelConfigFile(run, listener, configDir);
+        writeOtelConfigFile(run, listener, configDir, run.getEnvironment(listener));
 
         final ArgumentListBuilder neCmd = createNeCommandArguments(neInstallation, configDir, port);
         final ArgumentListBuilder ocCmd = createOcCommandArguments(ocInstallation, configDir, port);
