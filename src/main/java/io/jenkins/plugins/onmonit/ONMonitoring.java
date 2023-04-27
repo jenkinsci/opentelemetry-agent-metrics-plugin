@@ -3,6 +3,7 @@ package io.jenkins.plugins.onmonit;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -370,6 +371,8 @@ public class ONMonitoring extends SimpleBuildWrapper {
     /** Run on same node in parallel */
     //private boolean parallelBuild = false;
 
+    private ONTemplating templating = new ONTemplating();
+
     @DataBoundConstructor
     public ONMonitoring() {
     }
@@ -415,12 +418,21 @@ public class ONMonitoring extends SimpleBuildWrapper {
         return cmd;
     }
 
+    private org.thymeleaf.context.Context getJobContext(final Run<?, ?> run) {
+        org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
+        String pageUrl = Jenkins.getInstance().getRootUrl() + run.getUrl();
+        context.setVariable("JENKINS_URL", Jenkins.getInstance().getRootUrl());
+        context.setVariable("pageUrl", pageUrl);
+        return context;
+    }
+
     protected void writeOtelConfigFile(final Run<?, ?> run, final TaskListener listener, FilePath configDir) {
         FilePath configFile = configDir.child("otel.yaml");
-        String pageUrl = Jenkins.getInstance().getRootUrl() + run.getUrl();
 
         try (Writer w = new OutputStreamWriter(configFile.write(), StandardCharsets.UTF_8)) {
-            w.write("jenkins_job_url{url=\"" + pageUrl + "\"} 1\n");
+            String content = templating.renderTemplate(getJobContext(run));
+            listener.getLogger().println("otel.yaml content:\n" + content);
+            w.write(content);
         } catch (InterruptedException e) {
             listener.fatalError("InterruptedException while writing yaml config file", e);
             Thread.currentThread().interrupt();

@@ -1,0 +1,51 @@
+receivers:
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      cpu:
+      disk:
+      filesystem:
+      load:
+      memory:
+      network:
+      paging:
+exporters:
+  logging:
+    loglevel: debug
+  otlp:
+    endpoint: "https://otlp-ci.eks.jemmic.com:443" # "${env.OTEL_EXPORTER_OTLP_ENDPOINT}"
+    headers:
+      Authorization: "${env.OTEL_EXPORTER_OTLP_HEADERS.substring(env.OTEL_EXPORTER_OTLP_HEADERS.indexOf("=") + 1)}"
+
+processors:
+  resourcedetection:
+    detectors:
+    - system
+    - ec2
+  resource/ci:
+    attributes:
+    - action: insert
+      key: ci.url
+      value: [[${JENKINS_URL}]]
+    - action: insert
+      key: ci.job.name
+      value: ${JOB_NAME}
+    - action: insert
+      key: ci.job.id
+      value: ${BUILD_ID}
+    - action: insert
+      key: service.name
+      value: ci_jemmic_com
+  batch:
+    send_batch_size: 10000
+    timeout: 10s
+
+service:
+  telemetry:
+    metrics:
+      level: none
+  pipelines:
+    metrics:
+      receivers: [hostmetrics]
+      processors: [resourcedetection, resource/ci] # [batch, resourcedetection]
+      exporters: [otlp, logging]
