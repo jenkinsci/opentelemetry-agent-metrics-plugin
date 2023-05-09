@@ -1,14 +1,11 @@
 receivers:
-  hostmetrics:
-    collection_interval: 10s
-    scrapers:
-      cpu:
-      disk:
-      filesystem:
-      load:
-      memory:
-      network:
-      paging:
+  prometheus/ci:
+    config:
+      scrape_configs:
+        - job_name: 'otl-col-ci'
+          scrape_interval: 15s
+          static_configs:
+            - targets: ['localhost:9100']
 exporters:
   logging:
     loglevel: debug
@@ -29,7 +26,10 @@ processors:
       value: "[[${JENKINS_URL}]]"
     - action: insert
       key: ci.job.name
-      value: "[[${env.JOB_NAME}]]"
+      value: "[[${jobName}]]"
+    - action: insert
+      key: ci.job.groupname
+      value: "[[${jobGroupName}]]"
     - action: insert
       key: ci.job.id
       value: "[[${env.BUILD_ID}]]"
@@ -46,6 +46,6 @@ service:
       level: none
   pipelines:
     metrics:
-      receivers: [hostmetrics]
+      receivers: [prometheus/ci]
       processors: [resourcedetection, resource/ci] # [batch, resourcedetection]
       exporters: [otlp, logging]

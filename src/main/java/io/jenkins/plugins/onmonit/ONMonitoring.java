@@ -435,15 +435,31 @@ public class ONMonitoring extends SimpleBuildWrapper {
         }
     }
 
+    private String trimSuffix(String original, String suffix) {
+        if (original.endsWith(suffix)) {
+            return original.substring(0, original.length() - suffix.length());
+        }
+        return original;
+    }
+
+    private String trimWithDefault(String original, String suffix, String dfault) {
+        String trimmed = trimSuffix(original, suffix);
+        return trimmed.length()==0 ? dfault : trimSuffix(trimmed, "/");
+    }
+
     private org.thymeleaf.context.Context getJobContext(final Run<?, ?> run, EnvVars environment) {
         org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
         String pageUrl = Jenkins.getInstance().getRootUrl() + run.getUrl();
         String otlpEndpoint = environment.get("OTEL_EXPORTER_OTLP_ENDPOINT");
         String otlpHeader = environment.get("OTEL_EXPORTER_OTLP_HEADERS");
+        String jobName = environment.get("JOB_NAME");
+        String jobBaseName = environment.get("JOB_BASE_NAME");
         context.setVariable("JENKINS_URL", Jenkins.getInstance().getRootUrl());
         context.setVariable("pageUrl", pageUrl);
         context.setVariable("env", environment);
         context.setVariable("serviceName", "ci_jemmic_com");
+        context.setVariable("jobName", jobName);
+        context.setVariable("jobGroupName", trimWithDefault(jobName, jobBaseName, "-"));
         context.setVariable("otlpEndpoint", toOtelCompatibleUrl(otlpEndpoint));
         context.setVariable("otlpAuthHeader", otlpHeader.substring(otlpHeader.indexOf("=") + 1));
         return context;
