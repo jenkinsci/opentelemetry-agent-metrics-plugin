@@ -65,6 +65,8 @@ import hudson.util.ArgumentListBuilder;
 import hudson.util.FormValidation;
 import hudson.util.ProcessTree;
 import hudson.util.ProcessTree.OSProcess;
+import io.jenkins.plugins.onmonit.nodeexporter.NEResourceUtil;
+import io.jenkins.plugins.onmonit.otelcollector.OCResourceUtil;
 import hudson.util.XStream2;
 import jenkins.model.Jenkins;
 import jenkins.security.MasterToSlaveCallable;
@@ -384,11 +386,12 @@ public class ONMonitoring extends SimpleBuildWrapper {
 
         final ArgumentListBuilder cmd;
         final String executable = isWindows() ? "windows_exporter.exe" : "node_exporter";
-        if ("".equals(path)) {
-            cmd = new ArgumentListBuilder(executable);
-        } else {
-            cmd = new ArgumentListBuilder(path + File.separator + executable);
-        }
+        //if ("".equals(path)) {
+        //    cmd = new ArgumentListBuilder(executable);
+        //} else {
+        //    cmd = new ArgumentListBuilder(path + File.separator + executable);
+        //}
+        cmd = new ArgumentListBuilder(configDir.child(executable).getRemote());
 
         cmd.add("--web.listen-address=:" + portUsed);
 
@@ -406,11 +409,12 @@ public class ONMonitoring extends SimpleBuildWrapper {
         final ArgumentListBuilder cmd;
 
         final String executable = isWindows() ? "otelcol-contrib.exe" : "otelcol-contrib";
-        if ("".equals(path)) {
-            cmd = new ArgumentListBuilder(executable);
-        } else {
-            cmd = new ArgumentListBuilder(path + File.separator + executable);
-        }
+        //if ("".equals(path)) {
+        //    cmd = new ArgumentListBuilder(executable);
+        //} else {
+        //    cmd = new ArgumentListBuilder(path + File.separator + executable);
+        //}
+        cmd = new ArgumentListBuilder(configDir.child(executable).getRemote());
 
         cmd.add("--config=file:" + configDir + File.separator + "otel.yaml");
 
@@ -478,6 +482,41 @@ public class ONMonitoring extends SimpleBuildWrapper {
             Thread.currentThread().interrupt();
         } catch (IOException e) {
             listener.fatalError("IOException while writing yaml config file", e);
+        }
+    }
+
+    protected String getOs() {
+        if (isWindows()) {
+            return "win";
+        } else if (isDarwin()) {
+            return "darwin";
+        }
+        return "linux";
+    }
+
+    protected void writeOtelCollector(final Run<?, ?> run, final TaskListener listener, FilePath configDir, EnvVars environment) {
+        FilePath executableFile = configDir.child(isWindows() ? "otelcol-contrib.exe" : "otelcol-contrib");
+
+        try (OutputStream w = executableFile.write()) {
+            OCResourceUtil.writeOtelCollector(w, getOs(), isAmd64());
+        } catch (InterruptedException e) {
+            listener.fatalError("InterruptedException while writing otel collector executable", e);
+            Thread.currentThread().interrupt();
+        } catch (IOException e) {
+            listener.fatalError("IOException while writing otel collector executable", e);
+        }
+    }
+
+    protected void writeNodeExporter(final Run<?, ?> run, final TaskListener listener, FilePath configDir, EnvVars environment) {
+        FilePath executableFile = configDir.child(isWindows() ? "windows_exporter.exe" : "node_exporter");
+
+        try (OutputStream w = executableFile.write()) {
+            NEResourceUtil.writeNodeExporter(w, getOs(), isAmd64());
+        } catch (InterruptedException e) {
+            listener.fatalError("InterruptedException while writing node exporter executable", e);
+            Thread.currentThread().interrupt();
+        } catch (IOException e) {
+            listener.fatalError("IOException while writing node exporter executable", e);
         }
     }
 
@@ -598,6 +637,8 @@ public class ONMonitoring extends SimpleBuildWrapper {
         }
 
         writeOtelConfigFile(run, listener, configDir, run.getEnvironment(listener));
+        writeOtelCollector(run, listener, configDir, run.getEnvironment(listener));
+        writeNodeExporter(run, listener, configDir, run.getEnvironment(listener));
 
         final ArgumentListBuilder neCmd = createNeCommandArguments(neInstallation, configDir, port);
         final ArgumentListBuilder ocCmd = createOcCommandArguments(ocInstallation, configDir, port);
@@ -737,7 +778,17 @@ public class ONMonitoring extends SimpleBuildWrapper {
         context.setDisposer(new ONDisposer(onEnvironment));
     }
 
+    private boolean isDarwin() {
+        String os = System.getProperty("os.name").toLowerCase();
+        return os.contains("mac") || os.contains("darwin");
+    }
+
     private boolean isWindows() {
         return System.getProperty("os.name").toLowerCase().contains("win");
+    }
+
+    private boolean isAmd64() {
+        String arch = System.getProperty("os.arch").toLowerCase();
+        return arch.contains("amd64") || arch.contains("x64") || arch.contains("x86-64");
     }
 }
