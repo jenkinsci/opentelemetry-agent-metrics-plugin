@@ -391,6 +391,7 @@ public class ONMonitoring extends SimpleBuildWrapper {
         //}
         cmd = new ArgumentListBuilder(configDir.child(executable).getRemote());
 
+        cmd.add("--web.disable-exporter-metrics");
         cmd.add("--web.listen-address=:" + portUsed);
 
         //cmd.add("--collector.textfile.directory=" + configDir);
