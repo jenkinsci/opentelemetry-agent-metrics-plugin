@@ -65,8 +65,6 @@ import hudson.util.ArgumentListBuilder;
 import hudson.util.FormValidation;
 import hudson.util.ProcessTree;
 import hudson.util.ProcessTree.OSProcess;
-import io.jenkins.plugins.onmonit.nodeexporter.NEResourceUtil;
-import io.jenkins.plugins.onmonit.otelcollector.OCResourceUtil;
 import hudson.util.XStream2;
 import jenkins.model.Jenkins;
 import jenkins.security.MasterToSlaveCallable;
@@ -498,7 +496,8 @@ public class ONMonitoring extends SimpleBuildWrapper {
         FilePath executableFile = configDir.child(isWindows() ? "otelcol-contrib.exe" : "otelcol-contrib");
 
         try (OutputStream w = executableFile.write()) {
-            OCResourceUtil.writeOtelCollector(w, getOs(), isAmd64());
+            ResourceUtil.writeOtelCollector(w, getOs(), isAmd64());
+            executableFile.chmod(0755);
         } catch (InterruptedException e) {
             listener.fatalError("InterruptedException while writing otel collector executable", e);
             Thread.currentThread().interrupt();
@@ -511,7 +510,8 @@ public class ONMonitoring extends SimpleBuildWrapper {
         FilePath executableFile = configDir.child(isWindows() ? "windows_exporter.exe" : "node_exporter");
 
         try (OutputStream w = executableFile.write()) {
-            NEResourceUtil.writeNodeExporter(w, getOs(), isAmd64());
+            ResourceUtil.writeNodeExporter(w, getOs(), isAmd64());
+            executableFile.chmod(0755);
         } catch (InterruptedException e) {
             listener.fatalError("InterruptedException while writing node exporter executable", e);
             Thread.currentThread().interrupt();
