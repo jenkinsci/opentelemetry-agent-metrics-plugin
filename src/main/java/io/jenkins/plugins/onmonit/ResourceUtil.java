@@ -11,9 +11,9 @@ public class ResourceUtil {
         if ("win".equals(os)) {
             resourceName = "otelcol-contrib.exe";
         } else if ("darwin".equals(os)) {
-            resourceName = "otelcol-contrib_0.76.1_darwin_" + (isAmd64 ? "amd64" : "arm64");
+            resourceName = "otelcol-contrib_0.70.0_darwin_" + (isAmd64 ? "amd64" : "arm64");
         } else {
-            resourceName = "otelcol-contrib_0.76.1_linux_" + (isAmd64 ? "amd64" : "arm64");
+            resourceName = "otelcol-contrib_0.70.0_linux_" + (isAmd64 ? "amd64" : "arm64");
         }
         ClassLoader cl = ResourceUtil.class.getClassLoader();
         try (InputStream stream = cl.getResourceAsStream("io/jenkins/plugins/onmonit/otelcollector/" + resourceName)) {
