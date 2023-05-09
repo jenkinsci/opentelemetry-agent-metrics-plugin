@@ -457,6 +457,7 @@ public class ONMonitoring extends SimpleBuildWrapper {
         context.setVariable("JENKINS_URL", Jenkins.getInstance().getRootUrl());
         context.setVariable("pageUrl", pageUrl);
         context.setVariable("env", environment);
+        context.setVariable("nePort", port);
         context.setVariable("serviceName", "ci_jemmic_com");
         context.setVariable("jobName", jobName);
         context.setVariable("jobGroupName", trimWithDefault(jobName, jobBaseName, "-"));
