@@ -54,7 +54,7 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 		}
 		cmd.add("--config=file:" + configFile.getRemote());
 		Proc proc = launcherProvider.getLauncher().launch()
-				.cmds("otelcol-contrib")
+				.cmds(cmd)
 				.envs(envOverrides)
 				.stdout(debug ? new TeeOutputStream(listener.getLogger(), baos) : baos)
 				.stderr(debug ? new TeeOutputStream(listener.getLogger(), baos) : baos)
