@@ -56,7 +56,7 @@ Usage
 2. Click on the job you wish to edit.
 3. On the left-hand side of the screen, click “Configure”.
 4. Scroll down to the “Post-build Actions” header.
-5. Click “Add post-build action” and select “Monitor agent with Otel.
+5. Click “Add post-build action” and select “Monitor agent with Otel”.
 6.  Click “Save”.
 
 ## Using the plugin in Jenkins Pipeline
