@@ -4,6 +4,7 @@ import hudson.AbortException;
 import hudson.Proc;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
+import org.apache.commons.io.output.TeeOutputStream;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteProcess;
 import hudson.FilePath;
@@ -52,8 +53,8 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 		Proc proc = launcherProvider.getLauncher().launch()
 				.cmds(cmd)
 				.envs(envOverrides)
-				.stdout(debug ? listener.getLogger() : baos)
-				.stderr(debug ? listener.getLogger() : baos)
+				.stdout(debug ? new TeeOutputStream(listener.getLogger(), baos) : baos)
+				.stderr(debug ? new TeeOutputStream(listener.getLogger(), baos) : baos)
 				.start();
 		Instant timeout = Instant.now().plus(1, ChronoUnit.MINUTES);
 		String strPort = Integer.toString(port);

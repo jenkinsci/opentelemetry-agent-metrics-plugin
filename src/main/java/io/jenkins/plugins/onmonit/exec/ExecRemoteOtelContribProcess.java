@@ -7,6 +7,7 @@ import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteProcess;
+import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -55,8 +56,8 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 		Proc proc = launcherProvider.getLauncher().launch()
 				.cmds("otelcol-contrib")
 				.envs(envOverrides)
-				.stdout(debug ? listener.getLogger() : baos)
-				.stderr(debug ? listener.getLogger() : baos)
+				.stdout(debug ? new TeeOutputStream(listener.getLogger(), baos) : baos)
+				.stderr(debug ? new TeeOutputStream(listener.getLogger(), baos) : baos)
 				.start();
 		Instant timeout = Instant.now().plus(1, ChronoUnit.MINUTES);
 		while (proc.isAlive() && Instant.now().isBefore(timeout)) {
