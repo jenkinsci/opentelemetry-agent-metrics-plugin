@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jenkins-ci.jpi' version '0.39.0'
+    id 'org.jenkins-ci.jpi' version '0.48.0'
     id 'idea'
 }
 
@@ -8,7 +8,7 @@ version = '0.0.1-SNAPSHOT'
 description = 'Monitor agents by deploying the opentelemetry collector and prometheus node exporter, display a link to a Grafana dashboard'
 
 jenkinsPlugin {
-    coreVersion = '2.235.1'
+    coreVersion = '2.375.1'
 
     shortName = 'otel-monitoring'
 
@@ -21,7 +21,7 @@ jenkinsPlugin {
     gitHubUrl = 'https://github.com/jenkinsci/otel-monitoring'
 
     // optional version number from which this plugin release is configuration-compatible
-    compatibleSinceVersion = '2.235.1'
+    compatibleSinceVersion = '2.375.1'
 
     // set the directory from which the development server will run, defaults to 'work'
     workDir = file('/tmp/jenkins')

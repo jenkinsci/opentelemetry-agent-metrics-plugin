@@ -271,7 +271,9 @@ public class ONMonitoring extends SimpleBuildWrapper {
                 return oldZombies;
             } catch (final IOException ignore) {
             } finally {
-                fileOfZombies.delete();
+                try {
+                    fileOfZombies.delete();
+                } catch (IOException ignore) {}
             }
         }
 
