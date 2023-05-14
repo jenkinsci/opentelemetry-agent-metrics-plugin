@@ -37,7 +37,7 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 		this.listener = listener;
 		this.temp = temp;
 		Map<String, String> overrides = new java.util.HashMap<>();
-		overrides.put("COOKIE", envCookie);
+		overrides.put("_JENKINS_PM_NODE_EXPORTER_COOKIE", envCookie);
 		this.envOverrides = overrides;
 		this.additionalOptions = additionalOptions;
 		this.debug = debug;

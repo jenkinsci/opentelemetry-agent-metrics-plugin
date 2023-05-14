@@ -38,7 +38,7 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 		this.listener = listener;
 		this.temp = temp;
 		Map<String, String> overrides = new java.util.HashMap<>();
-		overrides.put("COOKIE", envCookie);
+		overrides.put("_JENKINS_PM_OTEL_COLLECTOR_COOKIE", envCookie);
 		this.envOverrides = overrides;
 		this.additionalOptions = additionalOptions;
 		this.debug = debug;
