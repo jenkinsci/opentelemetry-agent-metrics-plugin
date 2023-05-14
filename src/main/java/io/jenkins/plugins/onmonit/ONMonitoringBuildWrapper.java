@@ -3,7 +3,6 @@ package io.jenkins.plugins.onmonit;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -11,7 +10,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -28,11 +26,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import com.google.common.base.Optional;
-import com.thoughtworks.xstream.XStream;
-
 import antlr.ANTLRException;
-import hudson.CopyOnWrite;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -41,13 +35,10 @@ import hudson.Launcher.ProcStarter;
 import hudson.Proc;
 import hudson.Util;
 import hudson.XmlFile;
-import hudson.init.InitMilestone;
-import hudson.init.Initializer;
 import hudson.model.AbstractProject;
 import hudson.model.AutoCompletionCandidates;
 import hudson.model.Computer;
 import hudson.model.Executor;
-import hudson.model.Items;
 import hudson.model.Label;
 import hudson.model.Node;
 import hudson.model.Run;
@@ -64,13 +55,12 @@ import hudson.util.ArgumentListBuilder;
 import hudson.util.FormValidation;
 import hudson.util.ProcessTree;
 import hudson.util.ProcessTree.OSProcess;
-import hudson.util.XStream2;
 import jenkins.model.Jenkins;
 import jenkins.security.MasterToSlaveCallable;
 import jenkins.tasks.SimpleBuildWrapper;
 import net.sf.json.JSONObject;
 
-public class ONMonitoring extends SimpleBuildWrapper {
+public class ONMonitoringBuildWrapper extends SimpleBuildWrapper {
 
     private static final class ComputerNameComparator implements Comparator<Computer> {
 
@@ -152,7 +142,7 @@ public class ONMonitoring extends SimpleBuildWrapper {
 
         @Override
         public BuildWrapper newInstance(final StaplerRequest req, final JSONObject formData) throws hudson.model.Descriptor.FormException {
-            return req.bindJSON(ONMonitoring.class, formData);
+            return req.bindJSON(ONMonitoringBuildWrapper.class, formData);
         }
 
         private FormValidation validateOptionalNonNegativeInteger(final String value) {
@@ -191,7 +181,7 @@ public class ONMonitoring extends SimpleBuildWrapper {
                     final Node node = computer.getNode();
                     final Launcher launcher = node.createLauncher(listener);
 
-                    ONMonitoring.shutdownAndCleanup(pmEnvironment, launcher, listener);
+                    ONMonitoringBuildWrapper.shutdownAndCleanup(pmEnvironment, launcher, listener);
                 } catch (final IOException e) {
                     throw new RuntimeException(e);
                 } catch (final InterruptedException e) {
@@ -341,7 +331,7 @@ public class ONMonitoring extends SimpleBuildWrapper {
     private ONTemplating templating = new ONTemplating();
 
     @DataBoundConstructor
-    public ONMonitoring() {
+    public ONMonitoringBuildWrapper() {
     }
 
     protected ArgumentListBuilder createNeCommandArguments(final FilePath configDir, final int portUsed) {
@@ -384,57 +374,11 @@ public class ONMonitoring extends SimpleBuildWrapper {
         return cmd;
     }
 
-    private String toOtelCompatibleUrl(String urlStr) {
-        try {
-            URL url = new URL(urlStr);
-            if (url.getPort() == -1) {
-                url = new URL(url.getProtocol(), url.getHost(), url.getDefaultPort(), url.getFile());
-            }
-            if ("/".equals(url.getFile())) {
-                url = new URL(url.getProtocol(), url.getHost(), url.getPort(), "");
-            }
-            return url.toString();
-        } catch(MalformedURLException e) {
-            return urlStr;
-        }
-    }
-
-    private String trimSuffix(String original, String suffix) {
-        if (original.endsWith(suffix)) {
-            return original.substring(0, original.length() - suffix.length());
-        }
-        return original;
-    }
-
-    private String trimWithDefault(String original, String suffix, String dfault) {
-        String trimmed = trimSuffix(original, suffix);
-        return trimmed.length()==0 ? dfault : trimSuffix(trimmed, "/");
-    }
-
-    private org.thymeleaf.context.Context getJobContext(final Run<?, ?> run, EnvVars environment) {
-        org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
-        String pageUrl = Jenkins.getInstance().getRootUrl() + run.getUrl();
-        String otlpEndpoint = environment.get("OTEL_EXPORTER_OTLP_ENDPOINT");
-        String otlpHeader = environment.get("OTEL_EXPORTER_OTLP_HEADERS");
-        String jobName = environment.get("JOB_NAME");
-        String jobBaseName = environment.get("JOB_BASE_NAME");
-        context.setVariable("JENKINS_URL", Jenkins.getInstance().getRootUrl());
-        context.setVariable("pageUrl", pageUrl);
-        context.setVariable("env", environment);
-        context.setVariable("nePort", port);
-        context.setVariable("serviceName", "ci_jemmic_com");
-        context.setVariable("jobName", jobName);
-        context.setVariable("jobGroupName", trimWithDefault(jobName, jobBaseName, "-"));
-        context.setVariable("otlpEndpoint", toOtelCompatibleUrl(otlpEndpoint));
-        context.setVariable("otlpAuthHeader", otlpHeader.substring(otlpHeader.indexOf("=") + 1));
-        return context;
-    }
-
     protected void writeOtelConfigFile(final Run<?, ?> run, final TaskListener listener, FilePath configDir, EnvVars environment) {
         FilePath configFile = configDir.child("otel.yaml");
 
         try (Writer w = new OutputStreamWriter(configFile.write(), StandardCharsets.UTF_8)) {
-            String content = templating.renderTemplate(getJobContext(run, environment));
+            String content = templating.renderTemplate(templating.getJobContext(run, environment, port));
             listener.getLogger().println("otel.yaml content:\n" + content);
             w.write(content);
         } catch (InterruptedException e) {

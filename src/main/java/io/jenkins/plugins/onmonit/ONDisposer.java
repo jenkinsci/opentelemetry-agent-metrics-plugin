@@ -21,7 +21,7 @@ public class ONDisposer extends Disposer {
     @Override
     public void tearDown(final Run<?, ?> run, final FilePath workspace, final Launcher launcher, final TaskListener listener) throws IOException, InterruptedException {
         if (!onEnvironment.shutdownWithBuild) {
-            ONMonitoring.shutdownAndCleanup(onEnvironment, launcher, listener);
+            ONMonitoringBuildWrapper.shutdownAndCleanup(onEnvironment, launcher, listener);
         }
     }
 

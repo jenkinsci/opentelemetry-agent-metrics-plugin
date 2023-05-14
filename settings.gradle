@@ -1,1 +1,1 @@
-rootProject.name = 'prometheus-monitoring-plugin'
+rootProject.name = 'opentelemetry-nodeexporter-monitoring-plugin'
