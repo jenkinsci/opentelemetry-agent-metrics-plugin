@@ -52,6 +52,9 @@ sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
 dependencies {
+    // Import the Jenkinse plugin BOM
+    implementation platform('io.jenkins.tools.bom:bom-2.375.x:2081.v85885a_d2e5c5')
+
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     //api 'org.apache.commons:commons-math3:3.6.1'
 
@@ -59,6 +62,16 @@ dependencies {
     //implementation 'com.google.guava:guava:28.1-jre'
     implementation 'org.thymeleaf:thymeleaf:3.1.1.RELEASE'
 
+    implementation 'org.jenkins-ci.plugins.workflow:workflow-api'
+    implementation 'org.jenkins-ci.plugins.workflow:workflow-step-api'
+
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
+
+    testImplementation 'io.jenkins:configuration-as-code'
+    testImplementation 'io.jenkins.configuration-as-code:test-harness'
+    testImplementation 'org.jenkins-ci.plugins.workflow:workflow-basic-steps'
+    testImplementation 'org.jenkins-ci.plugins.workflow:workflow-cps'
+    testImplementation 'org.jenkins-ci.plugins.workflow:workflow-durable-task-step'
+    testImplementation 'org.jenkins-ci.plugins.workflow:workflow-job'
 }
