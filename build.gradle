@@ -26,6 +26,8 @@ jenkinsPlugin {
     // set the directory from which the development server will run, defaults to 'work'
     workDir = file('/tmp/jenkins')
 
+    configurePublishing = false
+
     // the developers section is optional, and corresponds to the POM developers section
     developers {
         developer {
