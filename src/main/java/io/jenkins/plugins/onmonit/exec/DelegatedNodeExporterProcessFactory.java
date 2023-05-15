@@ -1,5 +1,6 @@
 package io.jenkins.plugins.onmonit.exec;
 
+import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -17,7 +18,7 @@ import java.util.Map;
 /**
  * A factory that delegates to other factories for node_exporter execution.
  */
-//@Extension
+@Extension
 public class DelegatedNodeExporterProcessFactory extends RemoteNodeExporterProcessFactory {
 
 	private static final List<RemoteNodeExporterProcessFactory> delegates;
