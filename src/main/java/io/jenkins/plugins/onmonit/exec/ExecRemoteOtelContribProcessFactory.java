@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * A factory that uses the native otelcol-contrib installed on a remote system. otelcol-contrib has to be in PATH environment variable.
  */
-@Extension
 public class ExecRemoteOtelContribProcessFactory extends RemoteOtelContribProcessFactory {
 
 	/**

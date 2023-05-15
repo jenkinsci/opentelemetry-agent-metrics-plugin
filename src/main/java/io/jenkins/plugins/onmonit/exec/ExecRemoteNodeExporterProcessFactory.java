@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * A factory that uses the native node-exporter installed on a remote system. node-exporter has to be in PATH environment variable.
  */
-@Extension
 public class ExecRemoteNodeExporterProcessFactory extends RemoteNodeExporterProcessFactory {
 
 	/**

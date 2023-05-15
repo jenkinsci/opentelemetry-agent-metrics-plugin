@@ -12,7 +12,6 @@ import io.jenkins.plugins.onmonit.util.ComputerInfo;
 /**
  * A factory that uses a node_exporter binary uploaded to a remote system.
  */
-@Extension
 public class ExecUploadedNodeExporterProcessFactory extends RemoteNodeExporterProcessFactory {
 
 	/**

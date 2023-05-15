@@ -12,7 +12,6 @@ import io.jenkins.plugins.onmonit.util.ComputerInfo;
 /**
  * A factory that uses an otelcol-contrib binary uploaded to a remote system.
  */
-@Extension
 public class ExecUploadedOtelContribProcessFactory extends RemoteOtelContribProcessFactory {
 
 	/**
