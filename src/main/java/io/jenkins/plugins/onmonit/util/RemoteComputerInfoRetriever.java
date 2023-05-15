@@ -13,19 +13,21 @@ public class RemoteComputerInfoRetriever {
 			if (ch == null) {
 				throw new IllegalArgumentException("Channel is null");
 			}
-			return ch.call(new MasterToSlaveCallable<ComputerInfo, Throwable>() {
-				private static final long serialVersionUID = 5982559307031083756L;
-
-				@Override
-				public ComputerInfo call() throws Throwable {
-					return new ComputerInfo(getOs(), isAmd64());
-				}
-			});
+			return ch.call(new InfoCallable());
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			throw new RuntimeException(e);
 		} catch (Throwable e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	public static class InfoCallable extends MasterToSlaveCallable<ComputerInfo, Throwable> {
+		private static final long serialVersionUID = 5982559307031083756L;
+
+		@Override
+		public ComputerInfo call() throws Throwable {
+			return new ComputerInfo(getOs(), isAmd64());
 		}
 	}
 
