@@ -21,17 +21,17 @@ public class ONMonitoringStep extends Step implements Serializable {
 	/**
 	 * Whether to print debug messages to the job console log.
 	 */
-	private boolean debug;
+	private boolean debug = false;
 
 	/**
 	 * Any additional options to set for the node_exporter process.
 	 */
-	private String neAdditionalOptions;
+	private String neAdditionalOptions = "";
 
 	/**
 	 * Any additional options to set for the otel-contrib process.
 	 */
-	private String ocAdditionalOptions;
+	private String ocAdditionalOptions = "";
 
 	/** Constructor. */
 	@DataBoundConstructor
