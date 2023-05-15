@@ -15,15 +15,14 @@ import java.io.OutputStream;
 
 public class ExecUploadedNodeExporterProcess extends ExecRemoteNodeExporterProcess implements RemoteProcess {
 
-	ExecUploadedNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port) throws Exception {
-		super(launcherProvider, listener, temp, envCookie, additionalOptions, debug, port);
+	ExecUploadedNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port) throws Exception {
+		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, port);
 	}
 
 	@Override
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
 		FilePath executableFile = this.temp.child("node_exporter");
 		Launcher launcher = launcherProvider.getLauncher();
-		ComputerInfo info = RemoteComputerInfoRetriever.getRemoteInfo(launcher);
 		try (OutputStream w = executableFile.write()) {
 			ResourceUtil.writeNodeExporter(w, info.getOs(), info.isAmd64());
 			executableFile.chmod(0755);

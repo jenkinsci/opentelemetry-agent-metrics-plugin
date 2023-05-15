@@ -8,6 +8,7 @@ import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteNodeExporterProcessFactory;
 import io.jenkins.plugins.onmonit.RemoteOtelContribProcessFactory;
 import io.jenkins.plugins.onmonit.RemoteProcess;
+import io.jenkins.plugins.onmonit.util.ComputerInfo;
 
 /**
  * A factory that uses a node_exporter binary uploaded to a remote system.
@@ -27,7 +28,7 @@ public class ExecUploadedNodeExporterProcessFactory extends RemoteNodeExporterPr
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean isSupported(Launcher launcher, final TaskListener listener) {
+	public boolean isSupported(Launcher launcher, final TaskListener listener, ComputerInfo info) {
 		// TODO: perform better check for actually supported systems
 		return true;
 	}
@@ -36,8 +37,8 @@ public class ExecUploadedNodeExporterProcessFactory extends RemoteNodeExporterPr
 	 * {@inheritDoc}
 	 */
 	@Override
-	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port)
+	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port)
 			throws Throwable {
-		return new ExecUploadedNodeExporterProcess(launcherProvider, listener, temp, envCookie, additionalOptions, debug, port);
+		return new ExecUploadedNodeExporterProcess(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, port);
 	}
 }

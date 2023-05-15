@@ -7,6 +7,7 @@ import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteOtelContribProcessFactory;
 import io.jenkins.plugins.onmonit.RemoteProcess;
+import io.jenkins.plugins.onmonit.util.ComputerInfo;
 
 /**
  * A factory that uses an otelcol-contrib binary uploaded to a remote system.
@@ -26,7 +27,7 @@ public class ExecUploadedOtelContribProcessFactory extends RemoteOtelContribProc
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean isSupported(Launcher launcher, final TaskListener listener) {
+	public boolean isSupported(Launcher launcher, final TaskListener listener, ComputerInfo info) {
 		// TODO: perform better check for actually supported systems
 		return true;
 	}
@@ -35,8 +36,8 @@ public class ExecUploadedOtelContribProcessFactory extends RemoteOtelContribProc
 	 * {@inheritDoc}
 	 */
 	@Override
-	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config)
+	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config)
 			throws Throwable {
-		return new ExecUploadedOtelContribProcess(launcherProvider, listener, temp, envCookie, additionalOptions, debug, config);
+		return new ExecUploadedOtelContribProcess(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, config);
 	}
 }

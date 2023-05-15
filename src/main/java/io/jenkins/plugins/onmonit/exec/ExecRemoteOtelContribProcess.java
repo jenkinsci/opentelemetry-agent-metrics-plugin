@@ -7,6 +7,7 @@ import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteProcess;
+import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
 
@@ -23,6 +24,8 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 
 	protected final TaskListener listener;
 
+	protected final ComputerInfo info;
+
 	protected final FilePath temp;
 
 	protected final Map<String, String> envOverrides;
@@ -33,9 +36,10 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 
 	private final String config;
 
-	ExecRemoteOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config) throws Exception {
+	ExecRemoteOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config) throws Exception {
 		this.launcherProvider = launcherProvider;
 		this.listener = listener;
+		this.info = info;
 		this.temp = temp;
 		Map<String, String> overrides = new java.util.HashMap<>();
 		overrides.put("_JENKINS_PM_OTEL_COLLECTOR_COOKIE", envCookie);

@@ -7,6 +7,7 @@ import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteOtelContribProcessFactory;
 import io.jenkins.plugins.onmonit.RemoteProcess;
+import io.jenkins.plugins.onmonit.util.ComputerInfo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,7 +31,7 @@ public class ExecRemoteOtelContribProcessFactory extends RemoteOtelContribProces
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean isSupported(Launcher launcher, final TaskListener listener) {
+	public boolean isSupported(Launcher launcher, final TaskListener listener, ComputerInfo info) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
 			int status = launcher.launch().cmds("otelcol-contrib", "--version").quiet(true).stdout(baos).stderr(baos).start().joinWithTimeout(1, TimeUnit.MINUTES, listener);
@@ -59,8 +60,8 @@ public class ExecRemoteOtelContribProcessFactory extends RemoteOtelContribProces
 	 * {@inheritDoc}
 	 */
 	@Override
-	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config)
+	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config)
 			throws Throwable {
-		return new ExecRemoteOtelContribProcess(launcherProvider, listener, temp, envCookie, additionalOptions, debug, config);
+		return new ExecRemoteOtelContribProcess(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, config);
 	}
 }

@@ -8,6 +8,7 @@ import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteNodeExporterProcessFactory;
 import io.jenkins.plugins.onmonit.RemoteProcess;
+import io.jenkins.plugins.onmonit.util.ComputerInfo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class ExecRemoteNodeExporterProcessFactory extends RemoteNodeExporterProc
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean isSupported(Launcher launcher, final TaskListener listener) {
+	public boolean isSupported(Launcher launcher, final TaskListener listener, ComputerInfo info) {
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			int status = launcher.launch().cmds("node_exporter", "--version").quiet(true).stdout(baos).stderr(baos).start().joinWithTimeout(1, TimeUnit.MINUTES, listener);
@@ -56,10 +57,10 @@ public class ExecRemoteNodeExporterProcessFactory extends RemoteNodeExporterProc
 	 * {@inheritDoc}
 	 */
 	@Override
-	public RemoteProcess start(LauncherProvider launcherProvider, TaskListener listener,
+	public RemoteProcess start(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info,
 							   @CheckForNull FilePath temp, String envCookie, String additionalOptions,
 							   boolean debug, int port)
 			throws Throwable {
-		return new ExecRemoteNodeExporterProcess(launcherProvider, listener, temp, envCookie, additionalOptions, debug, port);
+		return new ExecRemoteNodeExporterProcess(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, port);
 	}
 }

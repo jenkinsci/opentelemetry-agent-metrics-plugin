@@ -4,6 +4,7 @@ import hudson.AbortException;
 import hudson.Proc;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
+import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import org.apache.commons.io.output.TeeOutputStream;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteProcess;
@@ -22,6 +23,8 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 
 	protected final TaskListener listener;
 
+	protected final ComputerInfo info;
+
 	protected final FilePath temp;
 
 	private final Map<String, String> envOverrides;
@@ -32,9 +35,10 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 
 	protected final int port;
 
-	ExecRemoteNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port) throws Exception {
+	ExecRemoteNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port) throws Exception {
 		this.launcherProvider = launcherProvider;
 		this.listener = listener;
+		this.info = info;
 		this.temp = temp;
 		Map<String, String> overrides = new java.util.HashMap<>();
 		overrides.put("_JENKINS_PM_NODE_EXPORTER_COOKIE", envCookie);

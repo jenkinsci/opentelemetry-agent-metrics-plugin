@@ -2,6 +2,8 @@ package io.jenkins.plugins.onmonit;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.TaskListener;
+import io.jenkins.plugins.onmonit.util.ComputerInfo;
+import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.workflow.steps.BodyExecutionCallback;
@@ -106,12 +108,13 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		Run<?, ?> build = getBuild();
 		FilePath workspace = getWorkspace();
 		listener.getLogger().println("[on-monit] Looking for node_exporter implementation...");
+		ComputerInfo info = RemoteComputerInfoRetriever.getRemoteInfo(getLauncher());
 		Map<String, Throwable> faults = new LinkedHashMap<>();
 		for (RemoteNodeExporterProcessFactory factory : Jenkins.get().getExtensionList(RemoteNodeExporterProcessFactory.class)) {
-			if (factory.isSupported(getLauncher(), listener)) {
+			if (factory.isSupported(getLauncher(), listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					nodeExporter = factory.start(this, listener, tempDir(workspace), UUID.randomUUID().toString(), neAdditionalOptions, debug, port);
+					nodeExporter = factory.start(this, listener, info, tempDir(workspace), UUID.randomUUID().toString(), neAdditionalOptions, debug, port);
 					break;
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
@@ -121,10 +124,10 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		listener.getLogger().println("[on-monit] Looking for otel-contrib implementation...");
 		String config = templating.renderTemplate(templating.getJobContext(build, build.getEnvironment(listener), port));
 		for (RemoteOtelContribProcessFactory factory : Jenkins.get().getExtensionList(RemoteOtelContribProcessFactory.class)) {
-			if (factory.isSupported(getLauncher(), listener)) {
+			if (factory.isSupported(getLauncher(), listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					otelContrib = factory.start(this, listener, tempDir(workspace), UUID.randomUUID().toString(), neAdditionalOptions, debug, config);
+					otelContrib = factory.start(this, listener, info, tempDir(workspace), UUID.randomUUID().toString(), neAdditionalOptions, debug, config);
 					break;
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
