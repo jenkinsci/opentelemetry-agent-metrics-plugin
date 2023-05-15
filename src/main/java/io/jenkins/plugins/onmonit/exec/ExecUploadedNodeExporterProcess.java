@@ -8,7 +8,6 @@ import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.ResourceUtil;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
-import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
 
 import java.io.IOException;
 import java.io.OutputStream;

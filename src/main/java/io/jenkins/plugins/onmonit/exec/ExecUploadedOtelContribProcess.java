@@ -3,14 +3,11 @@ package io.jenkins.plugins.onmonit.exec;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
-import hudson.remoting.Callable;
 import hudson.util.ArgumentListBuilder;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.ResourceUtil;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
-import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
-import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.IOException;
 import java.io.OutputStream;
