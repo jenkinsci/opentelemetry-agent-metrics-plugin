@@ -20,7 +20,7 @@ public class ExecDownloadedNodeExporterProcess extends ExecRemoteNodeExporterPro
 
 	@Override
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
-		FilePath executableFile = this.temp.createTempFile("node_exporter", "");
+		FilePath executableFile = this.createTempExecutableFile();
 		String url = ONMonitConfig.get().getDownloadBaseUrl() + "/" + ResourceUtil.getNodeExporterFilename(info.getOs(), info.isAmd64());
 		try {
 			launcherProvider.getLauncher().getChannel().call(new DownloadOnSlaveCallable(url, executableFile.getRemote()));

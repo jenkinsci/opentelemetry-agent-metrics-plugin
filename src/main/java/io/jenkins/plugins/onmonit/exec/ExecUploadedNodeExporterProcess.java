@@ -19,7 +19,7 @@ public class ExecUploadedNodeExporterProcess extends ExecRemoteNodeExporterProce
 
 	@Override
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
-		FilePath executableFile = this.temp.createTempFile("node_exporter", "");
+		FilePath executableFile = this.createTempExecutableFile();
 		try (OutputStream w = executableFile.write()) {
 			ResourceUtil.writeNodeExporter(w, info.getOs(), info.isAmd64());
 			executableFile.chmod(0755);

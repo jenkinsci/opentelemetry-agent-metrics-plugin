@@ -84,7 +84,14 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 	}
 
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
-		return new ArgumentListBuilder("node_exporter");
+		return new ArgumentListBuilder("win".equals(info.getOs()) ? "windows_exporter.exe" : "node_exporter");
+	}
+
+	protected FilePath createTempExecutableFile() throws IOException, InterruptedException {
+		if ("win".equals(info.getOs())) {
+			return this.temp.createTempFile("windows_exporter", "exe");
+		}
+		return this.temp.createTempFile("node_exporter", "");
 	}
 
 	/**

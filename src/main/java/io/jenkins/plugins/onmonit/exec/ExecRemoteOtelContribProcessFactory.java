@@ -32,7 +32,8 @@ public class ExecRemoteOtelContribProcessFactory extends RemoteOtelContribProces
 	public boolean isSupported(Launcher launcher, final TaskListener listener, ComputerInfo info) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			int status = launcher.launch().cmds("otelcol-contrib", "--version").quiet(true).stdout(baos).stderr(baos).start().joinWithTimeout(1, TimeUnit.MINUTES, listener);
+			String cmd = "win".equals(info.getOs()) ? "otelcol-contrib.exe" : "otelcol-contrib";
+			int status = launcher.launch().cmds(cmd, "--version").quiet(true).stdout(baos).stderr(baos).start().joinWithTimeout(1, TimeUnit.MINUTES, listener);
 			String version = baos.toString();
 			/*
 			 * `otelcol-contrib --version` should always return 0. For the moment we explicitly require version 0.70.0

@@ -20,7 +20,7 @@ public class ExecDownloadedOtelContribProcess extends ExecRemoteOtelContribProce
 
 	@Override
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
-		FilePath executableFile = this.temp.createTempFile("otelcol-contrib", "");
+		FilePath executableFile = this.createTempExecutableFile();
 		String url = ONMonitConfig.get().getDownloadBaseUrl() + "/" + ResourceUtil.getOtelFilename(info.getOs(), info.isAmd64());
 		try {
 			launcherProvider.getLauncher().getChannel().call(new DownloadOnSlaveCallable(url, executableFile.getRemote()));

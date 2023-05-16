@@ -89,7 +89,14 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 	}
 
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
-		return new ArgumentListBuilder("otelcol-contrib");
+		return new ArgumentListBuilder("win".equals(info.getOs()) ? "otelcol-contrib.exe" : "otelcol-contrib");
+	}
+
+	protected FilePath createTempExecutableFile() throws IOException, InterruptedException {
+		if ("win".equals(info.getOs())) {
+			return this.temp.createTempFile("otelcol-contrib", "exe");
+		}
+		return this.temp.createTempFile("otelcol-contrib", "");
 	}
 
 	/**

@@ -33,12 +33,14 @@ public class ExecRemoteNodeExporterProcessFactory extends RemoteNodeExporterProc
 	public boolean isSupported(Launcher launcher, final TaskListener listener, ComputerInfo info) {
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			int status = launcher.launch().cmds("node_exporter", "--version").quiet(true).stdout(baos).stderr(baos).start().joinWithTimeout(1, TimeUnit.MINUTES, listener);
+			String cmd = "win".equals(info.getOs()) ? "windows_exporter.exe" : "node_exporter";
+			int status = launcher.launch().cmds(cmd, "--version").quiet(true).stdout(baos).stderr(baos).start().joinWithTimeout(1, TimeUnit.MINUTES, listener);
 			String version = baos.toString();
 			/*
 			 * `node_exporter --version` should always return 0. For the moment we explicitly require version 1.5.0
 			 */
-			return status == 0 && version.contains("version 1.5.0");
+			String expectedVersion = "win".equals(info.getOs()) ? "version 0.22.0" : "version 1.5.0";
+			return status == 0 && version.contains(expectedVersion);
 		} catch (IOException e) {
 			listener.getLogger().println("Could not find node_exporter: IOException: " + e.getMessage());
 			listener.getLogger().println("Check if node_exporter is installed and in PATH");
