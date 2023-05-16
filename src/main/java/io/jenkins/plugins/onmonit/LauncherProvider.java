@@ -11,7 +11,7 @@ import java.io.IOException;
  */
 public interface LauncherProvider {
 	/**
-	 * Provides an up to date launcher
+	 * Provides an up-to-date launcher
 	 */
 	Launcher getLauncher() throws IOException, InterruptedException;
 
