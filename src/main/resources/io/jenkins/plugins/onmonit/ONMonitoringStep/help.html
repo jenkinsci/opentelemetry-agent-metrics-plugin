@@ -12,23 +12,23 @@
 <strong>Fields:</strong>
 <ul>
     <li>
-        <code>Node exporter listen on port</code> <i>(optional, default: 9100)</i>:
+        <code>Node_exporter listen on port</code> <i>(optional, default: 9100)</i>:
         Node exporter will try to listen on this port to expose the host metrics.
         If another process is already listening, then we try port after port incrementally (so first 9100, 9101, 9102, …)
         until binding to a port succeeds.
     <li>
-        <code>debug</code> <i>(optional, default: false)</i>:
+        <code>Log output</code> <i>(optional, default: false)</i>:
         A boolean flag. When true, any process output from node_exporter and otel-contrib is forwarded
         to the Job console logs. Useful for troubleshooting node_exporter + otel-contrib.
     </li>
     <li>
-        <code>neAdditionalOptions</code> <i>(optional)</i>:
+        <code>Node_exporter additional options</code> <i>(optional)</i>:
         Any additional options to pass to the node_exporter process execution.
         This can be used to enable/disable specific collectors.
         See the <code>node_exporter --help</code> for more information.
     </li>
     <li>
-        <code>ocAdditionalOptions</code> <i>(optional)</i>:
+        <code>Otel-contrib additional options</code> <i>(optional)</i>:
         Any additional options to pass to the otel-contrib process execution.
         This can be used to enable feature-flag gates or override specific values of the configuration.
         See the <code>otel-contrib --help</code> for more information.
