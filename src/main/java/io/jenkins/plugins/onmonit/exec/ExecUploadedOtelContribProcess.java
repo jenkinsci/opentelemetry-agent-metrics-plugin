@@ -21,7 +21,6 @@ public class ExecUploadedOtelContribProcess extends ExecRemoteOtelContribProcess
 	@Override
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
 		FilePath executableFile = this.temp.child("otelcol-contrib");
-		Launcher launcher = launcherProvider.getLauncher();
 		try (OutputStream w = executableFile.write()) {
 			ResourceUtil.writeOtelCollector(w, info.getOs(), info.isAmd64());
 			executableFile.chmod(0755);
