@@ -23,13 +23,14 @@ public class ExecUploadedNodeExporterProcess extends ExecRemoteNodeExporterProce
 		try (OutputStream w = executableFile.write()) {
 			ResourceUtil.writeNodeExporter(w, info.getOs(), info.isAmd64());
 			executableFile.chmod(0755);
+			return new ArgumentListBuilder(executableFile.getRemote());
 		} catch (InterruptedException e) {
 			listener.fatalError("InterruptedException while writing node_exporter executable", e);
 			Thread.currentThread().interrupt();
 		} catch (IOException e) {
 			listener.fatalError("IOException while writing node_exporter executable", e);
 		}
-		return new ArgumentListBuilder(executableFile.getRemote());
+		throw new RuntimeException("could not start node_exporter");
 	}
 
 }

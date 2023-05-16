@@ -25,13 +25,14 @@ public class ExecDownloadedNodeExporterProcess extends ExecRemoteNodeExporterPro
 		try {
 			launcherProvider.getLauncher().getChannel().call(new DownloadOnSlaveCallable(url, executableFile.getRemote()));
 			executableFile.chmod(0755);
+			return new ArgumentListBuilder(executableFile.getRemote());
 		} catch (InterruptedException e) {
 			listener.fatalError("InterruptedException while writing node_exporter executable", e);
 			Thread.currentThread().interrupt();
 		} catch (Throwable e) {
 			listener.fatalError("IOException while writing node_exporter executable", e);
 		}
-		return new ArgumentListBuilder(executableFile.getRemote());
+		throw new RuntimeException("could not start node_exporter");
 	}
 
 }
