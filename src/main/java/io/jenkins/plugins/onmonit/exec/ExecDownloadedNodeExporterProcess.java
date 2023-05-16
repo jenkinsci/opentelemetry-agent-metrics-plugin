@@ -4,6 +4,7 @@ import hudson.FilePath;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
 import io.jenkins.plugins.onmonit.LauncherProvider;
+import io.jenkins.plugins.onmonit.ONMonitConfig;
 import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.ResourceUtil;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
@@ -20,7 +21,7 @@ public class ExecDownloadedNodeExporterProcess extends ExecRemoteNodeExporterPro
 	@Override
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
 		FilePath executableFile = this.temp.createTempFile("node_exporter", "");
-		String url = "baseUrl" + ResourceUtil.getNodeExporterFilename(info.getOs(), info.isAmd64());
+		String url = ONMonitConfig.get().getDownloadBaseUrl() + "/" + ResourceUtil.getNodeExporterFilename(info.getOs(), info.isAmd64());
 		try {
 			launcherProvider.getLauncher().getChannel().call(new DownloadOnSlaveCallable(url, executableFile.getRemote()));
 			executableFile.chmod(0755);

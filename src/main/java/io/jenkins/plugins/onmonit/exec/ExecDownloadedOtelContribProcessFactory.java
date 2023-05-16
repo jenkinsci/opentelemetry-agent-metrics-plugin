@@ -4,6 +4,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.LauncherProvider;
+import io.jenkins.plugins.onmonit.ONMonitConfig;
 import io.jenkins.plugins.onmonit.RemoteOtelContribProcessFactory;
 import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
@@ -26,7 +27,9 @@ public class ExecDownloadedOtelContribProcessFactory extends RemoteOtelContribPr
 	 */
 	@Override
 	public boolean isSupported(Launcher launcher, final TaskListener listener, ComputerInfo info) {
-		// TODO: check whether baseUrl is configured
+		if (ONMonitConfig.get().getDownloadBaseUrl().isEmpty()) {
+			return false;
+		}
 		// TODO: perform better check for actually supported systems
 		return true;
 	}
