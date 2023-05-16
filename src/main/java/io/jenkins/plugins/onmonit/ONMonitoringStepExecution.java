@@ -149,9 +149,10 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		ComputerInfo info = RemoteComputerInfoRetriever.getRemoteInfo(launcher);
 		Semaphore portSync = AvailablePortRetriever.getSyncOjbectForLauncher(launcher);
 		Map<String, Throwable> faults = new LinkedHashMap<>();
+		AvailablePort usedPort;
 		try {
 			portSync.acquire();
-			AvailablePort usedPort = AvailablePortRetriever.getAvailablePort(launcher, port, port + 100);
+			usedPort = AvailablePortRetriever.getAvailablePort(launcher, port, port + 100);
 			listener.getLogger().println("[on-monit] node_exporter will listen on " + usedPort.getPort());
 			listener.getLogger().println("[on-monit] Looking for node_exporter implementation...");
 			for (RemoteNodeExporterProcessFactory factory : Jenkins.get().getExtensionList(RemoteNodeExporterProcessFactory.class)) {
