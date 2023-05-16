@@ -126,7 +126,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			if (factory.isSupported(getLauncher(), listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					otelContrib = factory.start(this, listener, info, tempDir(workspace), UUID.randomUUID().toString(), neAdditionalOptions, debug, config);
+					otelContrib = factory.start(this, listener, info, tempDir(workspace), UUID.randomUUID().toString(), ocAdditionalOptions, debug, config);
 					break;
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
