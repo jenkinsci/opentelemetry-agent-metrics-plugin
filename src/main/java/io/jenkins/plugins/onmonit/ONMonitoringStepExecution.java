@@ -71,7 +71,33 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 
 	@Override
 	public void stop(@NonNull Throwable cause) throws Exception {
-		cleanUp();
+		try {
+			cleanUp();
+		} finally {
+			super.stop(cause);
+		}
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		try {
+			cleanUp();
+			initRemoteProcesses();
+		} catch (InterruptedException e) {
+			getContext().onFailure(e);
+			Thread.currentThread().interrupt();
+		} catch (Exception x) {
+			getContext().onFailure(x);
+			try {
+				x.printStackTrace(getListener().getLogger());
+				getListener().getLogger().println(Messages.ONMonitoring_CouldNotStartProcesses());
+			} catch (IOException e) {
+				// suppressed
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
 	}
 
 	private static class Callback extends BodyExecutionCallback.TailCall {
@@ -170,10 +196,12 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		TaskListener listener = getContext().get(TaskListener.class);
 		if (nodeExporter != null) {
 			nodeExporter.stop(listener);
+			nodeExporter = null;
 			listener.getLogger().println(Messages.ONMonitoringBuildWrapper_Stopped());
 		}
 		if (otelContrib != null) {
 			otelContrib.stop(listener);
+			otelContrib = null;
 			listener.getLogger().println(Messages.ONMonitoringBuildWrapper_Stopped());
 		}
 	}
