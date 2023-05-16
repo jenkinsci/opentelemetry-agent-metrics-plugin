@@ -67,3 +67,7 @@ Usage
 
 ## Configuration of Grafana
 
+## Hardware requirements
+
+The monitoring processes usually use 2MB in memory and 200 MB in disk size.
+CPU usage is minimal.
