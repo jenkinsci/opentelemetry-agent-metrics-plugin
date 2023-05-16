@@ -8,7 +8,7 @@
         <f:checkbox default="false" />
     </f:entry>
 
-    <f:entry field="neAdditionalOptions" title="${%Otel-contrib additional options}">
+    <f:entry field="neAdditionalOptions" title="${%Node_exporter additional options}">
         <f:textbox />
     </f:entry>
 
