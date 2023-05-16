@@ -38,6 +38,8 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 
 	private final String config;
 
+	private final String configTmpChild;
+
 	ExecRemoteOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config) throws Exception {
 		this.launcherProvider = launcherProvider;
 		this.listener = listener;
@@ -50,8 +52,9 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 		this.debug = debug;
 		this.config = config;
 
-		FilePath configFile = temp.child("otel.yaml");
+		FilePath configFile = temp.createTempFile("otel", ".yaml");
 		configFile.write(config, StandardCharsets.UTF_8.name());
+		this.configTmpChild = configFile.getName();
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ArgumentListBuilder cmd = getCmd();
@@ -95,7 +98,7 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 	@Override
 	public void stop(TaskListener listener) throws IOException, InterruptedException {
 		launcherProvider.getLauncher().kill(envOverrides);
-		temp.child("otel.yaml").delete();
+		temp.child(configTmpChild).delete();
 	}
 
 }
