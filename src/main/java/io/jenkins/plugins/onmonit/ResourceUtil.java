@@ -8,7 +8,7 @@ public class ResourceUtil {
 
     public static String getOtelFilename(String os, boolean isAmd64) {
         if ("win".equals(os)) {
-            return "otelcol-contrib.exe";
+            return "otelcol-contrib_0.70.0_win_amd64.exe";
         } else if ("darwin".equals(os)) {
             return "otelcol-contrib_0.70.0_darwin_" + (isAmd64 ? "amd64" : "arm64");
         } else {
