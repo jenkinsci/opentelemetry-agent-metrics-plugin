@@ -2,6 +2,8 @@ package io.jenkins.plugins.onmonit;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.TaskListener;
+import io.jenkins.plugins.onmonit.exec.ExecRemoteNodeExporterProcess;
+import io.jenkins.plugins.onmonit.exec.ExecRemoteOtelContribProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
 import jenkins.model.Jenkins;
@@ -17,6 +19,7 @@ import hudson.slaves.WorkspaceList;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -32,6 +35,10 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 	private String neAdditionalOptions;
 
 	private String ocAdditionalOptions;
+
+	private String neCookie;
+
+	private String ocCookie;
 
 	private transient ONTemplating templating = new ONTemplating();
 
@@ -53,6 +60,8 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		this.debug = debug;
 		this.neAdditionalOptions = neAdditionalOptions;
 		this.ocAdditionalOptions = ocAdditionalOptions;
+		this.neCookie = UUID.randomUUID().toString();
+		this.ocCookie = UUID.randomUUID().toString();
 	}
 
 	@Override
@@ -139,7 +148,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			if (factory.isSupported(getLauncher(), listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					nodeExporter = factory.start(this, listener, info, tempDir(workspace), UUID.randomUUID().toString(), neAdditionalOptions, debug, port);
+					nodeExporter = factory.start(this, listener, info, tempDir(workspace), neCookie, neAdditionalOptions, debug, port);
 					break;
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
@@ -152,7 +161,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			if (factory.isSupported(getLauncher(), listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					otelContrib = factory.start(this, listener, info, tempDir(workspace), UUID.randomUUID().toString(), ocAdditionalOptions, debug, config);
+					otelContrib = factory.start(this, listener, info, tempDir(workspace), ocCookie, ocAdditionalOptions, debug, config);
 					break;
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
@@ -198,11 +207,19 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			nodeExporter.stop(listener);
 			nodeExporter = null;
 			listener.getLogger().println(Messages.ONMonitoringBuildWrapper_Stopped());
+		} else {
+			Map<String, String> neCookieEnv = new HashMap<>();
+			neCookieEnv.put(ExecRemoteNodeExporterProcess.PROC_COOKIE_NAME, neCookie);
+			getLauncher().kill(neCookieEnv);
 		}
 		if (otelContrib != null) {
 			otelContrib.stop(listener);
 			otelContrib = null;
 			listener.getLogger().println(Messages.ONMonitoringBuildWrapper_Stopped());
+		} else {
+			Map<String, String> neCookieEnv = new HashMap<>();
+			neCookieEnv.put(ExecRemoteOtelContribProcess.PROC_COOKIE_NAME, ocCookie);
+			getLauncher().kill(neCookieEnv);
 		}
 	}
 
