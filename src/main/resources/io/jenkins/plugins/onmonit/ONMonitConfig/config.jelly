@@ -1,0 +1,14 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+  <f:section title="${%ONMonit}">
+    <f:entry field="grafanaDashboard" title="${%Grafana dashboard URL}">
+      <f:textbox />
+    </f:entry>
+    <f:entry field="downloadBaseUrl" title="${%Artifact download base URL}">
+      <f:textbox />
+    </f:entry>
+    <f:entry field="otelConfigTemplate" title="${%OTEL configuration template}">
+      <f:textarea />
+    </f:entry>
+  </f:section>
+</j:jelly>
