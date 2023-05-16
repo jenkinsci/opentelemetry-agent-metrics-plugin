@@ -36,6 +36,11 @@ processors:
     - action: insert
       key: service.name
       value: "[[${serviceName}]]"
+  transform/ci:
+    metric_statements:
+    - context: resource
+      statements:
+      - set(attributes["executor"], Concat([attributes["host.name"], "[[${nePort}]]"], ":"))
   batch:
     send_batch_size: 10000
     timeout: 10s
@@ -47,5 +52,5 @@ service:
   pipelines:
     metrics:
       receivers: [prometheus/ci]
-      processors: [resourcedetection, resource/ci] # [batch, resourcedetection]
+      processors: [resourcedetection, transform/ci, resource/ci] # [batch, resourcedetection]
       exporters: [otlp, logging]
