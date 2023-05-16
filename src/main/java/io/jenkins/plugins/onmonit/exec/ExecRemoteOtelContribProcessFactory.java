@@ -1,6 +1,5 @@
 package io.jenkins.plugins.onmonit.exec;
 
-import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -23,7 +22,7 @@ public class ExecRemoteOtelContribProcessFactory extends RemoteOtelContribProces
 	 */
 	@Override
 	public String getDisplayName() {
-		return "Exec otelcol-contrib (binary otelcol-contrib on a remote machine)";
+		return "Exec otelcol-contrib (binary otelcol-contrib present on remote machine)";
 	}
 
 	/**

@@ -29,6 +29,7 @@ public class DelegatedNodeExporterProcessFactory extends RemoteNodeExporterProce
 	static {
 		List<RemoteNodeExporterProcessFactory> d = new ArrayList<>();
 		d.add(new ExecRemoteNodeExporterProcessFactory());
+		d.add(new ExecDownloadedNodeExporterProcessFactory());
 		d.add(new ExecUploadedNodeExporterProcessFactory());
 		delegates = Collections.unmodifiableList(d);
 	}

@@ -1,7 +1,6 @@
 package io.jenkins.plugins.onmonit.exec;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
-import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
@@ -24,7 +23,7 @@ public class ExecRemoteNodeExporterProcessFactory extends RemoteNodeExporterProc
 	 */
 	@Override
 	public String getDisplayName() {
-		return "Exec node_exporter (binary node_exporter on a remote machine)";
+		return "Exec node_exporter (binary node_exporter present on remote machine)";
 	}
 
 	/**

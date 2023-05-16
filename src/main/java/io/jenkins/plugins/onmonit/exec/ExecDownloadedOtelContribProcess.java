@@ -7,26 +7,27 @@ import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.ResourceUtil;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
+import io.jenkins.plugins.onmonit.util.DownloadOnSlaveCallable;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
-public class ExecUploadedOtelContribProcess extends ExecRemoteOtelContribProcess implements RemoteProcess {
+public class ExecDownloadedOtelContribProcess extends ExecRemoteOtelContribProcess implements RemoteProcess {
 
-	ExecUploadedOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config) throws Exception {
+	ExecDownloadedOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config) throws Exception {
 		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, config);
 	}
 
 	@Override
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
 		FilePath executableFile = this.temp.createTempFile("otelcol-contrib", "");
-		try (OutputStream w = executableFile.write()) {
-			ResourceUtil.writeOtelCollector(w, info.getOs(), info.isAmd64());
+		String url = "baseUrl" + ResourceUtil.getOtelFilename(info.getOs(), info.isAmd64());
+		try {
+			launcherProvider.getLauncher().getChannel().call(new DownloadOnSlaveCallable(url, executableFile.getRemote()));
 			executableFile.chmod(0755);
 		} catch (InterruptedException e) {
 			listener.fatalError("InterruptedException while writing otelcol-contrib executable", e);
 			Thread.currentThread().interrupt();
-		} catch (IOException e) {
+		} catch (Throwable e) {
 			listener.fatalError("IOException while writing otelcol-contrib executable", e);
 		}
 		return new ArgumentListBuilder(executableFile.getRemote());

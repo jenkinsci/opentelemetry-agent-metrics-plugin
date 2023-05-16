@@ -29,6 +29,7 @@ public class DelegatedOtelContribProcessFactory extends RemoteOtelContribProcess
 	static {
 		List<RemoteOtelContribProcessFactory> d = new ArrayList<>();
 		d.add(new ExecRemoteOtelContribProcessFactory());
+		d.add(new ExecDownloadedOtelContribProcessFactory());
 		d.add(new ExecUploadedOtelContribProcessFactory());
 		delegates = Collections.unmodifiableList(d);
 	}

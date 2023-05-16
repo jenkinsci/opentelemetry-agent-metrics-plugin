@@ -11,14 +11,14 @@ import io.jenkins.plugins.onmonit.util.ComputerInfo;
 /**
  * A factory that uses an otelcol-contrib binary uploaded to a remote system.
  */
-public class ExecUploadedOtelContribProcessFactory extends RemoteOtelContribProcessFactory {
+public class ExecDownloadedOtelContribProcessFactory extends RemoteOtelContribProcessFactory {
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public String getDisplayName() {
-		return "Exec otelcol-contrib (uploaded otelcol-contrib from master to remote machine)";
+		return "Exec otelcol-contrib (download otelcol-contrib from web to remote machine)";
 	}
 
 	/**
@@ -26,6 +26,7 @@ public class ExecUploadedOtelContribProcessFactory extends RemoteOtelContribProc
 	 */
 	@Override
 	public boolean isSupported(Launcher launcher, final TaskListener listener, ComputerInfo info) {
+		// TODO: check whether baseUrl is configured
 		// TODO: perform better check for actually supported systems
 		return true;
 	}
@@ -36,6 +37,6 @@ public class ExecUploadedOtelContribProcessFactory extends RemoteOtelContribProc
 	@Override
 	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config)
 			throws Throwable {
-		return new ExecUploadedOtelContribProcess(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, config);
+		return new ExecDownloadedOtelContribProcess(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, config);
 	}
 }
