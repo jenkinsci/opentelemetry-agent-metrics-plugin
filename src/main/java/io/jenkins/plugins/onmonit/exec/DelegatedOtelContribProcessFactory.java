@@ -8,7 +8,10 @@ import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteOtelContribProcessFactory;
 import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
+import org.apache.commons.lang.StringUtils;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -68,6 +71,14 @@ public class DelegatedOtelContribProcessFactory extends RemoteOtelContribProcess
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
 				}
+			}
+		}
+		for (Map.Entry<String, Throwable> fault : faults.entrySet()) {
+			listener.getLogger().println("[on-monit] * " + fault.getKey());
+			StringWriter sw = new StringWriter();
+			fault.getValue().printStackTrace(new PrintWriter(sw));
+			for (String line : StringUtils.split(sw.toString(), "\n")) {
+				listener.getLogger().println("[on-monit]     " + line);
 			}
 		}
 		throw new RuntimeException("Could not start process");
