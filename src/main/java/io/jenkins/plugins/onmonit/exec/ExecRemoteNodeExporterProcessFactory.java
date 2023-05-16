@@ -41,7 +41,6 @@ public class ExecRemoteNodeExporterProcessFactory extends RemoteNodeExporterProc
 			 */
 			return status == 0 && version.contains("version 1.5.0");
 		} catch (IOException e) {
-			e.printStackTrace();
 			listener.getLogger().println("Could not find node_exporter: IOException: " + e.getMessage());
 			listener.getLogger().println("Check if node_exporter is installed and in PATH");
 			return false;

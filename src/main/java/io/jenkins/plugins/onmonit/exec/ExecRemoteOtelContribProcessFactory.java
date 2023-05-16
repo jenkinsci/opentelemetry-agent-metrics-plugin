@@ -44,7 +44,6 @@ public class ExecRemoteOtelContribProcessFactory extends RemoteOtelContribProces
 			listener.getLogger().println("Unsupported, requiring version 0.70.0: `otelcol-contrib --version` returned " + status + " printed " + version);
 			return false;
 		} catch (IOException e) {
-			e.printStackTrace();
 			listener.getLogger().println("Could not find otelcol-contrib: IOException: " + e.getMessage());
 			listener.getLogger().println("Check if otelcol-contrib is installed and in PATH");
 			return false;
