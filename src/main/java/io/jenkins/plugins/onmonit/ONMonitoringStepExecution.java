@@ -4,6 +4,8 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.exec.ExecRemoteNodeExporterProcess;
 import io.jenkins.plugins.onmonit.exec.ExecRemoteOtelContribProcess;
+import io.jenkins.plugins.onmonit.util.AvailablePort;
+import io.jenkins.plugins.onmonit.util.AvailablePortRetriever;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
 import jenkins.model.Jenkins;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
 
 public class ONMonitoringStepExecution extends StepExecution implements LauncherProvider {
 
@@ -142,24 +145,33 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		TaskListener listener = getListener();
 		Run<?, ?> build = getBuild();
 		FilePath workspace = getWorkspace();
-		listener.getLogger().println("[on-monit] Looking for node_exporter implementation...");
-		ComputerInfo info = RemoteComputerInfoRetriever.getRemoteInfo(getLauncher());
+		Launcher launcher = getLauncher();
+		ComputerInfo info = RemoteComputerInfoRetriever.getRemoteInfo(launcher);
+		Semaphore portSync = AvailablePortRetriever.getSyncOjbectForLauncher(launcher);
 		Map<String, Throwable> faults = new LinkedHashMap<>();
-		for (RemoteNodeExporterProcessFactory factory : Jenkins.get().getExtensionList(RemoteNodeExporterProcessFactory.class)) {
-			if (factory.isSupported(getLauncher(), listener, info)) {
-				try {
-					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					nodeExporter = factory.start(this, listener, info, tempDir(workspace), neCookie, neAdditionalOptions, debug, port);
-					break;
-				} catch (Throwable t) {
-					faults.put(factory.getDisplayName(), t);
+		try {
+			portSync.acquire();
+			AvailablePort usedPort = AvailablePortRetriever.getAvailablePort(launcher, port, port + 100);
+			listener.getLogger().println("[on-monit] node_exporter will listen on " + usedPort.getPort());
+			listener.getLogger().println("[on-monit] Looking for node_exporter implementation...");
+			for (RemoteNodeExporterProcessFactory factory : Jenkins.get().getExtensionList(RemoteNodeExporterProcessFactory.class)) {
+				if (factory.isSupported(launcher, listener, info)) {
+					try {
+						listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
+						nodeExporter = factory.start(this, listener, info, tempDir(workspace), neCookie, neAdditionalOptions, debug, usedPort.getPort());
+						break;
+					} catch (Throwable t) {
+						faults.put(factory.getDisplayName(), t);
+					}
 				}
 			}
+		} finally {
+			portSync.release();
 		}
 		listener.getLogger().println("[on-monit] Looking for otel-contrib implementation...");
-		String config = templating.renderTemplate(templating.getJobContext(build, build.getEnvironment(listener), port));
+		String config = templating.renderTemplate(templating.getJobContext(build, build.getEnvironment(listener), usedPort.getPort()));
 		for (RemoteOtelContribProcessFactory factory : Jenkins.get().getExtensionList(RemoteOtelContribProcessFactory.class)) {
-			if (factory.isSupported(getLauncher(), listener, info)) {
+			if (factory.isSupported(launcher, listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
 					otelContrib = factory.start(this, listener, info, tempDir(workspace), ocCookie, ocAdditionalOptions, debug, config);
