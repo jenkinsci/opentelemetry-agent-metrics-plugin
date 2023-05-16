@@ -81,6 +81,6 @@ public class DelegatedNodeExporterProcessFactory extends RemoteNodeExporterProce
 				listener.getLogger().println("[on-monit]     " + line);
 			}
 		}
-		throw new RuntimeException("Could not start process");
+		throw new RuntimeException("Could not start process node_exporter");
 	}
 }
