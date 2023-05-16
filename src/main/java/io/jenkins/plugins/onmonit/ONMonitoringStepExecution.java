@@ -70,6 +70,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		try {
 			initRemoteProcesses();
 		} catch (Exception e) {
+			getListener().getLogger().println(Messages.ONMonitoringStep_CouldNotStartProcesses());
 			cleanUp();
 			throw e;
 		}
@@ -100,7 +101,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			getContext().onFailure(x);
 			try {
 				x.printStackTrace(getListener().getLogger());
-				getListener().getLogger().println(Messages.ONMonitoring_CouldNotStartProcesses());
+				getListener().getLogger().println(Messages.ONMonitoringStep_CouldNotStartProcesses());
 			} catch (IOException e) {
 				// suppressed
 			} catch (InterruptedException e) {
@@ -195,7 +196,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			throw new RuntimeException("[on-monit] Could not find a suitable otel-contrib provider.");
 		}
 
-		listener.getLogger().println(Messages.ONMonitoringBuildWrapper_Started());
+		listener.getLogger().println(Messages.ONMonitoringStep_Started());
 	}
 
 	/**
@@ -206,7 +207,6 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		if (nodeExporter != null) {
 			nodeExporter.stop(listener);
 			nodeExporter = null;
-			listener.getLogger().println(Messages.ONMonitoringBuildWrapper_Stopped());
 		} else {
 			Map<String, String> neCookieEnv = new HashMap<>();
 			neCookieEnv.put(ExecRemoteNodeExporterProcess.PROC_COOKIE_NAME, neCookie);
@@ -215,12 +215,12 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		if (otelContrib != null) {
 			otelContrib.stop(listener);
 			otelContrib = null;
-			listener.getLogger().println(Messages.ONMonitoringBuildWrapper_Stopped());
 		} else {
 			Map<String, String> neCookieEnv = new HashMap<>();
 			neCookieEnv.put(ExecRemoteOtelContribProcess.PROC_COOKIE_NAME, ocCookie);
 			getLauncher().kill(neCookieEnv);
 		}
+		listener.getLogger().println(Messages.ONMonitoringStep_Stopped());
 	}
 
 	@Override
