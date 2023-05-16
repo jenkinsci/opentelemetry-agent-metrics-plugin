@@ -130,8 +130,10 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 
 	}
 
-	static FilePath tempDir(FilePath ws) {
-		return WorkspaceList.tempDir(ws);
+	static FilePath tempDir(FilePath ws) throws IOException, InterruptedException {
+		FilePath tmpDir = WorkspaceList.tempDir(ws);
+		tmpDir.mkdirs();
+		return tmpDir;
 	}
 
 	/**
