@@ -19,17 +19,17 @@
     <li>
         <code>debug</code> <i>(optional, default: false)</i>:
         A boolean flag. When true, any process output from node_exporter and otel-contrib is forwarded
-        to the Job console logs.
+        to the Job console logs. Useful for troubleshooting node_exporter + otel-contrib.
     </li>
     <li>
         <code>neAdditionalOptions</code> <i>(optional)</i>:
-        Any additional options to pass to the node_exporter process.
+        Any additional options to pass to the node_exporter process execution.
         This can be used to enable/disable specific collectors.
         See the <code>node_exporter --help</code> for more information.
     </li>
     <li>
         <code>ocAdditionalOptions</code> <i>(optional)</i>:
-        Any additional options to pass to the otel-contrib process.
+        Any additional options to pass to the otel-contrib process execution.
         This can be used to enable feature-flag gates or override specific values of the configuration.
         See the <code>otel-contrib --help</code> for more information.
     </li>

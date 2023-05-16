@@ -1,2 +1,4 @@
-<div>Ordinal of the port Prometheus node exporter will be listening on, if left empty
-	(default) port 9100 is used. Use only if you know what you’re doing.</div>
+<div>Ordinal of the port node_exporter will be listening on, if left empty
+	(default) port 9100 is used. If another process is already listening,
+	then we try port after port incrementally (so first 9100, 9101, 9102, …)
+	until binding to a port succeeds.</div>
