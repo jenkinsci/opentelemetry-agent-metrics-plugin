@@ -1,0 +1,74 @@
+<p>
+    Gather agent host metrics and forward them to an OpenTelemetry agent.
+    It uses <a href="https://github.com/prometheus/node_exporter" target="_blank">node_exporter</a> to gather host metrics and
+    <a href="https://github.com/open-telemetry/opentelemetry-collector-releases" target="_blank">otel-contrib</a> to forward them to an OpenTelemetry agent.
+    Node_exporter listens on a tcp port and returns the metrics when queried.
+    Otel-contrib queries the metrics and forwards them to an <a href="https://opentelemetry.io/" target="_blank">OpenTelemetry agent</a>.
+</p>
+<p>
+    onMonit depends on the <a href="https://plugins.jenkins.io/opentelemetry/">OpenTelemetry plugin</a> being configured and the <code>Export OpenTelemetry configuration as environment variables</code> option being checked.
+    This determines to which OpenTelemetry endpoint the agent metrics are being sent to.
+</p>
+<strong>Fields:</strong>
+<ul>
+    <li>
+        <code>Node exporter listen on port</code> <i>(optional, default: 9100)</i>:
+        Node exporter will try to listen on this port to expose the host metrics.
+        If another process is already listening, then we try port after port incrementally (so first 9100, 9101, 9102, …)
+        until binding to a port succeeds.
+    <li>
+        <code>debug</code> <i>(optional, default: false)</i>:
+        A boolean flag. When true, any process output from node_exporter and otel-contrib is forwarded
+        to the Job console logs.
+    </li>
+    <li>
+        <code>neAdditionalOptions</code> <i>(optional)</i>:
+        Any additional options to pass to the node_exporter process.
+        This can be used to enable/disable specific collectors.
+        See the <code>node_exporter --help</code> for more information.
+    </li>
+    <li>
+        <code>ocAdditionalOptions</code> <i>(optional)</i>:
+        Any additional options to pass to the otel-contrib process.
+        This can be used to enable feature-flag gates or override specific values of the configuration.
+        See the <code>otel-contrib --help</code> for more information.
+    </li>
+</ul>
+<p>
+    <strong>Examples:</strong><br/>
+    The whole pipeline can be monitored using node_exporter + otel-contrib agents by using onMonit as a pipeline option:
+    <code>
+        <pre>
+pipeline {
+    options {
+        onMonit()
+    }
+}
+        </pre>
+    </code>
+
+    If some stages run on other nodes these need to declare the onMonit option as well in order to be monitored:
+    <code>
+        <pre>
+    stage {
+        agent { label "other-node" }
+        options {
+            onMonit()
+        }
+    }
+        </pre>
+    </code>
+
+    It's also possible to just monitor a specific block of steps:
+    <code>
+        <pre>
+    stage {
+        steps {
+            onMonit() {
+                echo "Monitored :)"
+            }
+        }
+    }
+        </pre>
+    </code>
+</p>
