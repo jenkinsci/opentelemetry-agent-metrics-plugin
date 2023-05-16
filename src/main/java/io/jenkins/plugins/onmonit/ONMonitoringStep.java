@@ -93,7 +93,7 @@ public class ONMonitoringStep extends Step implements Serializable {
 		@NonNull
 		@Override
 		public String getDisplayName() {
-			return Messages.ONMonitoringBuildWrapper_DisplayName();
+			return Messages.ONMonitoringStep_DisplayName();
 		}
 
 		@Override
