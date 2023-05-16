@@ -11,24 +11,16 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.thymeleaf.templateresolver.StringTemplateResolver;
 
 public class ONTemplating {
-    //private String configTemplate = null;
-    private static TemplateEngine templateEngine = null;
 
-    /*String getConfigFileTemplate() throws IOException, URISyntaxException {
-        if (configTemplate != null) {
-            return configTemplate;
-        }
-        String resourceName = "otel.yaml.tmpl";
-        ClassLoader cl = ONTemplating.class.getClassLoader();
-        configTemplate = Files.readString(Paths.get(cl.getResource(resourceName).toURI()));
-        return configTemplate;
-    }*/
+    private static TemplateEngine defaultTemplateEngine = null;
+    private static TemplateEngine configTemplateEngine = null;
 
-    TemplateEngine getTemplateEngine() {
-        if (templateEngine != null) {
-            return templateEngine;
+    TemplateEngine getDefaultTemplateEngine() {
+        if (defaultTemplateEngine != null) {
+            return defaultTemplateEngine;
         }
         final ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver(getClass().getClassLoader());
         templateResolver.setTemplateMode(TemplateMode.TEXT);
@@ -38,14 +30,28 @@ public class ONTemplating {
         templateResolver.setCheckExistence(true);
         final TemplateEngine tEngine = new TemplateEngine();
         tEngine.setTemplateResolver(templateResolver);
-        templateEngine = tEngine;
-        return templateEngine;
+        defaultTemplateEngine = tEngine;
+        return defaultTemplateEngine;
+    }
+
+    TemplateEngine getStringTemplateEngine() {
+        if (configTemplateEngine != null) {
+            return configTemplateEngine;
+        }
+        final TemplateEngine tEngine = new TemplateEngine();
+        tEngine.setTemplateResolver(new StringTemplateResolver());
+        configTemplateEngine = tEngine;
+        return configTemplateEngine;
     }
 
     String renderTemplate(Context context) {
-        return getTemplateEngine().process("otel.yaml", context);
+        String template = ONMonitConfig.get().getOtelConfigTemplate();
+        if (template.isEmpty()) {
+            return getDefaultTemplateEngine().process("otel.yaml", context);
+        } else {
+            return getStringTemplateEngine().process(template, context);
+        }
     }
-
 
     private String toOtelCompatibleUrl(String urlStr) {
         try {
