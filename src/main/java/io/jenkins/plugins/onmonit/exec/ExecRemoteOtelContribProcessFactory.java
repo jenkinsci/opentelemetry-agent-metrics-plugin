@@ -4,8 +4,8 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.LauncherProvider;
+import io.jenkins.plugins.onmonit.RemoteOtelContribProcess;
 import io.jenkins.plugins.onmonit.RemoteOtelContribProcessFactory;
-import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 
 import java.io.ByteArrayOutputStream;
@@ -58,8 +58,8 @@ public class ExecRemoteOtelContribProcessFactory extends RemoteOtelContribProces
 	 * {@inheritDoc}
 	 */
 	@Override
-	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config)
+	public RemoteOtelContribProcess create(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug)
 			throws Throwable {
-		return new ExecRemoteOtelContribProcess(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, config);
+		return new ExecRemoteOtelContribProcess(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);
 	}
 }

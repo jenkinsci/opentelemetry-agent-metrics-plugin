@@ -14,8 +14,8 @@ import java.io.IOException;
 
 public class ExecDownloadedOtelContribProcess extends ExecRemoteOtelContribProcess implements RemoteProcess {
 
-	ExecDownloadedOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config) throws Exception {
-		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, config);
+	ExecDownloadedOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug) throws Exception {
+		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);
 	}
 
 	@Override

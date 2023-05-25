@@ -49,13 +49,13 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 	 * The proxy for the real remote node_exporter process that is on the other side of the channel (as the process needs to
 	 * run on a remote machine)
 	 */
-	private transient RemoteProcess nodeExporter = null;
+	private transient RemoteNodeExporterProcess nodeExporter = null;
 
 	/**
 	 * The proxy for the real remote otel-contrib process that is on the other side of the channel (as the process needs to
 	 * run on a remote machine)
 	 */
-	private transient RemoteProcess otelContrib = null;
+	private transient RemoteOtelContribProcess otelContrib = null;
 
 	ONMonitoringStepExecution(StepContext context, int port, boolean debug, String neAdditionalOptions, String ocAdditionalOptions) {
 		super(context);
@@ -151,33 +151,24 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		ComputerInfo info = RemoteComputerInfoRetriever.getRemoteInfo(launcher);
 		Semaphore portSync = AvailablePortRetriever.getSyncOjbectForLauncher(launcher);
 		Map<String, Throwable> faults = new LinkedHashMap<>();
-		AvailablePort usedPort;
-		try {
-			portSync.acquire();
-			usedPort = AvailablePortRetriever.getAvailablePort(launcher, port, port + 100);
-			listener.getLogger().println("[on-monit] node_exporter will listen on " + usedPort.getPort());
-			listener.getLogger().println("[on-monit] Looking for node_exporter implementation...");
-			for (RemoteNodeExporterProcessFactory factory : Jenkins.get().getExtensionList(RemoteNodeExporterProcessFactory.class)) {
-				if (factory.isSupported(launcher, listener, info)) {
-					try {
-						listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-						nodeExporter = factory.start(this, listener, info, tempDir(workspace), neCookie, neAdditionalOptions, debug, usedPort.getPort());
-						break;
-					} catch (Throwable t) {
-						faults.put(factory.getDisplayName(), t);
-					}
+		listener.getLogger().println("[on-monit] Looking for node_exporter implementation...");
+		for (RemoteNodeExporterProcessFactory factory : Jenkins.get().getExtensionList(RemoteNodeExporterProcessFactory.class)) {
+			if (factory.isSupported(launcher, listener, info)) {
+				try {
+					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
+					nodeExporter = factory.create(this, listener, info, tempDir(workspace), neCookie, neAdditionalOptions, debug);
+					break;
+				} catch (Throwable t) {
+					faults.put(factory.getDisplayName(), t);
 				}
 			}
-		} finally {
-			portSync.release();
 		}
 		listener.getLogger().println("[on-monit] Looking for otel-contrib implementation...");
-		String config = templating.renderTemplate(templating.getJobContext(build, build.getEnvironment(listener), usedPort.getPort()));
 		for (RemoteOtelContribProcessFactory factory : Jenkins.get().getExtensionList(RemoteOtelContribProcessFactory.class)) {
 			if (factory.isSupported(launcher, listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					otelContrib = factory.start(this, listener, info, tempDir(workspace), ocCookie, ocAdditionalOptions, debug, config);
+					otelContrib = factory.create(this, listener, info, tempDir(workspace), ocCookie, ocAdditionalOptions, debug);
 					break;
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
@@ -210,7 +201,17 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			}
 			throw new RuntimeException("[on-monit] Could not find a suitable otel-contrib provider.");
 		}
-
+		AvailablePort usedPort;
+		try {
+			portSync.acquire();
+			usedPort = AvailablePortRetriever.getAvailablePort(launcher, port, port + 100);
+			listener.getLogger().println("[on-monit] node_exporter will listen on " + usedPort.getPort());
+			nodeExporter.start(listener, usedPort.getPort());
+		} finally {
+			portSync.release();
+		}
+		String config = templating.renderTemplate(templating.getJobContext(build, build.getEnvironment(listener), usedPort.getPort()));
+		otelContrib.start(listener, config);
 		listener.getLogger().println(Messages.ONMonitoringStep_Started());
 	}
 

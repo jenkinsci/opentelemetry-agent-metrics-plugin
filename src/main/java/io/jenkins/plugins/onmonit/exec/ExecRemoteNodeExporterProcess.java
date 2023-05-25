@@ -4,10 +4,10 @@ import hudson.AbortException;
 import hudson.Proc;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
+import io.jenkins.plugins.onmonit.RemoteNodeExporterProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import org.apache.commons.io.output.TeeOutputStream;
 import io.jenkins.plugins.onmonit.LauncherProvider;
-import io.jenkins.plugins.onmonit.RemoteProcess;
 import hudson.FilePath;
 import org.apache.commons.lang.StringUtils;
 
@@ -17,7 +17,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
-public class ExecRemoteNodeExporterProcess implements RemoteProcess {
+public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess {
 
 	public static final String PROC_COOKIE_NAME = "_JENKINS_PM_NODE_EXPORTER_COOKIE";
 
@@ -35,11 +35,13 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 
 	protected final boolean debug;
 
-	protected final int port;
-
 	private FilePath executableTmpChild;
 
-	ExecRemoteNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port) throws Exception {
+	private final ArgumentListBuilder cmd;
+
+	private boolean started;
+
+	ExecRemoteNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug) throws Exception {
 		this.launcherProvider = launcherProvider;
 		this.listener = listener;
 		this.info = info;
@@ -49,14 +51,20 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 		this.envOverrides = overrides;
 		this.additionalOptions = additionalOptions;
 		this.debug = debug;
-		this.port = port;
-
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ArgumentListBuilder cmd = getCmd();
+		this.cmd = getCmd();
 		if (StringUtils.isNotBlank(additionalOptions)) {
 			cmd.addTokenized(additionalOptions);
 		}
 		cmd.add("--web.disable-exporter-metrics");
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void start(TaskListener listener, int port) throws IOException, InterruptedException {
+		this.started = true;
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		cmd.add("--web.listen-address=:" + port);
 		Proc proc = launcherProvider.getLauncher().launch()
 				.cmds(cmd)
@@ -105,7 +113,10 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 	 */
 	@Override
 	public void stop(TaskListener listener) throws IOException, InterruptedException {
-		launcherProvider.getLauncher().kill(envOverrides);
+		if (started) {
+			launcherProvider.getLauncher().kill(envOverrides);
+			started = false;
+		}
 		if (executableTmpChild != null) {
 			executableTmpChild.delete();
 		}

@@ -5,8 +5,8 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.LauncherProvider;
+import io.jenkins.plugins.onmonit.RemoteOtelContribProcess;
 import io.jenkins.plugins.onmonit.RemoteOtelContribProcessFactory;
-import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import org.apache.commons.lang.StringUtils;
 
@@ -60,7 +60,7 @@ public class DelegatedOtelContribProcessFactory extends RemoteOtelContribProcess
 	 * {@inheritDoc}
 	 */
 	@Override
-	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config)
+	public RemoteOtelContribProcess create(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug)
 			throws Throwable {
 		Launcher launcher = launcherProvider.getLauncher();
 		Map<String, Throwable> faults = new LinkedHashMap<>();
@@ -68,7 +68,7 @@ public class DelegatedOtelContribProcessFactory extends RemoteOtelContribProcess
 			if (factory.isSupported(launcher, listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					return factory.start(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, config);
+					return factory.create(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
 				}

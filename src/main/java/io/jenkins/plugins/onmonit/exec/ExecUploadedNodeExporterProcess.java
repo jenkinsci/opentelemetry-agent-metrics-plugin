@@ -13,8 +13,8 @@ import java.io.OutputStream;
 
 public class ExecUploadedNodeExporterProcess extends ExecRemoteNodeExporterProcess implements RemoteProcess {
 
-	ExecUploadedNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port) throws Exception {
-		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, port);
+	ExecUploadedNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug) throws Exception {
+		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);
 	}
 
 	@Override

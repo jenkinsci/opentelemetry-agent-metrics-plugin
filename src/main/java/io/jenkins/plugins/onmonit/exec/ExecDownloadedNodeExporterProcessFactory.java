@@ -5,8 +5,8 @@ import hudson.Launcher;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.ONMonitConfig;
+import io.jenkins.plugins.onmonit.RemoteNodeExporterProcess;
 import io.jenkins.plugins.onmonit.RemoteNodeExporterProcessFactory;
-import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 
 /**
@@ -38,8 +38,8 @@ public class ExecDownloadedNodeExporterProcessFactory extends RemoteNodeExporter
 	 * {@inheritDoc}
 	 */
 	@Override
-	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port)
+	public RemoteNodeExporterProcess create(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug)
 			throws Throwable {
-		return new ExecDownloadedNodeExporterProcess(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, port);
+		return new ExecDownloadedNodeExporterProcess(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);
 	}
 }

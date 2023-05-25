@@ -5,8 +5,8 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.LauncherProvider;
+import io.jenkins.plugins.onmonit.RemoteNodeExporterProcess;
 import io.jenkins.plugins.onmonit.RemoteNodeExporterProcessFactory;
-import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import org.apache.commons.lang.StringUtils;
 
@@ -60,7 +60,7 @@ public class DelegatedNodeExporterProcessFactory extends RemoteNodeExporterProce
 	 * {@inheritDoc}
 	 */
 	@Override
-	public RemoteProcess start(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port)
+	public RemoteNodeExporterProcess create(LauncherProvider launcherProvider, final TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug)
 			throws Throwable {
 		Launcher launcher = launcherProvider.getLauncher();
 		Map<String, Throwable> faults = new LinkedHashMap<>();
@@ -68,7 +68,7 @@ public class DelegatedNodeExporterProcessFactory extends RemoteNodeExporterProce
 			if (factory.isSupported(launcher, listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					return factory.start(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, port);
+					return factory.create(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
 				}

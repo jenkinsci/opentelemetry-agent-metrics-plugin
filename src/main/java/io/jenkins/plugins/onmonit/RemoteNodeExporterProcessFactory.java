@@ -30,7 +30,7 @@ public abstract class RemoteNodeExporterProcessFactory implements ExtensionPoint
 	public abstract boolean isSupported(Launcher launcher, TaskListener listener, ComputerInfo info);
 
 	/**
-	 * Start a node-exporter process on the specified launcher.
+	 * Create a node-exporter process on the specified launcher. This does not yet start it.
 	 *
 	 * @param launcherProvider provides launchers on which to start a node-exporter.
 	 * @param listener a listener for any diagnostics.
@@ -39,12 +39,11 @@ public abstract class RemoteNodeExporterProcessFactory implements ExtensionPoint
 	 * @param envCookie a value to distinguish the created process
 	 * @param additionalOptions any additional arguments to pass to the launched process
 	 * @param debug whether to pass any process output to the Job console log (useful for troubleshooting)
-	 * @param port the port on which the node_exporter should listen on
 	 * @return the process.
 	 * @throws Throwable if the process cannot be started.
 	 */
-	public abstract RemoteProcess start(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info,
-										@CheckForNull FilePath temp, String envCookie, String additionalOptions,
-										boolean debug, int port) throws Throwable;
+	public abstract RemoteNodeExporterProcess create(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info,
+										 @CheckForNull FilePath temp, String envCookie, String additionalOptions,
+										 boolean debug) throws Throwable;
 
 }

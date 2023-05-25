@@ -6,7 +6,7 @@ import hudson.Proc;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
 import io.jenkins.plugins.onmonit.LauncherProvider;
-import io.jenkins.plugins.onmonit.RemoteProcess;
+import io.jenkins.plugins.onmonit.RemoteOtelContribProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang.StringUtils;
@@ -18,7 +18,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
-public class ExecRemoteOtelContribProcess implements RemoteProcess {
+public class ExecRemoteOtelContribProcess implements RemoteOtelContribProcess {
 
 	public static final String PROC_COOKIE_NAME = "_JENKINS_PM_OTEL_COLLECTOR_COOKIE";
 
@@ -36,13 +36,15 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 
 	protected final boolean debug;
 
-	private final String config;
-
 	private final String configTmpChild;
 
 	private FilePath executableTmpChild;
 
-	ExecRemoteOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config) throws Exception {
+	private final ArgumentListBuilder cmd;
+
+	private boolean started;
+
+	ExecRemoteOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug) throws Exception {
 		this.launcherProvider = launcherProvider;
 		this.listener = listener;
 		this.info = info;
@@ -52,18 +54,26 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 		this.envOverrides = overrides;
 		this.additionalOptions = additionalOptions;
 		this.debug = debug;
-		this.config = config;
-
 		FilePath configFile = temp.createTempFile("otel", ".yaml");
-		configFile.write(config, StandardCharsets.UTF_8.name());
 		this.configTmpChild = configFile.getName();
-
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ArgumentListBuilder cmd = getCmd();
+		this.cmd = getCmd();
 		if (StringUtils.isNotBlank(additionalOptions)) {
 			cmd.addTokenized(additionalOptions);
 		}
 		cmd.add("--config=file:" + configFile.getRemote());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void start(TaskListener listener, String config) throws IOException, InterruptedException {
+		this.started = true;
+
+		FilePath configFile = temp.child(configTmpChild);
+		configFile.write(config, StandardCharsets.UTF_8.name());
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Proc proc = launcherProvider.getLauncher().launch()
 				.cmds(cmd)
 				.envs(envOverrides)
@@ -110,7 +120,10 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 	 */
 	@Override
 	public void stop(TaskListener listener) throws IOException, InterruptedException {
-		launcherProvider.getLauncher().kill(envOverrides);
+		if (started) {
+			launcherProvider.getLauncher().kill(envOverrides);
+			started = false;
+		}
 		temp.child(configTmpChild).delete();
 		if (executableTmpChild != null) {
 			executableTmpChild.delete();

@@ -13,8 +13,8 @@ import java.io.OutputStream;
 
 public class ExecUploadedOtelContribProcess extends ExecRemoteOtelContribProcess implements RemoteProcess {
 
-	ExecUploadedOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config) throws Exception {
-		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, config);
+	ExecUploadedOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug) throws Exception {
+		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);
 	}
 
 	@Override

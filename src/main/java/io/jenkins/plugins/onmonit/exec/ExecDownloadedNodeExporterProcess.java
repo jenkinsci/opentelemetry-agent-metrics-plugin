@@ -14,8 +14,8 @@ import java.io.IOException;
 
 public class ExecDownloadedNodeExporterProcess extends ExecRemoteNodeExporterProcess implements RemoteProcess {
 
-	ExecDownloadedNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port) throws Exception {
-		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug, port);
+	ExecDownloadedNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug) throws Exception {
+		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);
 	}
 
 	@Override
