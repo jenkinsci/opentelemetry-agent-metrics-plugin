@@ -40,6 +40,8 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 
 	private final String configTmpChild;
 
+	private FilePath executableTmpChild;
+
 	ExecRemoteOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, String config) throws Exception {
 		this.launcherProvider = launcherProvider;
 		this.listener = listener;
@@ -93,10 +95,14 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 	}
 
 	protected FilePath createTempExecutableFile() throws IOException, InterruptedException {
+		FilePath result;
 		if ("win".equals(info.getOs())) {
-			return this.temp.createTempFile("otelcol-contrib", "exe");
+			result = this.temp.createTempFile("otelcol-contrib", "exe");
+		} else {
+			result = this.temp.createTempFile("otelcol-contrib", "");
 		}
-		return this.temp.createTempFile("otelcol-contrib", "");
+		this.executableTmpChild = result;
+		return result;
 	}
 
 	/**
@@ -106,6 +112,9 @@ public class ExecRemoteOtelContribProcess implements RemoteProcess {
 	public void stop(TaskListener listener) throws IOException, InterruptedException {
 		launcherProvider.getLauncher().kill(envOverrides);
 		temp.child(configTmpChild).delete();
+		if (executableTmpChild != null) {
+			executableTmpChild.delete();
+		}
 	}
 
 }

@@ -37,6 +37,8 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 
 	protected final int port;
 
+	private FilePath executableTmpChild;
+
 	ExecRemoteNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug, int port) throws Exception {
 		this.launcherProvider = launcherProvider;
 		this.listener = listener;
@@ -88,10 +90,14 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 	}
 
 	protected FilePath createTempExecutableFile() throws IOException, InterruptedException {
+		FilePath result;
 		if ("win".equals(info.getOs())) {
-			return this.temp.createTempFile("windows_exporter", "exe");
+			result = this.temp.createTempFile("windows_exporter", "exe");
+		} else {
+			result = this.temp.createTempFile("node_exporter", "");
 		}
-		return this.temp.createTempFile("node_exporter", "");
+		this.executableTmpChild = result;
+		return result;
 	}
 
 	/**
@@ -100,6 +106,9 @@ public class ExecRemoteNodeExporterProcess implements RemoteProcess {
 	@Override
 	public void stop(TaskListener listener) throws IOException, InterruptedException {
 		launcherProvider.getLauncher().kill(envOverrides);
+		if (executableTmpChild != null) {
+			executableTmpChild.delete();
+		}
 	}
 
 }
