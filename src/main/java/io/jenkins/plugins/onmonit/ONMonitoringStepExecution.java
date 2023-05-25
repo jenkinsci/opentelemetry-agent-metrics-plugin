@@ -43,7 +43,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 
 	private String ocCookie;
 
-	private transient ONTemplating templating = new ONTemplating();
+	private static ONTemplating templating = new ONTemplating();
 
 	/**
 	 * The proxy for the real remote node_exporter process that is on the other side of the channel (as the process needs to
@@ -209,6 +209,12 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			nodeExporter.start(listener, usedPort.getPort());
 		} finally {
 			portSync.release();
+		}
+		if (templating == null) {
+			throw new NullPointerException("templating is null");
+		}
+		if (build == null) {
+			throw new NullPointerException("build is null");
 		}
 		String config = templating.renderTemplate(templating.getJobContext(build, build.getEnvironment(listener), usedPort.getPort()));
 		otelContrib.start(listener, config);
