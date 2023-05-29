@@ -58,12 +58,18 @@ Usage
 2. Select "onMonit" sample step.
 3. Click "Generate Pipeline Script"
 
+When used in a pipeline involving multiple agents (eg. parallel stages), then `onMonit` needs to be explicitly
+used for each stage running on a different node!
+
 ## Using the plugin in declarative Jenkins Pipeline
 
 1. Go to Job > Pipeline Syntax > Declarative Directive Generator
 2. Select "options" sample directive.
 3. Add "onMonit".
 4. Click "Generate Declarative Directive"
+
+When used in a pipeline involving multiple agents (eg. parallel stages), then `onMonit` needs to be explicitly
+used for each stage running on a different node!
 
 ## Using the plugin in Jenkins job:
 
@@ -72,6 +78,18 @@ Currently, it's only possible to use this plugin in Pipeline jobs and not in fre
 ## Configuration of Grafana
 
 The dashboard to which this plugin links should be able to display the metrics gathered from the agents.
+[Node Exporter Full](https://grafana.com/grafana/dashboards/1860-node-exporter-full/) is a good basis.
+
+The dashboard [node-exporter-full-ci.json](node-exporter-full-ci.json) was built from the one linked above.<br>
+It additionally allows selecting by jobGroup, jobName, jobId and executor.
+
+* The jobGroup variable is useful for multi-branch pipeline jobs to narrow the selection of jobNames to only
+those of the selected multibranch pipeline.
+* The jobName corresponds to the Jenkins job name
+* The jobId is the job ID as assigned by Jenkins to each build
+* The executor allows to select which agent of a build the metrics were gathered on.
+  This is useful for builds involving multiple agents (eg. using parallel stages).
+  The `onMonit` step needs to be explicitly used for each stage running on a different node.
 
 ## Hardware requirements
 
