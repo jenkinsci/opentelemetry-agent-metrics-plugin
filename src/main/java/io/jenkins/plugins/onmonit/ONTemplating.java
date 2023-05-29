@@ -103,8 +103,9 @@ public class ONTemplating {
     }
 
     public UrlContext getUrlContext(EnvVars environment) {
-        String jobGroup = environment.get("JOB_BASE_NAME");
+        String jobBaseName = environment.get("JOB_BASE_NAME");
         String jobName = environment.get("JOB_NAME");
+        String jobGroup = trimWithDefault(jobName, jobBaseName, "-");
         String jobId = environment.get("BUILD_ID");
         return new UrlContext(jobGroup, jobName, jobId);
     }
@@ -139,7 +140,7 @@ public class ONTemplating {
             if (entry.getKey() == null || entry.getValue() == null) {
                 continue;
             }
-            result = result.replaceAll("{" + entry.getKey() + "}", URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+            result = result.replaceAll("\\{" + entry.getKey() + "\\}", URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
         }
         return result;
     }
