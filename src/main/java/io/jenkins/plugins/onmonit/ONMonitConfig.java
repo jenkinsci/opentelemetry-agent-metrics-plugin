@@ -10,6 +10,11 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import jenkins.YesNoMaybe;
 import jenkins.model.GlobalConfiguration;
@@ -36,7 +41,9 @@ public final class ONMonitConfig extends GlobalConfiguration {
 		return ExtensionList.lookupSingleton(ONMonitConfig.class);
 	}
 
-	private static final String ICONS_PREFIX = "plugin/opentelemetry/images/svgs/";
+	private static final Pattern urlVariable = Pattern.compile("\\{([^}]*)\\}");
+	private static final Set<String> validVariables = Set.of("jobGroup", "jobName", "jobId", "startTime", "endTime");
+	private static final String ICONS_PREFIX = "plugin/onmonit/images/svgs/";
 	private static final String ICON_GRAFANA = ICONS_PREFIX + "grafana.svg";
 	private static final String ICON_OTEL = ICONS_PREFIX + "opentelemetry.svg";
 
@@ -136,7 +143,15 @@ public final class ONMonitConfig extends GlobalConfiguration {
 			return FormValidation.ok();
 		}
 
-		return validateUrl(grafanaDashboard);
+		String badVariables = urlVariable.matcher(grafanaDashboard).results()
+				.map(result -> result.group(1))
+				.filter(v -> !validVariables.contains(v))
+				.collect(Collectors.joining("}, {"));
+		if (!badVariables.isEmpty()) {
+			return FormValidation.error("Bad variables: {" + badVariables + "}");
+		}
+		String urlWithoutVariables = urlVariable.matcher(grafanaDashboard).replaceAll("varValue");
+		return validateUrl(urlWithoutVariables);
 	}
 
 	/**
