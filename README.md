@@ -77,11 +77,11 @@ Currently, it's only possible to use this plugin in Pipeline jobs and not in fre
 
 ## Configuration of Grafana
 
-The dashboard to which this plugin links should be able to display the metrics gathered from the agents.
-[Node Exporter Full](https://grafana.com/grafana/dashboards/1860-node-exporter-full/) is a good basis.
+The dashboard to which this plugin links should be able to display the metrics gathered from the agents.<br>
+[Node Exporter Full](https://grafana.com/grafana/dashboards/1860-node-exporter-full/) was used as a basis to develop [node-exporter-full-ci.json](node-exporter-full-ci.json).
+You can use this dashboard by importing the JSON file defining the dashboard linked above.
 
-The dashboard [node-exporter-full-ci.json](node-exporter-full-ci.json) was built from the one linked above.<br>
-It additionally allows selecting by jobGroup, jobName, jobId and executor.
+This dashboard additionally allows selecting by jobGroup, jobName, jobId and executor.
 
 * The jobGroup variable is useful for multi-branch pipeline jobs to narrow the selection of jobNames to only
 those of the selected multibranch pipeline.
