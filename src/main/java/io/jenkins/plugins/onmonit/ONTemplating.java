@@ -2,8 +2,10 @@ package io.jenkins.plugins.onmonit;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Set;
 
 import hudson.EnvVars;
 import hudson.model.Run;
@@ -101,7 +103,14 @@ public class ONTemplating {
     }
 
     public String getVisualisationUrl(String urlTemplate, Map<String, String> context) {
-        return "";
+        String result = urlTemplate;
+        for (Map.Entry<String, String> entry : context.entrySet()) {
+            if (entry.getKey() == null || entry.getValue() == null) {
+                continue;
+            }
+            result = result.replaceAll("{" + entry.getKey() + "}", URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+        }
+        return result;
     }
 
 }
