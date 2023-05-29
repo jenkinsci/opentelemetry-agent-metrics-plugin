@@ -80,11 +80,11 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 		binding.put("jobGroup", this.jobGroup);
 		binding.put("jobName", this.jobName);
 		binding.put("jobId", this.jobId);
-		binding.put("startTime", String.valueOf(Instant.ofEpochMilli(run.getStartTimeInMillis()).getEpochSecond()));
+		binding.put("startTime", String.valueOf(run.getStartTimeInMillis()));
 		if (run.isBuilding()) {
 			binding.put("endTime", "now");
 		} else {
-			binding.put("endTime", String.valueOf(Instant.ofEpochMilli(run.getStartTimeInMillis() + run.getDuration()).getEpochSecond()));
+			binding.put("endTime", String.valueOf(run.getStartTimeInMillis() + run.getDuration()));
 		}
 
 		return Collections.singletonList(new MonitoringDashboardLink(
