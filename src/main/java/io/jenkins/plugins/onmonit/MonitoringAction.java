@@ -38,6 +38,7 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 		this.jobGroup = original.jobGroup;
 		this.jobName = original.jobName;
 		this.jobId = original.jobId;
+		this.run = original.run;
 		this.isProjectAction = isProjectAction;
 	}
 
