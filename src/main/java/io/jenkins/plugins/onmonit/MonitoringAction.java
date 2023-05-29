@@ -48,6 +48,9 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 
 	@Override
 	public Collection<? extends Action> getProjectActions() {
+		// Alternatively we could show the monitoring action of only the last successful build,
+		// we could search for the last build which has a MonitoringAction,
+		// or we could create a transient monitoring action spanning several of the last builds.
 		return run.getParent().getLastBuild().getActions(MonitoringAction.class);
 	}
 
