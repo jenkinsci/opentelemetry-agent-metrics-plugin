@@ -72,6 +72,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		StepContext context = getContext();
 		try {
 			initRemoteProcesses();
+			addActionOnce();
 		} catch (Exception e) {
 			getListener().getLogger().println(Messages.ONMonitoringStep_CouldNotStartProcesses());
 			cleanUp();
@@ -219,6 +220,14 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		String config = templating.renderTemplate(templating.getJobContext(build, build.getEnvironment(listener), usedPort.getPort()));
 		otelContrib.start(listener, config);
 		listener.getLogger().println(Messages.ONMonitoringStep_Started());
+	}
+
+	private void addActionOnce() throws IOException, InterruptedException {
+		TaskListener listener = getListener();
+		Run<?, ?> build = getBuild();
+		var environment = build.getEnvironment(listener);
+		ONTemplating.UrlContext urlContext = templating.getUrlContext(environment);
+		build.addOrReplaceAction(new MonitoringAction(urlContext));
 	}
 
 	/**

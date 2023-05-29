@@ -32,6 +32,10 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 		this.jobId = jobId;
 	}
 
+	public MonitoringAction(ONTemplating.UrlContext context) {
+		this(context.getJobGroup(), context.getJobName(), context.getJobId());
+	}
+
 	@Override
 	public void onAttached(Run<?, ?> r) {
 		this.run = r;

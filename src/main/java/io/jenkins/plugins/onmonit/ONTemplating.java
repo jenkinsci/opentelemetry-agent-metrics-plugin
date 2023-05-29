@@ -102,6 +102,37 @@ public class ONTemplating {
         return context;
     }
 
+    public UrlContext getUrlContext(EnvVars environment) {
+        String jobGroup = environment.get("JOB_BASE_NAME");
+        String jobName = environment.get("JOB_NAME");
+        String jobId = environment.get("BUILD_ID");
+        return new UrlContext(jobGroup, jobName, jobId);
+    }
+
+    public static class UrlContext {
+        private final String jobGroup;
+        private final String jobName;
+        private final String jobId;
+
+        public UrlContext(String jobGroup, String jobName, String jobId) {
+            this.jobGroup = jobGroup;
+            this.jobName = jobName;
+            this.jobId = jobId;
+        }
+
+        public String getJobGroup() {
+            return jobGroup;
+        }
+
+        public String getJobName() {
+            return jobName;
+        }
+
+        public String getJobId() {
+            return jobId;
+        }
+    }
+
     public String getVisualisationUrl(String urlTemplate, Map<String, String> context) {
         String result = urlTemplate;
         for (Map.Entry<String, String> entry : context.entrySet()) {
