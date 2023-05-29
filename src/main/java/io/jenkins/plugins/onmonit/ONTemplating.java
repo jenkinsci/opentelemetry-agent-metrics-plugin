@@ -3,6 +3,7 @@ package io.jenkins.plugins.onmonit;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import hudson.EnvVars;
 import hudson.model.Run;
@@ -97,6 +98,10 @@ public class ONTemplating {
         context.setVariable("otlpEndpoint", toOtelCompatibleUrl(otlpEndpoint));
         context.setVariable("otlpAuthHeader", otlpHeader.substring(otlpHeader.indexOf("=") + 1));
         return context;
+    }
+
+    public String getVisualisationUrl(String urlTemplate, Map<String, String> context) {
+        return "";
     }
 
 }

@@ -14,6 +14,8 @@ import javax.servlet.ServletException;
 import jenkins.YesNoMaybe;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
+import org.jenkins.ui.icon.Icon;
+import org.jenkins.ui.icon.IconSet;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.verb.POST;
@@ -33,6 +35,55 @@ public final class ONMonitConfig extends GlobalConfiguration {
 	public static ONMonitConfig get() {
 		return ExtensionList.lookupSingleton(ONMonitConfig.class);
 	}
+
+	private static final String ICONS_PREFIX = "plugin/opentelemetry/images/svgs/";
+	private static final String ICON_GRAFANA = ICONS_PREFIX + "grafana.svg";
+	private static final String ICON_OTEL = ICONS_PREFIX + "opentelemetry.svg";
+
+	public static final String ICON_CLASS_GRAFANA = "icon-onmonit-grafana";
+	public static final String ICON_CLASS_OTEL = "icon-onmonit-otel";
+
+	static {
+		IconSet.icons.addIcon(
+				new Icon(
+						ICON_CLASS_GRAFANA + " icon-sm",
+						ICON_GRAFANA,
+						Icon.ICON_SMALL_STYLE));
+		IconSet.icons.addIcon(
+				new Icon(
+						ICON_CLASS_GRAFANA + " icon-md",
+						ICON_GRAFANA,
+						Icon.ICON_MEDIUM_STYLE));
+		IconSet.icons.addIcon(
+				new Icon(
+						ICON_CLASS_GRAFANA + " icon-lg",
+						ICON_GRAFANA,
+						Icon.ICON_LARGE_STYLE));
+		IconSet.icons.addIcon(
+				new Icon(
+						ICON_CLASS_GRAFANA + " icon-xlg",
+						ICON_GRAFANA,
+						Icon.ICON_XLARGE_STYLE));
+		IconSet.icons.addIcon(
+				new Icon(
+						ICON_CLASS_OTEL + " icon-sm",
+						ICON_OTEL,
+						Icon.ICON_SMALL_STYLE));
+		IconSet.icons.addIcon(
+				new Icon(
+						ICON_CLASS_OTEL + " icon-md",
+						ICON_OTEL,
+						Icon.ICON_MEDIUM_STYLE));
+		IconSet.icons.addIcon(
+				new Icon(
+						ICON_CLASS_OTEL + " icon-lg",
+						ICON_OTEL,
+						Icon.ICON_LARGE_STYLE));
+		IconSet.icons.addIcon(
+				new Icon(
+						ICON_CLASS_OTEL + " icon-xlg",
+						ICON_OTEL,
+						Icon.ICON_XLARGE_STYLE));	}
 
 	/**
 	 * The URL to a Grafana dashboard which can displayed the metrics gathered by ONMonit.
