@@ -8,13 +8,14 @@ import jenkins.model.RunAction2;
 import jenkins.tasks.SimpleBuildStep;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.LastBuildAction, Serializable {
 	private static final Logger LOGGER = Logger.getLogger(MonitoringAction.class.getName());
@@ -25,11 +26,19 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 	private final String jobName;
 	private final String jobId;
 	private transient Run run;
+	private transient boolean isProjectAction;
 
 	public MonitoringAction(String jobGroup, String jobName, String jobId) {
 		this.jobGroup = jobGroup;
 		this.jobName = jobName;
 		this.jobId = jobId;
+	}
+
+	public MonitoringAction(MonitoringAction original, boolean isProjectAction) {
+		this.jobGroup = original.jobGroup;
+		this.jobName = original.jobName;
+		this.jobId = original.jobId;
+		this.isProjectAction = isProjectAction;
 	}
 
 	public MonitoringAction(ONTemplating.UrlContext context) {
@@ -51,7 +60,13 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 		// Alternatively we could show the monitoring action of only the last successful build,
 		// we could search for the last build which has a MonitoringAction,
 		// or we could create a transient monitoring action spanning several of the last builds.
-		return run.getParent().getLastBuild().getActions(MonitoringAction.class);
+		Run<?, ?> build = run.getParent().getLastBuild();
+		if (build == null) {
+			return new ArrayList<>();
+		}
+		return build.getActions(MonitoringAction.class).stream()
+				.map(a -> new MonitoringAction(a, true))
+				.collect(Collectors.toList());
 	}
 
 	@Override
@@ -91,7 +106,7 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 		}
 
 		return Collections.singletonList(new MonitoringDashboardLink(
-				"View pipeline with Grafana",
+				(isProjectAction ? "View last" : "View" ) + " build with Grafana",
 				templating.getVisualisationUrl(dashboardUrlTemplate, binding),
 				ONMonitConfig.ICON_CLASS_GRAFANA));
 	}
