@@ -8,7 +8,9 @@ The Otel Collector will scrape the metrics from node exporter.
 
 On the job page a link will be displayed to a Grafana dashboard displaying the metrics of any build agents for a given build.
 
-![main-job-page](images/main-page.png)
+![main-job-page](images/job-page.png)
+
+![grafana-dashboard](images/grafana-dashboard.png)
 
 ![configuration](images/configuration.png)
 
@@ -46,26 +48,30 @@ Usage
 1. Log into your Jenkins web UI.
 2. On the left-hand side of the screen, click “Manage Jenkins”
 3. Click “Configure System”.
-4. Scroll down to the “Otel monitoring” header.
+4. Scroll down to the “ONMonit” header.
 5. Enter the URL of the Grafana dashboard which will display the agent metrics.
 6. Click “Save”.
-
-## Using the plugin in Jenkins job:
-
-1. Log into your Jenkins web UI.
-2. Click on the job you wish to edit.
-3. On the left-hand side of the screen, click “Configure”.
-4. Scroll down to the “Post-build Actions” header.
-5. Click “Add post-build action” and select “Monitor agent with Otel”.
-6.  Click “Save”.
 
 ## Using the plugin in Jenkins Pipeline
 
 1. Go to Job > Pipeline Syntax > Snippet Generator
-2. Select "onmonit" sample step or "step: General Build Step" > "Monitor agent with Otel"
+2. Select "onMonit" sample step.
 3. Click "Generate Pipeline Script"
 
+## Using the plugin in declarative Jenkins Pipeline
+
+1. Go to Job > Pipeline Syntax > Declarative Directive Generator
+2. Select "options" sample directive.
+3. Add "onMonit".
+4. Click "Generate Declarative Directive"
+
+## Using the plugin in Jenkins job:
+
+Currently, it's only possible to use this plugin in Pipeline jobs and not in freestyle jobs.
+
 ## Configuration of Grafana
+
+The dashboard to which this plugin links should be able to display the metrics gathered from the agents.
 
 ## Hardware requirements
 
