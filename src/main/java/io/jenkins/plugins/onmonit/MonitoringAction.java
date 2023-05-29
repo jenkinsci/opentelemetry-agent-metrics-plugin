@@ -48,7 +48,7 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 
 	@Override
 	public Collection<? extends Action> getProjectActions() {
-		return run.getParent().getLastSuccessfulBuild().getActions(MonitoringAction.class);
+		return run.getParent().getLastBuild().getActions(MonitoringAction.class);
 	}
 
 	@Override
