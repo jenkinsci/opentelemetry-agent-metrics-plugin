@@ -51,6 +51,6 @@ public class RemoteComputerInfoRetriever {
 
 	public static boolean isAmd64() {
 		String arch = System.getProperty("os.arch").toLowerCase();
-		return arch.contains("amd64") || arch.contains("x64") || arch.contains("x86-64");
+		return arch.contains("amd64") || arch.contains("x64") || arch.contains("x86-64") || arch.contains("x86_64");
 	}
 }
