@@ -22,4 +22,11 @@ public class ComputerInfo implements Serializable {
 		return isAmd64;
 	}
 
+	@Override
+	public String toString() {
+		return "ComputerInfo{" +
+				"os='" + os + '\'' +
+				", isAmd64=" + isAmd64 +
+				'}';
+	}
 }

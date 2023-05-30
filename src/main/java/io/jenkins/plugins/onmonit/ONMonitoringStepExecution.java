@@ -152,6 +152,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		ComputerInfo info = RemoteComputerInfoRetriever.getRemoteInfo(launcher);
 		Semaphore portSync = AvailablePortRetriever.getSyncOjbectForLauncher(launcher);
 		Map<String, Throwable> faults = new LinkedHashMap<>();
+		listener.getLogger().println("[on-monit] Detected agent info: " + info);
 		listener.getLogger().println("[on-monit] Looking for node_exporter implementation...");
 		for (RemoteNodeExporterProcessFactory factory : Jenkins.get().getExtensionList(RemoteNodeExporterProcessFactory.class)) {
 			if (factory.isSupported(launcher, listener, info)) {
