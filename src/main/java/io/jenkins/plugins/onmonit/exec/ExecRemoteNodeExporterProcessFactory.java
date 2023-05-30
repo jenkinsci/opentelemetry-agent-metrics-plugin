@@ -40,7 +40,11 @@ public class ExecRemoteNodeExporterProcessFactory extends RemoteNodeExporterProc
 			 * `node_exporter --version` should always return 0. For the moment we explicitly require version 1.5.0
 			 */
 			String expectedVersion = "win".equals(info.getOs()) ? "version 0.22.0" : "version 1.5.0";
-			return status == 0 && version.contains(expectedVersion);
+			if (status == 0 && version.contains(expectedVersion)) {
+				return true;
+			}
+			listener.getLogger().println("Unsupported, requiring " + expectedVersion + ": `node_exporter --version` returned " + status + " printed " + version);
+			return false;
 		} catch (IOException e) {
 			listener.getLogger().println("Could not find node_exporter: IOException: " + e.getMessage());
 			listener.getLogger().println("Check if node_exporter is installed and in PATH");
