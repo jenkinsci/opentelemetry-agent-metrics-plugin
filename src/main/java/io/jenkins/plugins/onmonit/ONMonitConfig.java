@@ -43,7 +43,7 @@ public final class ONMonitConfig extends GlobalConfiguration {
 
 	private static final Pattern urlVariable = Pattern.compile("\\{([^}]*)\\}");
 	private static final Set<String> validVariables = Set.of("jobGroup", "jobName", "jobId", "startTime", "endTime");
-	private static final String ICONS_PREFIX = "plugin/opentelemetry-nodeexporter-monitoring/images/svgs/";
+	private static final String ICONS_PREFIX = "plugin/opentelemetry-agent-metrics/images/svgs/";
 	private static final String ICON_GRAFANA = ICONS_PREFIX + "grafana.svg";
 	private static final String ICON_OTEL = ICONS_PREFIX + "opentelemetry.svg";
 
