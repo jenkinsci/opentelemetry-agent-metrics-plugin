@@ -13,13 +13,13 @@
         <relativePath />
     </parent>
     <groupId>io.jenkins.plugins</groupId>
-    <artifactId>otel-agent-metrics</artifactId>
+    <artifactId>opentelemetry-nodeexporter-monitoring</artifactId>
     <version>${revision}${changelist}</version>
     <packaging>hpi</packaging>
     <properties>
         <revision>1.0.2</revision>
         <changelist>-SNAPSHOT</changelist>
-        <jenkins.version>2.361.4</jenkins.version>
+        <jenkins.version>2.387.3</jenkins.version>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     </properties>
     <name>Otel agent host metrics monitoring</name>
@@ -31,7 +31,7 @@
         <dependencies>
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.361.x</artifactId>
+                <artifactId>bom-2.387.x</artifactId>
                 <version>2102.v854b_fec19c92</version>
                 <scope>import</scope>
                 <type>pom</type>

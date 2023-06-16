@@ -22,7 +22,7 @@ Usage
 1. Clone the GitHub repository.
 2. Import the Maven project into your favorite IDE (IntelliJ, Eclipse, etc.).
 3. Build the plugin using the gradle script (`./gradlew build` or `gradlew.bat build` on Windows).
-4. The plugin is created at `build/libs/otel-agent-metrics.hpi`.
+4. The plugin is created at `build/libs/opentelemetry-nodeexporter-monitoring.hpi`.
 
 ## Installing the plugin:
 
