@@ -32,8 +32,6 @@ public class ExecRemoteOtelContribProcess implements RemoteOtelContribProcess {
 
 	protected final Map<String, String> envOverrides;
 
-	protected final String additionalOptions;
-
 	protected final boolean debug;
 
 	private final String configTmpChild;
@@ -52,7 +50,6 @@ public class ExecRemoteOtelContribProcess implements RemoteOtelContribProcess {
 		Map<String, String> overrides = new java.util.HashMap<>();
 		overrides.put(PROC_COOKIE_NAME, envCookie);
 		this.envOverrides = overrides;
-		this.additionalOptions = additionalOptions;
 		this.debug = debug;
 		FilePath configFile = temp.createTempFile("otel", ".yaml");
 		this.configTmpChild = configFile.getName();

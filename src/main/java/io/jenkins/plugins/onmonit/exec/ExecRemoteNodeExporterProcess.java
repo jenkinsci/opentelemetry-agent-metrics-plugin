@@ -32,8 +32,6 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 
 	private final Map<String, String> envOverrides;
 
-	protected final String additionalOptions;
-
 	protected final boolean debug;
 
 	private FilePath executableTmpChild;
@@ -50,7 +48,6 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 		Map<String, String> overrides = new java.util.HashMap<>();
 		overrides.put(PROC_COOKIE_NAME, envCookie);
 		this.envOverrides = overrides;
-		this.additionalOptions = additionalOptions;
 		this.debug = debug;
 		this.cmd = getCmd();
 		if (StringUtils.isNotBlank(additionalOptions)) {
