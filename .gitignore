@@ -1,9 +1,12 @@
 # Ignore Gradle project-specific cache directory
 .gradle
 
-# Ignore Gradle build output directory
+# Ignore Gradle / Maven build output directory
 build
 target
+
+# mvn hpi:run
+work
 
 #
 .sonarlint
@@ -15,6 +18,8 @@ target
 .nb-gradle/
 .vscode/
 logs
+
+# IntelliJ IDEA project files
 **/*.iml
 **/*.ipr
 **/*.iws
@@ -23,6 +28,8 @@ bin
 out
 **/.nb-gradle/
 **/.nb-gradle-properties
+
+# Eclipse project files
 */.settings/
 */.classpath
 */.project
