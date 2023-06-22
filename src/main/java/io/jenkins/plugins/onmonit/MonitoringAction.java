@@ -26,7 +26,7 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 	private final String jobName;
 	private final String jobId;
 	private transient Run run;
-	private transient boolean isProjectAction;
+	private boolean isProjectAction;
 
 	public MonitoringAction(String jobGroup, String jobName, String jobId) {
 		this.jobGroup = jobGroup;
