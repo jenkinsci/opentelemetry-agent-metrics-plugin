@@ -13,7 +13,7 @@ import io.jenkins.plugins.onmonit.util.DownloadOnSlaveCallable;
 
 import java.io.IOException;
 
-public class ExecDownloadedNodeExporterProcess extends ExecRemoteNodeExporterProcess implements RemoteProcess {
+public class ExecDownloadedNodeExporterProcess extends ExecRemoteNodeExporterProcess {
 
 	ExecDownloadedNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug) throws Exception {
 		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);

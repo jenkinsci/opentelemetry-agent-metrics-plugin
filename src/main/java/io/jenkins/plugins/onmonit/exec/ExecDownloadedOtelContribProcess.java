@@ -13,7 +13,7 @@ import io.jenkins.plugins.onmonit.util.DownloadOnSlaveCallable;
 
 import java.io.IOException;
 
-public class ExecDownloadedOtelContribProcess extends ExecRemoteOtelContribProcess implements RemoteProcess {
+public class ExecDownloadedOtelContribProcess extends ExecRemoteOtelContribProcess {
 
 	ExecDownloadedOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug) throws Exception {
 		super(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);
