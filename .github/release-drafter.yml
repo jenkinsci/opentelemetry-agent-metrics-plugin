@@ -1,0 +1,2 @@
+_extends: .github
+tag-template: opentelemetry-agent-metrics-$NEXT_MINOR_VERSION
