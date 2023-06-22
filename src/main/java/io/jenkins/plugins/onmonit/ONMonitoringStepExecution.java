@@ -133,6 +133,9 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 
 	static FilePath tempDir(FilePath ws) throws IOException, InterruptedException {
 		FilePath tmpDir = WorkspaceList.tempDir(ws);
+		if (tmpDir == null) {
+			throw new IOException("Could not create a tempDirectory in " + ws);
+		}
 		tmpDir.mkdirs();
 		return tmpDir;
 	}

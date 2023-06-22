@@ -35,7 +35,7 @@ public abstract class RemoteOtelContribProcessFactory implements ExtensionPoint 
 	 * @param launcherProvider provides launchers on which to start an otel-contrib process.
 	 * @param listener a listener for any diagnostics.
 	 * @param info information about the target environment (OS, arch)
-	 * @param temp a temporary directory to use; null if unspecified
+	 * @param temp a temporary directory to use
 	 * @param envCookie a value to distinguish the created process
 	 * @param additionalOptions any additional arguments to pass to the launched process
 	 * @param debug whether to pass any process output to the Job console log (useful for troubleshooting)
@@ -43,7 +43,7 @@ public abstract class RemoteOtelContribProcessFactory implements ExtensionPoint 
 	 * @throws Throwable if the process cannot be started.
 	 */
 	public abstract RemoteOtelContribProcess create(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info,
-										 @CheckForNull FilePath temp, String envCookie, String additionalOptions,
+										 FilePath temp, String envCookie, String additionalOptions,
 										 boolean debug) throws Throwable;
 
 }
