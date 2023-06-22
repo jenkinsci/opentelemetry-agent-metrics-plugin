@@ -6,6 +6,8 @@ import hudson.remoting.VirtualChannel;
 import jenkins.security.MasterToSlaveCallable;
 import org.jenkinsci.remoting.RoleChecker;
 
+import java.util.Locale;
+
 public class RemoteComputerInfoRetriever {
 	public static ComputerInfo getRemoteInfo(Launcher launcher) {
 		try {
@@ -41,16 +43,16 @@ public class RemoteComputerInfoRetriever {
 	}
 
 	public static boolean isWindows() {
-		return System.getProperty("os.name").toLowerCase().contains("win");
+		return System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("win");
 	}
 
 	public static boolean isDarwin() {
-		String os = System.getProperty("os.name").toLowerCase();
+		String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
 		return os.contains("mac") || os.contains("darwin");
 	}
 
 	public static boolean isAmd64() {
-		String arch = System.getProperty("os.arch").toLowerCase();
+		String arch = System.getProperty("os.arch").toLowerCase(Locale.ENGLISH);
 		return arch.contains("amd64") || arch.contains("x64") || arch.contains("x86-64") || arch.contains("x86_64");
 	}
 }
