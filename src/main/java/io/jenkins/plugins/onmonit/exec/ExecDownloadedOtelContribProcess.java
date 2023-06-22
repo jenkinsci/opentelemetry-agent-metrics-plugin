@@ -2,6 +2,7 @@ package io.jenkins.plugins.onmonit.exec;
 
 import hudson.FilePath;
 import hudson.model.TaskListener;
+import hudson.remoting.VirtualChannel;
 import hudson.util.ArgumentListBuilder;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.ONMonitConfig;
@@ -23,7 +24,11 @@ public class ExecDownloadedOtelContribProcess extends ExecRemoteOtelContribProce
 		FilePath executableFile = this.createTempExecutableFile();
 		String url = ONMonitConfig.get().getDownloadBaseUrl() + "/" + ResourceUtil.getOtelFilename(info.getOs(), info.isAmd64());
 		try {
-			launcherProvider.getLauncher().getChannel().call(new DownloadOnSlaveCallable(url, executableFile.getRemote()));
+			VirtualChannel channel = launcherProvider.getLauncher().getChannel();
+			if (channel == null) {
+				throw new RuntimeException("Could not access channel");
+			}
+			channel.call(new DownloadOnSlaveCallable(url, executableFile.getRemote()));
 			executableFile.chmod(0755);
 			return new ArgumentListBuilder(executableFile.getRemote());
 		} catch (InterruptedException e) {
