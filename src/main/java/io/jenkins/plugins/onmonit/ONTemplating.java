@@ -18,8 +18,8 @@ import org.thymeleaf.templateresolver.StringTemplateResolver;
 
 public class ONTemplating {
 
-    private static TemplateEngine defaultTemplateEngine = null;
-    private static TemplateEngine configTemplateEngine = null;
+    private static volatile TemplateEngine defaultTemplateEngine = null;
+    private static volatile TemplateEngine configTemplateEngine = null;
 
     TemplateEngine getDefaultTemplateEngine() {
         if (defaultTemplateEngine != null) {
