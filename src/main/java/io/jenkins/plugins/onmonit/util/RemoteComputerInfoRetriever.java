@@ -1,10 +1,8 @@
 package io.jenkins.plugins.onmonit.util;
 
-import hudson.remoting.Callable;
 import hudson.Launcher;
 import hudson.remoting.VirtualChannel;
 import jenkins.security.MasterToSlaveCallable;
-import org.jenkinsci.remoting.RoleChecker;
 
 import java.util.Locale;
 
