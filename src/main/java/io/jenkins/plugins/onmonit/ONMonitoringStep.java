@@ -13,6 +13,8 @@ import java.io.Serializable;
 
 public class ONMonitoringStep extends Step implements Serializable {
 
+	private static final long serialVersionUID = -8426358446277313998L;
+
 	/**
 	 * The port for the node-exporter to listen on.
 	 */
