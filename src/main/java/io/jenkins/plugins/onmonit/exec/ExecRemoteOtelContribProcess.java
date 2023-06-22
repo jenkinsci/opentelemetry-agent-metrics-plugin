@@ -82,7 +82,7 @@ public class ExecRemoteOtelContribProcess implements RemoteOtelContribProcess {
 				.start();
 		Instant timeout = Instant.now().plus(1, ChronoUnit.MINUTES);
 		while (proc.isAlive() && Instant.now().isBefore(timeout)) {
-			String output = baos.toString();
+			String output = baos.toString(StandardCharsets.UTF_8);
 			if (output.contains("Everything is ready.")) {
 				return;
 			}

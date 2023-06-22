@@ -11,6 +11,7 @@ import io.jenkins.plugins.onmonit.util.ComputerInfo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,7 +36,7 @@ public class ExecRemoteNodeExporterProcessFactory extends RemoteNodeExporterProc
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			String cmd = "win".equals(info.getOs()) ? "windows_exporter.exe" : "node_exporter";
 			int status = launcher.launch().cmds(cmd, "--version").quiet(true).stdout(baos).stderr(baos).start().joinWithTimeout(1, TimeUnit.MINUTES, listener);
-			String version = baos.toString();
+			String version = baos.toString(StandardCharsets.UTF_8);
 			/*
 			 * `node_exporter --version` should always return 0. For the moment we explicitly require version 1.5.0
 			 */

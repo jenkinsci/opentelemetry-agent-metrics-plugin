@@ -13,6 +13,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
@@ -75,7 +76,7 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 		Instant timeout = Instant.now().plus(1, ChronoUnit.MINUTES);
 		String strPort = Integer.toString(port);
 		while (proc.isAlive() && Instant.now().isBefore(timeout)) {
-			String output = baos.toString();
+			String output = baos.toString(StandardCharsets.UTF_8);
 			if (output.contains("Listening on") && output.contains(strPort)) {
 				return;
 			}

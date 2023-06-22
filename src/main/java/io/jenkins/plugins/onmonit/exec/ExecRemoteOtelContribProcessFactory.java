@@ -10,6 +10,7 @@ import io.jenkins.plugins.onmonit.util.ComputerInfo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,7 +35,7 @@ public class ExecRemoteOtelContribProcessFactory extends RemoteOtelContribProces
 		try {
 			String cmd = "win".equals(info.getOs()) ? "otelcol-contrib.exe" : "otelcol-contrib";
 			int status = launcher.launch().cmds(cmd, "--version").quiet(true).stdout(baos).stderr(baos).start().joinWithTimeout(1, TimeUnit.MINUTES, listener);
-			String version = baos.toString();
+			String version = baos.toString(StandardCharsets.UTF_8);
 			/*
 			 * `otelcol-contrib --version` should always return 0. For the moment we explicitly require version 0.70.0
 			 */
