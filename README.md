@@ -17,22 +17,22 @@ On the job page a link will be displayed to a Grafana dashboard displaying the m
 Usage
 =====
 
-## Building the plugin:
+## Building the plugin
 
 1. Clone the GitHub repository.
 2. Import the Maven project into your favorite IDE (IntelliJ, Eclipse, etc.).
 3. Build the plugin using the gradle script (`./gradlew build` or `gradlew.bat build` on Windows).
 4. The plugin is created at `build/libs/opentelemetry-agent-metrics.hpi`.
 
-## Installing the plugin:
+## Installing the plugin
 
-### Manual install:
+### Manual install
 
 1. Copy the `hpi` file to your Jenkins build server and place it in the Jenkins plugin directory (usually `/var/lib/jenkins/plugins`).
 2. Ensure that the plugin is owned by the `jenkins` user.
 3. Restart Jenkins.
 
-### Web UI install:
+### Web UI install
 
 1. Log into your Jenkins web UI.
 2. On the left-hand side of the screen, click “Manage Jenkins”.
@@ -43,7 +43,7 @@ Usage
 7. Check the “Restart Jenkins when installation is complete and no jobs are running” checkbox.
 8. Wait for Jenkins to restart.
 
-## First-time configuration instructions:
+## First-time configuration instructions
 
 1. Log into your Jenkins web UI.
 2. On the left-hand side of the screen, click “Manage Jenkins”
@@ -71,7 +71,7 @@ used for each stage running on a different node!
 When used in a pipeline involving multiple agents (eg. parallel stages), then `onMonit` needs to be explicitly
 used for each stage running on a different node!
 
-## Using the plugin in Jenkins job:
+## Using the plugin in Jenkins job
 
 Currently, it's only possible to use this plugin in Pipeline jobs and not in freestyle jobs.
 
