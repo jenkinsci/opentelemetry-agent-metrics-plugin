@@ -25,10 +25,10 @@ public class ExecUploadedOtelContribProcess extends ExecRemoteOtelContribProcess
 			executableFile.chmod(0755);
 			return new ArgumentListBuilder(executableFile.getRemote());
 		} catch (InterruptedException e) {
-			listener.fatalError("InterruptedException while writing otelcol-contrib executable", e);
+			listener.fatalError("InterruptedException while writing otelcol-contrib executable %s", e);
 			Thread.currentThread().interrupt();
 		} catch (IOException e) {
-			listener.fatalError("IOException while writing otelcol-contrib executable", e);
+			listener.fatalError("IOException while writing otelcol-contrib executable %s", e);
 		}
 		throw new RuntimeException("could not start otelcol-contrib");
 	}
