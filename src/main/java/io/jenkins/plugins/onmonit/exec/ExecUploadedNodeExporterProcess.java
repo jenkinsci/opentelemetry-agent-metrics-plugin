@@ -25,10 +25,10 @@ public class ExecUploadedNodeExporterProcess extends ExecRemoteNodeExporterProce
 			executableFile.chmod(0755);
 			return new ArgumentListBuilder(executableFile.getRemote());
 		} catch (InterruptedException e) {
-			listener.fatalError("InterruptedException while writing node_exporter executable", e);
+			listener.fatalError("InterruptedException while writing node_exporter executable %s", e);
 			Thread.currentThread().interrupt();
 		} catch (IOException e) {
-			listener.fatalError("IOException while writing node_exporter executable", e);
+			listener.fatalError("IOException while writing node_exporter executable %s", e);
 		}
 		throw new RuntimeException("could not start node_exporter");
 	}
