@@ -1,5 +1,9 @@
 package io.jenkins.plugins.onmonit;
 
+import hudson.FilePath;
+
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,10 +20,26 @@ public class ResourceUtil {
         }
     }
 
-    public static void writeOtelCollector(OutputStream w, String os, boolean isAmd64) throws IOException {
+    private static FilePath getResourceRoot() throws IOException, InterruptedException {
+        String home = System.getenv().get("JENKINS_HOME");
+        if (home == null)  {
+            throw new IOException("JENKINS_HOME not defined");
+        }
+        FilePath container = new FilePath(new File(home));
+        if (!container.isDirectory()) {
+            throw new IOException("JENKINS_HOME is not a directory");
+        }
+        container = container.child("opentelemetry-agent-metrics");
+        if (!container.isDirectory() || !container.exists()) {
+            throw new IOException("Plugin executables source \"" + container.getRemote() + "\" is not a directory");
+        }
+        return container;
+    }
+
+    public static void writeOtelCollector(OutputStream w, String os, boolean isAmd64) throws IOException, InterruptedException {
         String resourceName = getOtelFilename(os, isAmd64);
-        ClassLoader cl = ResourceUtil.class.getClassLoader();
-        try (InputStream stream = cl.getResourceAsStream("io/jenkins/plugins/onmonit/otelcollector/" + resourceName)) {
+        FilePath executable = getResourceRoot().child(resourceName);
+        try (InputStream stream = executable.read()) {
             stream.transferTo(w);
         }
     }
@@ -34,10 +54,10 @@ public class ResourceUtil {
         }
     }
 
-    public static void writeNodeExporter(OutputStream w, String os, boolean isAmd64) throws IOException {
+    public static void writeNodeExporter(OutputStream w, String os, boolean isAmd64) throws IOException, InterruptedException {
         String resourceName = getNodeExporterFilename(os, isAmd64);
-        ClassLoader cl = ResourceUtil.class.getClassLoader();
-        try (InputStream stream = cl.getResourceAsStream("io/jenkins/plugins/onmonit/nodeexporter/" + resourceName)) {
+        FilePath executable = getResourceRoot().child(resourceName);
+        try (InputStream stream = executable.read()) {
             stream.transferTo(w);
         }
     }
