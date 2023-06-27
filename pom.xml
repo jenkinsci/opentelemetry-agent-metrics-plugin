@@ -23,8 +23,6 @@
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     </properties>
     <name>Otel agent host metrics monitoring</name>
-    <description>Monitor and troubleshoot Jenkins agents with OpenTelemetry and Node exporter.
-        Monitor agent metrics with dashboards.</description>
     <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
 
     <dependencyManagement>
