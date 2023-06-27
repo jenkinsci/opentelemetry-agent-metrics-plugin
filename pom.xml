@@ -109,14 +109,6 @@
             </exclusions>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.jenkins-ci.tools</groupId>
-                <artifactId>maven-hpi-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 
     <licenses>
         <license>
