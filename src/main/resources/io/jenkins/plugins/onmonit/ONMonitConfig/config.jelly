@@ -7,6 +7,12 @@
     <f:entry field="downloadBaseUrl" title="${%Artifact download base URL}">
       <f:textbox />
     </f:entry>
+    <f:entry field="neDefaultAdditionalOptions" title="${%Node_exporter default additional options}">
+      <f:textbox />
+    </f:entry>
+    <f:entry field="ocDefaultAdditionalOptions" title="${%Otel-contrib default additional options}">
+      <f:textbox />
+    </f:entry>
     <f:entry field="otelConfigTemplate" title="${%OTEL configuration template}">
       <f:textarea />
     </f:entry>

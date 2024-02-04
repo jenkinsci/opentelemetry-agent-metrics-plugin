@@ -105,6 +105,18 @@ public final class ONMonitConfig extends GlobalConfiguration {
 	private String downloadBaseUrl;
 
 	/**
+	 * The default additional options for node_exporter.
+	 */
+	@CheckForNull
+	private String neDefaultAdditionalOptions;
+
+	/**
+	 * The default additional options for otel-contrib.
+	 */
+	@CheckForNull
+	private String ocDefaultAdditionalOptions;
+
+	/**
 	 * A custom template for the OTEL config file.
 	 */
 	@CheckForNull
@@ -183,6 +195,46 @@ public final class ONMonitConfig extends GlobalConfiguration {
 		}
 
 		return validateUrl(downloadBaseUrl);
+	}
+
+	/**
+	 * Get the default additional options for the node_exporter process.
+	 *
+	 * @return the default additional options
+	 */
+	public String getNeDefaultAdditionalOptions() {
+		return neDefaultAdditionalOptions == null ? "" : neDefaultAdditionalOptions;
+	}
+
+	/**
+	 * Set the default additional options for the node_exporter process.
+	 * If null, no additional options are used.
+	 *
+	 * @param defaultAdditionalOptions the additional options
+	 */
+	public void setNeDefaultAdditionalOptions(@CheckForNull String defaultAdditionalOptions) {
+		this.neDefaultAdditionalOptions = defaultAdditionalOptions != null ? defaultAdditionalOptions.trim() : null;
+		save();
+	}
+
+	/**
+	 * Get the default additional options for the otel-contrib process.
+	 *
+	 * @return the default additional options
+	 */
+	public String getOcDefaultAdditionalOptions() {
+		return ocDefaultAdditionalOptions == null ? "" : ocDefaultAdditionalOptions;
+	}
+
+	/**
+	 * Set the default additional options for the otel-contrib process.
+	 * If null, no additional options are used.
+	 *
+	 * @param defaultAdditionalOptions the additional options
+	 */
+	public void setOcDefaultAdditionalOptions(@CheckForNull String defaultAdditionalOptions) {
+		this.ocDefaultAdditionalOptions = defaultAdditionalOptions != null ? defaultAdditionalOptions.trim() : null;
+		save();
 	}
 
 	/**
