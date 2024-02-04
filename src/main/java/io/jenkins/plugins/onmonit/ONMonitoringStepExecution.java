@@ -161,7 +161,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			if (factory.isSupported(launcher, listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					nodeExporter = factory.create(this, listener, info, tempDir(workspace), neCookie, neAdditionalOptions, debug);
+					nodeExporter = factory.create(this, listener, info, tempDir(workspace), neCookie, getEffectiveNeAdditionalOptions(), debug);
 					break;
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
@@ -173,7 +173,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			if (factory.isSupported(launcher, listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					otelContrib = factory.create(this, listener, info, tempDir(workspace), ocCookie, ocAdditionalOptions, debug);
+					otelContrib = factory.create(this, listener, info, tempDir(workspace), ocCookie, getEffectiveOcAdditionalOptions(), debug);
 					break;
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
@@ -224,6 +224,14 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		String config = templating.renderTemplate(templating.getJobContext(build, build.getEnvironment(listener), usedPort.getPort()));
 		otelContrib.start(listener, config);
 		listener.getLogger().println(Messages.ONMonitoringStep_Started());
+	}
+
+	private String getEffectiveNeAdditionalOptions() {
+		return StringUtils.isNotBlank(neAdditionalOptions) ? neAdditionalOptions : ONMonitConfig.get().getNeDefaultAdditionalOptions();
+	}
+
+	private String getEffectiveOcAdditionalOptions() {
+		return StringUtils.isNotBlank(ocAdditionalOptions) ? ocAdditionalOptions : ONMonitConfig.get().getOcDefaultAdditionalOptions();
 	}
 
 	private void addActionOnce() throws IOException, InterruptedException {
