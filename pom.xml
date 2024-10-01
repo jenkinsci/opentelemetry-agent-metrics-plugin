@@ -20,7 +20,7 @@
         <revision>1.2.3</revision>
         <changelist>-SNAPSHOT</changelist>
         <jenkins.version>2.387.3</jenkins.version>
-        <error-prone.version>2.31.0</error-prone.version>
+        <error-prone.version>2.33.0</error-prone.version>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     </properties>
     <name>Otel agent host metrics monitoring</name>
