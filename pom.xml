@@ -19,7 +19,7 @@
     <properties>
         <revision>1.2.3</revision>
         <changelist>-SNAPSHOT</changelist>
-        <jenkins.version>2.387.3</jenkins.version>
+        <jenkins.version>2.479</jenkins.version>
         <error-prone.version>2.35.1</error-prone.version>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     </properties>
