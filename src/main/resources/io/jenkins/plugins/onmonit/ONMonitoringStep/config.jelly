@@ -9,6 +9,14 @@
         <f:checkbox default="false" />
     </f:entry>
 
+    <f:entry field="launchCollector" title="${%Launch collector processes}">
+        <f:checkbox default="true" />
+    </f:entry>
+
+    <f:entry field="dashboardUrl" title="${%Override dashboard URL}">
+        <f:textbox />
+    </f:entry>
+
     <f:entry field="neAdditionalOptions" title="${%Node_exporter additional options}">
         <f:textbox />
     </f:entry>
