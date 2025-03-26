@@ -25,25 +25,28 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 	private final String jobGroup;
 	private final String jobName;
 	private final String jobId;
+	private final String dashboardUrl;
 	private transient Run run;
 	private boolean isProjectAction;
 
-	public MonitoringAction(String jobGroup, String jobName, String jobId) {
+	public MonitoringAction(String jobGroup, String jobName, String jobId, String dashboardUrl) {
 		this.jobGroup = jobGroup;
 		this.jobName = jobName;
 		this.jobId = jobId;
+		this.dashboardUrl = dashboardUrl;
 	}
 
 	public MonitoringAction(MonitoringAction original, boolean isProjectAction) {
 		this.jobGroup = original.jobGroup;
 		this.jobName = original.jobName;
 		this.jobId = original.jobId;
+		this.dashboardUrl = original.dashboardUrl;
 		this.run = original.run;
 		this.isProjectAction = isProjectAction;
 	}
 
-	public MonitoringAction(ONTemplating.UrlContext context) {
-		this(context.getJobGroup(), context.getJobName(), context.getJobId());
+	public MonitoringAction(ONTemplating.UrlContext context, String dashboardUrl) {
+		this(context.getJobGroup(), context.getJobName(), context.getJobId(), dashboardUrl);
 	}
 
 	@Override
@@ -87,13 +90,17 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 
 	@NonNull
 	public List<MonitoringDashboardLink> getLinks() {
-		String dashboardUrlTemplate = ONMonitConfig.get().getGrafanaDashboard();
+		String dashboardUrlTemplate = dashboardUrl;
 
-		if (dashboardUrlTemplate.isEmpty()) {
-			return Collections.singletonList(new MonitoringDashboardLink(
-					"Please define an ONMonit dashboard URL in Jenkins configuration",
-					Jenkins.get().getRootUrl() + "/configure",
-					"icon-gear2"));
+		if (null == dashboardUrl || dashboardUrl.isEmpty()) {
+			dashboardUrlTemplate = ONMonitConfig.get().getGrafanaDashboard();
+
+			if (dashboardUrlTemplate.isEmpty()) {
+				return Collections.singletonList(new MonitoringDashboardLink(
+						"Please define an ONMonit dashboard URL in Jenkins configuration",
+						Jenkins.get().getRootUrl() + "/configure",
+						"icon-gear2"));
+			}
 		}
 		Map<String, String> binding = new HashMap<>();
 		binding.put("jobGroup", this.jobGroup);
@@ -118,6 +125,7 @@ public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.Las
 				"jobGroup='" + jobGroup + '\'' +
 				", jobName='" + jobName + '\'' +
 				", jobId='" + jobId + '\'' +
+				", dashboardUrl='" + dashboardUrl + '\'' +
 				'}';
 	}
 

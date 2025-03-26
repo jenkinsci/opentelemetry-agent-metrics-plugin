@@ -35,6 +35,10 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 
 	private boolean debug;
 
+	private boolean launchCollector;
+
+	private String dashboardUrl;
+
 	private String neAdditionalOptions;
 
 	private String ocAdditionalOptions;
@@ -57,10 +61,12 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 	 */
 	private transient RemoteOtelContribProcess otelContrib = null;
 
-	ONMonitoringStepExecution(StepContext context, int port, boolean debug, String neAdditionalOptions, String ocAdditionalOptions) {
+	ONMonitoringStepExecution(StepContext context, int port, boolean debug, boolean launchCollector, String dashboardUrl, String neAdditionalOptions, String ocAdditionalOptions) {
 		super(context);
 		this.port = port;
 		this.debug = debug;
+		this.launchCollector = launchCollector;
+		this.dashboardUrl = dashboardUrl;
 		this.neAdditionalOptions = neAdditionalOptions;
 		this.ocAdditionalOptions = ocAdditionalOptions;
 		this.neCookie = UUID.randomUUID().toString();
@@ -146,9 +152,13 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 	 * @throws IOException
 	 */
 	private void initRemoteProcesses() throws IOException, InterruptedException {
+		TaskListener listener = getListener();
+		if (!launchCollector) {
+			listener.getLogger().println("[on-monit] Skipping launch of node_exporter and otel-contrib processes.");
+			return;
+		}
 
 		// TODO UI could be streamlined by unifying implementation (trying remote and fallback to upload)
-		TaskListener listener = getListener();
 		Run<?, ?> build = getBuild();
 		FilePath workspace = getWorkspace();
 		Launcher launcher = getLauncher();
@@ -239,13 +249,16 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		Run<?, ?> build = getBuild();
 		var environment = build.getEnvironment(listener);
 		ONTemplating.UrlContext urlContext = templating.getUrlContext(environment);
-		build.addOrReplaceAction(new MonitoringAction(urlContext));
+		build.addOrReplaceAction(new MonitoringAction(urlContext, dashboardUrl));
 	}
 
 	/**
 	 * Shuts down the current remote processes.
 	 */
 	private void cleanUp() throws Exception {
+		if (!launchCollector) {
+			return;
+		}
 		TaskListener listener = getContext().get(TaskListener.class);
 		if (nodeExporter != null) {
 			nodeExporter.stop(listener);

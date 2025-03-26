@@ -26,6 +26,16 @@ public class ONMonitoringStep extends Step implements Serializable {
 	private boolean debug = false;
 
 	/**
+	 * Whether to launch node_exporter + otelcol-contrib processes.
+	 */
+	private boolean launchCollector = true;
+
+	/**
+	 * Override the global dashboard URL.
+	 */
+	private String dashboardUrl = null;
+
+	/**
 	 * Any additional options to set for the node_exporter process.
 	 */
 	private String neAdditionalOptions = "";
@@ -41,7 +51,7 @@ public class ONMonitoringStep extends Step implements Serializable {
 
 	@Override
 	public StepExecution start(StepContext context) throws Exception {
-		return new ONMonitoringStepExecution(context, port, debug, neAdditionalOptions, ocAdditionalOptions);
+		return new ONMonitoringStepExecution(context, port, debug, launchCollector, dashboardUrl, neAdditionalOptions, ocAdditionalOptions);
 	}
 
 	@DataBoundSetter
@@ -52,6 +62,16 @@ public class ONMonitoringStep extends Step implements Serializable {
 	@DataBoundSetter
 	public void setDebug(final boolean debug) {
 		this.debug = debug;
+	}
+
+	@DataBoundSetter
+	public void setLaunchCollector(final boolean launchCollector) {
+		this.launchCollector = launchCollector;
+	}
+
+	@DataBoundSetter
+	public void setDashboardUrl(final String dashboardUrl) {
+		this.dashboardUrl = dashboardUrl;
 	}
 
 	@DataBoundSetter
@@ -70,6 +90,14 @@ public class ONMonitoringStep extends Step implements Serializable {
 
 	public boolean isDebug() {
 		return debug;
+	}
+
+	public boolean isLaunchCollector() {
+		return launchCollector;
+	}
+
+	public String getDashboardUrl() {
+		return dashboardUrl;
 	}
 
 	public String getNeAdditionalOptions() {

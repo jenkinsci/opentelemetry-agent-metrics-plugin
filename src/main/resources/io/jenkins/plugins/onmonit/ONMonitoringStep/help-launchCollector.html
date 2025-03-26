@@ -1,0 +1,6 @@
+<div>A boolean flag (default: true). When true, the node_exporter and otel-contrib processes are launched.
+	When false, these processes are not launched and the metrics are expected to be gathered outside the
+	control of this plugin (eg. by scraping kubernetes metrics) and all other fields with the exception of
+	<code>Override dashboard URL</code> will be ignored.
+	Check the <a href="https://plugins.jenkins.io/opentelemetry-agent-metrics/">opentelemetry-agent-metrics</a> plugin documentation for guidance
+	how to set up an OpenTelemetry pipeline linking metrics to a specific build and agent.</div>

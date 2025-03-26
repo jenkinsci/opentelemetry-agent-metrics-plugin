@@ -22,6 +22,21 @@
         to the Job console logs. Useful for troubleshooting node_exporter + otel-contrib.
     </li>
     <li>
+        <code>Launch collector processes</code> <i>(optional, default: true)</i>:
+        A boolean flag. When true, the node_exporter and otel-contrib processes are launched.
+        When false, these processes are not launched and the metrics are expected to be gathered outside the
+        control of this plugin (eg. by scraping kubernetes metrics) and all other fields with the exception of
+        <code>Override dashboard URL</code> will be ignored.
+        Check the <a href="https://plugins.jenkins.io/opentelemetry-agent-metrics/">opentelemetry-agent-metrics</a> plugin documentation for guidance
+        how to set up an OpenTelemetry pipeline linking metrics to a specific build and agent.
+    </li>
+    <li>
+        <code>Override dashboard URL</code> <i>(optional)</i>:
+        When set, this will override the global <code>Grafana dashboard URL</code> setting for this onMonit step.
+        a link to this Grafana dashboard is added to the job status page.
+        Parameters are set to select the given job and also set the time range to fit the job.
+    </li>
+    <li>
         <code>Node_exporter additional options</code> <i>(optional)</i>:
         Any additional options to pass to the node_exporter process execution.
         This can be used to enable/disable specific collectors.
