@@ -1,0 +1,118 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: ci-collector
+spec:
+  mode: deployment
+  config:
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+    connectors:
+      count:
+        spans:
+          ci.podspan.info:
+            description: A span linking host/pod with CI.
+            attributes:
+            - key: jenkins.url
+            # CICD SemConv is not yet stable. opentelemetry-plugin does not yet use these attributes out-of-the-box.
+            # Until they are available pipelines can use
+            # withSpanAttributes([spanAttribute(key: 'cicd.pipeline.name', value: "${env.JOB_NAME}", target: 'PIPELINE_ROOT_SPAN'), ... ])
+            # setSpanAttributes([spanAttribute(key: 'vcs.ref.head.revision', value: "${env.GIT_COMMIT}", target: 'PIPELINE_ROOT_SPAN')])
+            - key: cicd.pipeline.group
+              default_value: '-'
+            - key: cicd.pipeline.name
+              default_value: '-'
+            - key: cicd.pipeline.run.id
+              default_value: '-'
+            - key: cicd.pipeline.run.url.full
+              default_value: '-'
+            - key: vcs.ref.head.revision
+              default_value: '-'
+            - key: host.id
+              default_value: '-'
+            - key: host.name
+              default_value: '-'
+            - key: host.ip
+              default_value: '-'
+            - key: jenkins.computer.name
+              default_value: '-'
+            - key: k8s.namespace.name
+              default_value: '-'
+            - key: k8s.pod.name
+              default_value: '-'
+            - key: k8s.pod.ip
+              default_value: '-'
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+      batch: {}
+
+      # Processors required for detecting whether a span comes from a k8s pod
+      attributes/k8sIP:
+        actions:
+        # The opentelemetry-plugin sets the host.ip span attribute, but k8sattributes only reads the pod IP from k8s.pod.ip resource attribute
+        # -> copy the attribute
+        - key: k8s.pod.ip
+          action: insert
+          from_attribute: host.ip
+      groupbyattrs: # Ensure k8s.pod.ip is available as a resource attribute because k8sattributes works on resource attributes not on span attributes
+        keys:
+          - k8s.pod.ip
+      k8sattributes:
+        pod_association:
+        - sources:
+            # This rule associates all resources containing the 'k8s.pod.ip' attribute with the matching pods. If this attribute is not present in the resource, this rule will not be able to find the matching pod.
+            - from: resource_attribute
+              name: k8s.pod.ip
+
+        # opentelemetry-plugin always sends spans from the Jenkins controller so reading the k8s info from the TCP connection
+        # does not help unless the controller itself is running on k8s and then only for getting the controller k8s pod info.
+        #- sources:
+        #    # This rule will use the IP from the incoming connection from which the resource is received, and find the matching pod, based on the 'pod.status.podIP' of the observed pods
+        #    - from: connection
+      transform:
+        # Convert all resource attributes (including any newly detected k8s attributes) to span attributes because the count connector only works on span attributes.
+        trace_statements:
+        - context: span
+          statements:
+          - 'merge_maps(attributes, resource.attributes, "insert")'
+
+    exporters:
+      debug: {}
+        #verbosity: detailed
+      prometheus:
+        endpoint: "0.0.0.0:8890"
+        metric_expiration: 10m
+
+    service:
+      extensions:
+      - health_check
+      pipelines:
+        traces: # used to create an info metric linking incoming CI spans to any host/k8s metrics
+          receivers:
+          - otlp
+          processors:
+          - memory_limiter
+          - attributes/k8sIP
+          - groupbyattrs
+          - k8sattributes
+          - transform
+          exporters:
+          - count
+        metrics: # expose the CI info metric
+          receivers:
+          - count
+          exporters:
+          - debug
+          - prometheus
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
