@@ -137,6 +137,33 @@ those of the selected multibranch pipeline.
   This is useful for builds involving multiple agents (eg. using parallel stages).
   The `onMonit` step needs to be explicitly used for each stage running on a different node.
 
+## Agents running on K8s
+
+With `onMonit` it's possible to monitor CPU and memory metrics of agents running on K8s provisioned by the [kubernetes-plugin](https://github.com/jenkinsci/kubernetes-plugin/).
+
+Since the `node_exporter` and `otelcol-contrib` processes cannot accurately monitor pod metrics from inside the container
+we require that pod metrics are gathered independently of the `opentelemetry-agent-metrics-plugin`
+(ie. by scraping the metrics endpoint of the k8s api and using kube-state-metrics).
+Launching `node_exporter` and `otelcol-contrib` processes must be disabled in the `onMonit` step by using the parameter
+`launchCollector: false`.
+
+The [ci-pod-metrics-dashboard.json](ci-pod-metrics-dashboard.json) dashboard allows filtering for the pods used as agents
+by filtering on a `ci_podspan_info_total` metric produced on the basis of the spans emitted by the [opentelemetry-plugin](https://github.com/jenkinsci/opentelemetry-plugin/)
+using an opentelemetry-collector pipeline (eg. using the [collector.yaml](collector.yaml) config).
+
+The dashboard json can be imported into Grafana and then the dashboard URL configured either in the global Jenkins onMonit config
+or by using the following attributes in the onMonit step:
+
+* `dashboardUrl: https://.../path/to/your/dashboard?var-jobgroup={jobGroup}&var-job={jobName}&var-jobid={jobId}&from={startTime}&to={endTime}`
+
+Complete step example:
+```
+onMonit(
+  launchCollector: false,
+  dashboardUrl: 'https://.../path/to/your/dashboard?var-jobgroup={jobGroup}&var-job={jobName}&var-jobid={jobId}&from={startTime}&to={endTime}'
+)
+```
+
 ## Hardware requirements
 
 The monitoring processes usually use 2MB in memory and 200 MB in disk size.
