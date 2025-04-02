@@ -20,7 +20,7 @@
         <revision>1.4.1</revision>
         <changelist>-SNAPSHOT</changelist>
         <jenkins.version>2.479</jenkins.version>
-        <error-prone.version>2.36.0</error-prone.version>
+        <error-prone.version>2.37.0</error-prone.version>
         <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     </properties>
     <name>Otel agent host metrics monitoring</name>
@@ -94,7 +94,7 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
-            <version>1.20.5</version>
+            <version>1.20.6</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
