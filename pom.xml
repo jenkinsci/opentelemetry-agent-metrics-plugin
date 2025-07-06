@@ -14,10 +14,10 @@
     </parent>
     <groupId>io.jenkins.plugins</groupId>
     <artifactId>opentelemetry-agent-metrics</artifactId>
-    <version>1.4.2</version>
+    <version>${revision}${changelist}</version>
     <packaging>hpi</packaging>
     <properties>
-        <revision>1.4.2</revision>
+        <revision>1.4.3</revision>
         <changelist>-SNAPSHOT</changelist>
         <jenkins.version>2.479</jenkins.version>
         <error-prone.version>2.39.0</error-prone.version>
