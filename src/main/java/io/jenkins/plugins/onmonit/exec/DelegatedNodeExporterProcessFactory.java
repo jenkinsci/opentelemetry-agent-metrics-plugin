@@ -12,8 +12,6 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +25,7 @@ public class DelegatedNodeExporterProcessFactory extends RemoteNodeExporterProce
 	private static final List<RemoteNodeExporterProcessFactory> delegates;
 
 	static {
-		List<RemoteNodeExporterProcessFactory> d = new ArrayList<>();
-		d.add(new ExecRemoteNodeExporterProcessFactory());
-		d.add(new ExecDownloadedNodeExporterProcessFactory());
-		d.add(new ExecUploadedNodeExporterProcessFactory());
-		delegates = Collections.unmodifiableList(d);
+        delegates = List.of(new ExecRemoteNodeExporterProcessFactory(), new ExecDownloadedNodeExporterProcessFactory(), new ExecUploadedNodeExporterProcessFactory());
 	}
 
 	/**

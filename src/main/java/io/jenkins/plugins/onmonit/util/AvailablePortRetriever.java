@@ -5,6 +5,7 @@ import hudson.remoting.VirtualChannel;
 import jenkins.security.MasterToSlaveCallable;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.net.ServerSocket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +40,7 @@ public class AvailablePortRetriever {
 
 	public static class AvailablePortCallable extends MasterToSlaveCallable<AvailablePort, Throwable> {
 
+		@Serial
 		private static final long serialVersionUID = -4472949825725190221L;
 
 		private int basePort;

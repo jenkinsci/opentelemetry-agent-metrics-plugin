@@ -1,10 +1,12 @@
 package io.jenkins.plugins.onmonit.util;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 public class ComputerInfo implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+	@Serial
+    private static final long serialVersionUID = 1L;
 
 	private String os;
 	private boolean isAmd64;
