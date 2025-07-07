@@ -7,6 +7,7 @@ import jenkins.model.Jenkins;
 import jenkins.model.RunAction2;
 import jenkins.tasks.SimpleBuildStep;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 public class MonitoringAction implements Action, RunAction2, SimpleBuildStep.LastBuildAction, Serializable {
 	private static final Logger LOGGER = Logger.getLogger(MonitoringAction.class.getName());
+	@Serial
 	private static final long serialVersionUID = -7093396061479813632L;
 	private static final ONTemplating templating = new ONTemplating();
 

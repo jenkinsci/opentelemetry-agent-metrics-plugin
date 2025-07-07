@@ -6,7 +6,6 @@ import hudson.remoting.VirtualChannel;
 import hudson.util.ArgumentListBuilder;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.ONMonitConfig;
-import io.jenkins.plugins.onmonit.RemoteProcess;
 import io.jenkins.plugins.onmonit.ResourceUtil;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import io.jenkins.plugins.onmonit.util.DownloadOnSlaveCallable;

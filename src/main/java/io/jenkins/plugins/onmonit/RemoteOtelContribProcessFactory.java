@@ -1,6 +1,5 @@
 package io.jenkins.plugins.onmonit;
 
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 import hudson.ExtensionPoint;
 import hudson.FilePath;
 import hudson.Launcher;
