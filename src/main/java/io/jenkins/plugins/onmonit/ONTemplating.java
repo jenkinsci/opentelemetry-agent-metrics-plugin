@@ -5,7 +5,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.Set;
 
 import hudson.EnvVars;
 import hudson.model.Run;
@@ -80,7 +79,7 @@ public class ONTemplating {
 
     private String trimWithDefault(String original, String suffix, String _default) {
         String trimmed = trimSuffix(original, suffix);
-        return trimmed.length()==0 ? _default : trimSuffix(trimmed, "/");
+        return trimmed.isEmpty() ? _default : trimSuffix(trimmed, "/");
     }
 
     public org.thymeleaf.context.Context getJobContext(final Run<?, ?> run, EnvVars environment, int port) {

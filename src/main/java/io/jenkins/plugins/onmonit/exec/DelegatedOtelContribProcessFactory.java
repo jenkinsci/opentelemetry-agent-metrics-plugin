@@ -12,8 +12,6 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +25,7 @@ public class DelegatedOtelContribProcessFactory extends RemoteOtelContribProcess
 	private static final List<RemoteOtelContribProcessFactory> delegates;
 
 	static {
-		List<RemoteOtelContribProcessFactory> d = new ArrayList<>();
-		d.add(new ExecRemoteOtelContribProcessFactory());
-		d.add(new ExecDownloadedOtelContribProcessFactory());
-		d.add(new ExecUploadedOtelContribProcessFactory());
-		delegates = Collections.unmodifiableList(d);
+        delegates = List.of(new ExecRemoteOtelContribProcessFactory(), new ExecDownloadedOtelContribProcessFactory(), new ExecUploadedOtelContribProcessFactory());
 	}
 
 	/**
