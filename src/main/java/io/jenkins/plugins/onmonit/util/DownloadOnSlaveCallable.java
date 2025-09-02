@@ -3,6 +3,7 @@ package io.jenkins.plugins.onmonit.util;
 import jenkins.security.MasterToSlaveCallable;
 
 import java.io.BufferedInputStream;
+import java.io.Serial;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -10,7 +11,8 @@ import java.nio.file.StandardCopyOption;
 
 public class DownloadOnSlaveCallable extends MasterToSlaveCallable<Void, Throwable> {
 
-	private static final long serialVersionUID = 1031664907899192911L;
+	@Serial
+    private static final long serialVersionUID = 1031664907899192911L;
 
 	private String url;
 

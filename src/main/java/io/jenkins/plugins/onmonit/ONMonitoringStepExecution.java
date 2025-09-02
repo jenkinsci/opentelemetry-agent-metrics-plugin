@@ -20,6 +20,7 @@ import hudson.slaves.WorkspaceList;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serial;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -29,7 +30,8 @@ import java.util.concurrent.Semaphore;
 
 public class ONMonitoringStepExecution extends StepExecution implements LauncherProvider {
 
-	private static final long serialVersionUID = 1L;
+	@Serial
+    private static final long serialVersionUID = 1L;
 
 	private int port;
 
@@ -122,7 +124,8 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 
 	private static class Callback extends BodyExecutionCallback.TailCall {
 
-		private static final long serialVersionUID = 1L;
+		@Serial
+        private static final long serialVersionUID = 1L;
 
 		private final ONMonitoringStepExecution execution;
 
