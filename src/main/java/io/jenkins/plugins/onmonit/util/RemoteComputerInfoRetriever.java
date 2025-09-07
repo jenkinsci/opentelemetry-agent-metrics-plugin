@@ -25,7 +25,7 @@ public class RemoteComputerInfoRetriever {
 
 	public static class InfoCallable extends MasterToSlaveCallable<ComputerInfo, Throwable> {
 		@Serial
-        private static final long serialVersionUID = 5982559307031083756L;
+		private static final long serialVersionUID = 5982559307031083756L;
 
 		@Override
 		public ComputerInfo call() throws Throwable {

@@ -25,7 +25,7 @@ public class DelegatedNodeExporterProcessFactory extends RemoteNodeExporterProce
 	private static final List<RemoteNodeExporterProcessFactory> delegates;
 
 	static {
-        delegates = List.of(new ExecRemoteNodeExporterProcessFactory(), new ExecDownloadedNodeExporterProcessFactory(), new ExecUploadedNodeExporterProcessFactory());
+		delegates = List.of(new ExecRemoteNodeExporterProcessFactory(), new ExecDownloadedNodeExporterProcessFactory(), new ExecUploadedNodeExporterProcessFactory());
 	}
 
 	/**

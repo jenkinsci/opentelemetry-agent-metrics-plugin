@@ -25,7 +25,7 @@ public class DelegatedOtelContribProcessFactory extends RemoteOtelContribProcess
 	private static final List<RemoteOtelContribProcessFactory> delegates;
 
 	static {
-        delegates = List.of(new ExecRemoteOtelContribProcessFactory(), new ExecDownloadedOtelContribProcessFactory(), new ExecUploadedOtelContribProcessFactory());
+		delegates = List.of(new ExecRemoteOtelContribProcessFactory(), new ExecDownloadedOtelContribProcessFactory(), new ExecUploadedOtelContribProcessFactory());
 	}
 
 	/**

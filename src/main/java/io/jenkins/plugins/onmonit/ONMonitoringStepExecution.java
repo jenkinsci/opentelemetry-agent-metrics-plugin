@@ -31,7 +31,7 @@ import java.util.concurrent.Semaphore;
 public class ONMonitoringStepExecution extends StepExecution implements LauncherProvider {
 
 	@Serial
-    private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
 
 	private int port;
 
@@ -125,7 +125,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 	private static class Callback extends BodyExecutionCallback.TailCall {
 
 		@Serial
-        private static final long serialVersionUID = 1L;
+		private static final long serialVersionUID = 1L;
 
 		private final ONMonitoringStepExecution execution;
 

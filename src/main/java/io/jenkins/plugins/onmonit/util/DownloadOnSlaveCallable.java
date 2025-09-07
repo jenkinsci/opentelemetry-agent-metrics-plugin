@@ -12,7 +12,7 @@ import java.nio.file.StandardCopyOption;
 public class DownloadOnSlaveCallable extends MasterToSlaveCallable<Void, Throwable> {
 
 	@Serial
-    private static final long serialVersionUID = 1031664907899192911L;
+	private static final long serialVersionUID = 1031664907899192911L;
 
 	private String url;
 
