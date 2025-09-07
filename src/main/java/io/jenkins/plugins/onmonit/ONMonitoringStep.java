@@ -9,10 +9,12 @@ import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 public class ONMonitoringStep extends Step implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = -8426358446277313998L;
 
 	/**

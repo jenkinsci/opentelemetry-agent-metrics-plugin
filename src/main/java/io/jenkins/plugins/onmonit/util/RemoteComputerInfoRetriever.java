@@ -4,6 +4,7 @@ import hudson.Launcher;
 import hudson.remoting.VirtualChannel;
 import jenkins.security.MasterToSlaveCallable;
 
+import java.io.Serial;
 import java.util.Locale;
 
 public class RemoteComputerInfoRetriever {
@@ -23,6 +24,7 @@ public class RemoteComputerInfoRetriever {
 	}
 
 	public static class InfoCallable extends MasterToSlaveCallable<ComputerInfo, Throwable> {
+		@Serial
 		private static final long serialVersionUID = 5982559307031083756L;
 
 		@Override
