@@ -38,9 +38,9 @@ public class ExecRemoteNodeExporterProcessFactory extends RemoteNodeExporterProc
 			int status = launcher.launch().cmds(cmd, "--version").quiet(true).stdout(baos).stderr(baos).start().joinWithTimeout(1, TimeUnit.MINUTES, listener);
 			String version = baos.toString(StandardCharsets.UTF_8);
 			/*
-			 * `node_exporter --version` should always return 0. For the moment we explicitly require version 1.5.0
+			 * `node_exporter --version` should always return 0. For the moment we explicitly require version 1.9.1
 			 */
-			String expectedVersion = "win".equals(info.getOs()) ? "version 0.31.3" : "version 1.5.0";
+			String expectedVersion = "win".equals(info.getOs()) ? "version 0.31.3" : "version 1.9.1";
 			if (status == 0 && version.contains(expectedVersion)) {
 				return true;
 			}
