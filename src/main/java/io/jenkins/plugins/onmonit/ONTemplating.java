@@ -97,7 +97,13 @@ public class ONTemplating {
         context.setVariable("jobName", jobName);
         context.setVariable("jobGroupName", trimWithDefault(jobName, jobBaseName, "-"));
         context.setVariable("otlpEndpoint", toOtelCompatibleUrl(otlpEndpoint));
-        context.setVariable("otlpAuthHeader", otlpHeader.substring(otlpHeader.indexOf("=") + 1));
+        if (otlpHeader == null || otlpHeader.isEmpty()) {
+            context.setVariable("otlpAuthHeaders", "");
+        } else {
+            var otlpAuthHeader = otlpHeader.substring(otlpHeader.indexOf("=") + 1);
+            context.setVariable("otlpAuthHeaders", "headers:\n" +
+                    "      Authorization: \"" + otlpAuthHeader + "\"" );
+        }
         return context;
     }
 
