@@ -45,7 +45,7 @@ public class ResourceUtil {
 
     public static String getNodeExporterFilename(String os, boolean isAmd64) {
         if ("win".equals(os)) {
-            return "windows_exporter-0.22.0-amd64.exe";
+            return "windows_exporter-0.31.3-amd64.exe";
         } else if ("darwin".equals(os)) {
             return "node_exporter-1.5.0.darwin-" + (isAmd64 ? "amd64" : "arm64");
         } else {
