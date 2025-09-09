@@ -11,8 +11,7 @@ exporters:
     loglevel: debug
   otlp:
     endpoint: "[[${otlpEndpoint}]]"
-    headers:
-      Authorization: "[[${otlpAuthHeader}]]"
+    [[${otlpAuthHeaders}]]
 
 processors:
   resourcedetection:
