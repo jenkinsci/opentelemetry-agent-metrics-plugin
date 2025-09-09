@@ -58,6 +58,16 @@ Follow https://www.jenkins.io/doc/book/installing/offline/ on how to install thi
    cf [Setup the executable source](#Setup-the-executable-source)
 7. Click “Save”.
 
+### Configuration of OpenTelemetry destination
+
+The onMonit step requires the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable to be available when it's executed.
+This variable specifies the target to which agent metrics are sent in the otlp grpc protocol.
+
+While this env var may be specified manually the easiest way is to use the [opentelemetry-plugin](https://github.com/jenkinsci/opentelemetry-plugin/),
+configure the _OTLP Endpoint_ setting and enable the _Export OpenTelemetry configuration as environment variables_ setting.
+
+Optionally the Authentication header may be configured and passed to onMonit via the `OTEL_EXPORTER_OTLP_HEADERS` environment variable.
+
 ### Setup the executable source
 
 In order for this plugin to work 2 executables are run on the agents.
