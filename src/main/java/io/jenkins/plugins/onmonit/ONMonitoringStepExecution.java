@@ -235,6 +235,9 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			throw new NullPointerException("build is null");
 		}
 		String config = templating.renderTemplate(templating.getJobContext(build, build.getEnvironment(listener), usedPort.getPort()));
+		if (debug) {
+			listener.getLogger().println("[on-monit] otel-collector config:\n" + config);
+		}
 		otelContrib.start(listener, config);
 		listener.getLogger().println(Messages.ONMonitoringStep_Started());
 	}
