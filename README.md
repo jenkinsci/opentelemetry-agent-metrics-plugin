@@ -98,6 +98,23 @@ When running build agents on Linux amd64 and Mac Os arm64, then either
   * `$JENKINS_HOME/opentelemetry-agent-metrics/otelcol-contrib_0.70.0_darwin_arm64`
   * `$JENKINS_HOME/opentelemetry-agent-metrics/otelcol-contrib_0.70.0_linux_amd64`
 
+### (Optional) Using insecure http protocol
+
+When used inside a trusted network the insecure http protocol may be used to transmit the agent metrics.
+
+Warning: do not use this when sending the telemetry over the internet as it may expose sensitive data.
+
+By default, the opentelemetry-collector prevents use of insecure connections.
+This does not impact the success of builds using onMonit. It's just that no telemetry will be sent.
+When using the `debug: true`, a log message like the following could be included in the build logs:
+```
+info	exporterhelper/queued_retry.go:426	Exporting failed. Will retry the request after interval.	{"kind": "exporter", "data_type": "metrics", "name": "otlp", "error": "rpc error: code = Unavailable desc = connection error: desc = \"transport: authentication handshake failed: tls: first record does not look like a TLS handshake\"", "interval": "5.84280802s"}
+```
+
+To override the default opentelemetry-collector behavior and allow insecure connections either use
+the following argument in the onMonit step `ocAdditionalOptions: "--set=exporters.otlp.tls.insecure=true"`
+or set the global setting **Otel-contrib default additional options** to `--set=exporters.otlp.tls.insecure=true`.
+
 ## Using the plugin in Jenkins Pipeline
 
 1. Go to Job > Pipeline Syntax > Snippet Generator
