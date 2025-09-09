@@ -63,10 +63,10 @@ Follow https://www.jenkins.io/doc/book/installing/offline/ on how to install thi
 The onMonit step requires the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable to be available when it's executed.
 This variable specifies the target to which agent metrics are sent in the otlp grpc protocol.
 
-While this env var may be specified manually the easiest way is to use the [opentelemetry-plugin](https://github.com/jenkinsci/opentelemetry-plugin/),
+While this env var may be specified manually, the easiest way is to use the [opentelemetry-plugin](https://github.com/jenkinsci/opentelemetry-plugin/):
 configure the _OTLP Endpoint_ setting and enable the _Export OpenTelemetry configuration as environment variables_ setting.
 
-Optionally the Authentication header may be configured and passed to onMonit via the `OTEL_EXPORTER_OTLP_HEADERS` environment variable.
+Optionally the Authentication header may be configured and passed to onMonit via the `OTEL_EXPORTER_OTLP_HEADERS` environment variable (also configurable in the opentelemetry-plugin).
 
 ### Setup the executable source
 
@@ -112,14 +112,12 @@ When running build agents on Linux amd64 and Mac Os arm64, then either
 
 When used inside a trusted network the insecure http protocol may be used to transmit the agent metrics.
 
-Warning: do not use this when sending the telemetry over the internet as it may expose sensitive data.
+**Warning:** do not use this when sending the telemetry over the internet as it may expose sensitive data.
 
 By default, the opentelemetry-collector prevents use of insecure connections.
 This does not impact the success of builds using onMonit. It's just that no telemetry will be sent.
 When using the `debug: true`, a log message like the following could be included in the build logs:
-```
-info	exporterhelper/queued_retry.go:426	Exporting failed. Will retry the request after interval.	{"kind": "exporter", "data_type": "metrics", "name": "otlp", "error": "rpc error: code = Unavailable desc = connection error: desc = \"transport: authentication handshake failed: tls: first record does not look like a TLS handshake\"", "interval": "5.84280802s"}
-```
+`info	exporterhelper/queued_retry.go:426	Exporting failed. Will retry the request after interval.	{"kind": "exporter", "data_type": "metrics", "name": "otlp", "error": "rpc error: code = Unavailable desc = connection error: desc = \"transport: authentication handshake failed: tls: first record does not look like a TLS handshake\"", "interval": "5.84280802s"}`
 
 To override the default opentelemetry-collector behavior and allow insecure connections either use
 the following argument in the onMonit step `ocAdditionalOptions: "--set=exporters.otlp.tls.insecure=true"`
