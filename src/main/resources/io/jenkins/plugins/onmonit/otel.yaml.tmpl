@@ -11,7 +11,7 @@ exporters:
     loglevel: debug
   otlp:
     endpoint: "[[${otlpEndpoint}]]"
-    [[${otlpAuthHeaders}]]
+    [(${otlpAuthHeaderBefore})][[${otlpAuthHeader}]][(${otlpAuthHeaderAfter})]
 
 processors:
   resourcedetection:
