@@ -102,7 +102,7 @@ public class ONTemplating {
         } else {
             var otlpAuthHeader = otlpHeader.substring(otlpHeader.indexOf("=") + 1);
             context.setVariable("otlpAuthHeaders", "headers:\n" +
-                    "      Authorization: \"" + otlpAuthHeader + "\"" );
+                    "      Authorization: '" + otlpAuthHeader + "'" );
         }
         return context;
     }
