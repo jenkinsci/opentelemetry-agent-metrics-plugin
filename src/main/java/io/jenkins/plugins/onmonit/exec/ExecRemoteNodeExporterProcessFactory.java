@@ -40,7 +40,7 @@ public class ExecRemoteNodeExporterProcessFactory extends RemoteNodeExporterProc
 			/*
 			 * `node_exporter --version` should always return 0. For the moment we explicitly require version 1.5.0
 			 */
-			String expectedVersion = "win".equals(info.getOs()) ? "version 0.22.0" : "version 1.5.0";
+			String expectedVersion = "win".equals(info.getOs()) ? "version 0.31.3" : "version 1.5.0";
 			if (status == 0 && version.contains(expectedVersion)) {
 				return true;
 			}
