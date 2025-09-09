@@ -40,8 +40,10 @@ public class ONTemplating {
         if (configTemplateEngine != null) {
             return configTemplateEngine;
         }
+        final StringTemplateResolver templateResolver = new StringTemplateResolver();
+        templateResolver.setTemplateMode(TemplateMode.TEXT);
         final TemplateEngine tEngine = new TemplateEngine();
-        tEngine.setTemplateResolver(new StringTemplateResolver());
+        tEngine.setTemplateResolver(templateResolver);
         configTemplateEngine = tEngine;
         return configTemplateEngine;
     }
