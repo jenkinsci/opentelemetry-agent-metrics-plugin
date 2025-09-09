@@ -100,11 +100,15 @@ public class ONTemplating {
         context.setVariable("jobGroupName", trimWithDefault(jobName, jobBaseName, "-"));
         context.setVariable("otlpEndpoint", toOtelCompatibleUrl(otlpEndpoint));
         if (otlpHeader == null || otlpHeader.isEmpty()) {
-            context.setVariable("otlpAuthHeaders", "");
+            context.setVariable("otlpAuthHeaderBefore", "");
+            context.setVariable("otlpAuthHeader", "");
+            context.setVariable("otlpAuthHeaderAfter", "");
         } else {
             var otlpAuthHeader = otlpHeader.substring(otlpHeader.indexOf("=") + 1);
-            context.setVariable("otlpAuthHeaders", "headers:\n" +
-                    "      Authorization: '" + otlpAuthHeader + "'" );
+            context.setVariable("otlpAuthHeaderBefore", "headers:\n" +
+                    "      Authorization: '");
+            context.setVariable("otlpAuthHeader", otlpAuthHeader);
+            context.setVariable("otlpAuthHeaderAfter", "'" );
         }
         return context;
     }
