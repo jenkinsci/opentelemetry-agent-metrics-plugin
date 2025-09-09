@@ -37,12 +37,12 @@ public class ExecRemoteOtelContribProcessFactory extends RemoteOtelContribProces
 			int status = launcher.launch().cmds(cmd, "--version").quiet(true).stdout(baos).stderr(baos).start().joinWithTimeout(1, TimeUnit.MINUTES, listener);
 			String version = baos.toString(StandardCharsets.UTF_8);
 			/*
-			 * `otelcol-contrib --version` should always return 0. For the moment we explicitly require version 0.70.0
+			 * `otelcol-contrib --version` should always return 0. For the moment we explicitly require version 0.135.0
 			 */
-			if (status == 0 && version.contains("version 0.70.0")) {
+			if (status == 0 && version.contains("version 0.135.0")) {
 				return true;
 			}
-			listener.getLogger().println("Unsupported, requiring version 0.70.0: `otelcol-contrib --version` returned " + status + " printed " + version);
+			listener.getLogger().println("Unsupported, requiring version 0.135.0: `otelcol-contrib --version` returned " + status + " printed " + version);
 			return false;
 		} catch (IOException e) {
 			listener.getLogger().println("Could not find otelcol-contrib: IOException: " + e.getMessage());

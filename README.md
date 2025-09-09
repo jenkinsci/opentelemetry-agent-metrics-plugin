@@ -91,22 +91,22 @@ Be sure to use the exact versions required by this plugin!
 
 When running build agents on Linux amd64 and Mac Os arm64, then either
 
-* install on the `PATH` of any mac agents: `otelcol-contrib` (from `otelcol-contrib_0.70.0_darwin_arm64`) and `node_exporter` (from `node_exporter-1.5.0.darwin-arm64`)
-  and on the `PATH` of any Linux agents: `otelcol-contrib` (from `otelcol-contrib_0.70.0_linux_amd64`) and `node_exporter` (from `node_exporter-1.5.0.linux-amd64`)
+* install on the `PATH` of any mac agents: `otelcol-contrib` (from `otelcol-contrib_0.135.0_darwin_arm64`) and `node_exporter` (from `node_exporter-1.5.0.darwin-arm64`)
+  and on the `PATH` of any Linux agents: `otelcol-contrib` (from `otelcol-contrib_0.135.0_linux_amd64`) and `node_exporter` (from `node_exporter-1.5.0.linux-amd64`)
 
 * setup a web server (or S3 bucket) serving:
   * https://example.com/base-url/node_exporter-1.5.0.darwin-arm64
   * https://example.com/base-url/node_exporter-1.5.0.linux-amd64
-  * https://example.com/base-url/otelcol-contrib_0.70.0_darwin_arm64
-  * https://example.com/base-url/otelcol-contrib_0.70.0_linux_amd64
+  * https://example.com/base-url/otelcol-contrib_0.135.0_darwin_arm64
+  * https://example.com/base-url/otelcol-contrib_0.135.0_linux_amd64
 
   and configure `https://example.com/base-url` as the base URL in the plugin option.
 
 * Save the executables under the JENKINS_HOME:
   * `$JENKINS_HOME/opentelemetry-agent-metrics/node_exporter-1.5.0.darwin-arm64`
   * `$JENKINS_HOME/opentelemetry-agent-metrics/node_exporter-1.5.0.linux-amd64`
-  * `$JENKINS_HOME/opentelemetry-agent-metrics/otelcol-contrib_0.70.0_darwin_arm64`
-  * `$JENKINS_HOME/opentelemetry-agent-metrics/otelcol-contrib_0.70.0_linux_amd64`
+  * `$JENKINS_HOME/opentelemetry-agent-metrics/otelcol-contrib_0.135.0_darwin_arm64`
+  * `$JENKINS_HOME/opentelemetry-agent-metrics/otelcol-contrib_0.135.0_linux_amd64`
 
 ### (Optional) Using insecure http protocol
 
