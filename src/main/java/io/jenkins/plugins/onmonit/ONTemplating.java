@@ -89,13 +89,17 @@ public class ONTemplating {
         String pageUrl = Jenkins.get().getRootUrl() + run.getUrl();
         String otlpEndpoint = environment.get("OTEL_EXPORTER_OTLP_ENDPOINT");
         String otlpHeader = environment.get("OTEL_EXPORTER_OTLP_HEADERS");
+        String serviceName = environment.get("OTEL_SERVICE_NAME");
+        if (serviceName == null) {
+            serviceName = ONMonitConfig.get().getOtelServiceName();
+        }
         String jobName = environment.get("JOB_NAME");
         String jobBaseName = environment.get("JOB_BASE_NAME");
         context.setVariable("JENKINS_URL", Jenkins.get().getRootUrl());
         context.setVariable("pageUrl", pageUrl);
         context.setVariable("env", environment);
         context.setVariable("nePort", port);
-        context.setVariable("serviceName", "ci_jemmic_com");
+        context.setVariable("serviceName", serviceName);
         context.setVariable("jobName", jobName);
         context.setVariable("jobGroupName", trimWithDefault(jobName, jobBaseName, "-"));
         context.setVariable("otlpEndpoint", toOtelCompatibleUrl(otlpEndpoint));

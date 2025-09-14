@@ -120,6 +120,12 @@ public final class ONMonitConfig extends GlobalConfiguration {
 	@CheckForNull
 	private String otelConfigTemplate;
 
+	/**
+	 * Use a custom OpenTelemetry service name.
+	 */
+	@CheckForNull
+	private String otelServiceName;
+
 	/** Constructor. */
 	public ONMonitConfig() {
 		load();
@@ -252,6 +258,25 @@ public final class ONMonitConfig extends GlobalConfiguration {
 	 */
 	public void setOtelConfigTemplate(@CheckForNull String otelConfigTemplate) {
 		this.otelConfigTemplate = otelConfigTemplate != null ? otelConfigTemplate.trim() : null;
+		save();
+	}
+
+	/**
+	 * Get the OpenTelemetry service name.
+	 *
+	 * @return the otel service name
+	 */
+	public String getOtelServiceName() {
+		return otelServiceName == null ? "" : otelServiceName;
+	}
+
+	/**
+	 * Set the OpenTelemetry service name.
+	 *
+	 * @param otelServiceName the OTEL configuration template
+	 */
+	public void setOtelServiceName(@CheckForNull String otelServiceName) {
+		this.otelServiceName = otelServiceName != null ? otelServiceName.trim() : null;
 		save();
 	}
 

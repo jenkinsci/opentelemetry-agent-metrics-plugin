@@ -13,6 +13,9 @@
     <f:entry field="ocDefaultAdditionalOptions" title="${%Otel-contrib default additional options}">
       <f:textbox />
     </f:entry>
+    <f:entry field="otelServiceName" title="${%OpenTelemetry service name}">
+      <f:textbox />
+    </f:entry>
     <f:entry field="otelConfigTemplate" title="${%OTEL configuration template}">
       <f:textarea />
     </f:entry>
