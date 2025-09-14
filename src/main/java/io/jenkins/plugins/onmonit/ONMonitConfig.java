@@ -273,7 +273,7 @@ public final class ONMonitConfig extends GlobalConfiguration {
 	/**
 	 * Set the OpenTelemetry service name.
 	 *
-	 * @param otelServiceName the OTEL configuration template
+	 * @param otelServiceName the otel service name
 	 */
 	public void setOtelServiceName(@CheckForNull String otelServiceName) {
 		this.otelServiceName = otelServiceName != null ? otelServiceName.trim() : null;
