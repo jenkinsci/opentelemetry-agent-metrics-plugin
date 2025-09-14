@@ -2541,8 +2541,8 @@
         {
           "current": {
             "selected": false,
-            "text": "secuchat--test-k8s-20-k3019-j0kpp-rxl7l",
-            "value": "secuchat--test-k8s-20-k3019-j0kpp-rxl7l"
+            "text": "-",
+            "value": "-"
           },
           "datasource": {
             "type": "prometheus",
@@ -2596,9 +2596,9 @@
         },
         {
           "current": {
-            "selected": true,
-            "text": "SecuChat__Test-K8s",
-            "value": "SecuChat__Test-K8s"
+            "selected": false,
+            "text": "-",
+            "value": "-"
           },
           "datasource": {
             "type": "prometheus",
