@@ -53,7 +53,6 @@ spec:
         check_interval: 5s
         limit_percentage: 80
         spike_limit_percentage: 25
-      batch: {}
 
       # Processors required for detecting whether a span comes from a k8s pod
       attributes/k8sIP:
