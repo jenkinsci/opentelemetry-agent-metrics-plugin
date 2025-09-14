@@ -77,12 +77,15 @@ spec:
         #- sources:
         #    # This rule will use the IP from the incoming connection from which the resource is received, and find the matching pod, based on the 'pod.status.podIP' of the observed pods
         #    - from: connection
-      transform:
+      transform/span:
         # Convert all resource attributes (including any newly detected k8s attributes) to span attributes because the count connector only works on span attributes.
         trace_statements:
         - context: span
           statements:
           - 'merge_maps(attributes, resource.attributes, "insert")'
+      transform/metric:
+        metric_statements:
+          - 'convert_sum_to_gauge() where metric.name == "cicd.pipeline.run.info"'
 
     exporters:
       debug: {}
@@ -103,12 +106,14 @@ spec:
           - attributes/k8sIP
           - groupbyattrs
           - k8sattributes
-          - transform
+          - transform/span
           exporters:
           - count
         metrics: # expose the CI info metric
           receivers:
           - count
+          processors:
+          - transform/metric
           exporters:
           - debug
           - prometheus
