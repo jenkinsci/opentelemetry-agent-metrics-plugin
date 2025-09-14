@@ -7,8 +7,8 @@ receivers:
           static_configs:
             - targets: ['localhost:[[${nePort}]]']
 exporters:
-  logging:
-    loglevel: debug
+  debug:
+    verbosity: detailed
   otlp:
     endpoint: "[[${otlpEndpoint}]]"
     [(${otlpAuthHeaderBefore})][[${otlpAuthHeader}]][(${otlpAuthHeaderAfter})]
@@ -52,4 +52,4 @@ service:
     metrics:
       receivers: [prometheus/ci]
       processors: [resourcedetection, transform/ci, resource/ci] # [batch, resourcedetection]
-      exporters: [otlp, logging]
+      exporters: [otlp, debug]
