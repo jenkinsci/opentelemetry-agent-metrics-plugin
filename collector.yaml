@@ -16,7 +16,7 @@ spec:
     connectors:
       count:
         spans:
-          ci.podspan.info:
+          cicd.pipeline.run.info:
             description: A span linking host/pod with CI.
             attributes:
             - key: jenkins.url
