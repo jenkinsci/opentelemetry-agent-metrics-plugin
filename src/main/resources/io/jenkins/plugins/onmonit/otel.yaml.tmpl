@@ -41,7 +41,7 @@ processors:
     metric_statements:
     - context: resource
       statements:
-      - set(attributes["executor"], Concat([attributes["host.name"], "[[${nePort}]]"], ":"))
+      - set(attributes["cicd.worker.id"], Concat([attributes["host.name"], "[[${nePort}]]"], ":"))
   batch:
     send_batch_size: 10000
     timeout: 10s
