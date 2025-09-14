@@ -21,16 +21,18 @@ processors:
   resource/ci:
     attributes:
     - action: insert
-      key: ci.url
+      # not yet defined in Otel SemConv
+      key: cicd.controller.url
       value: "[[${JENKINS_URL}]]"
     - action: insert
-      key: ci.job.name
+      key: cicd.pipeline.name
       value: "[[${jobName}]]"
     - action: insert
-      key: ci.job.groupname
+      # not yet defined in Otel SemConv
+      key: cicd.group.name
       value: "[[${jobGroupName}]]"
     - action: insert
-      key: ci.job.id
+      key: cicd.pipeline.run.id
       value: "[[${env.BUILD_ID}]]"
     - action: insert
       key: service.name
