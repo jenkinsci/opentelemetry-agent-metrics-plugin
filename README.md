@@ -173,7 +173,7 @@ Launching `node_exporter` and `otelcol-contrib` processes must be disabled in th
 `launchCollector: false`.
 
 The [ci-pod-metrics-dashboard.json](ci-pod-metrics-dashboard.json) dashboard allows filtering for the pods used as agents
-by filtering on a `cicd_pipeline_run_info_total` metric produced on the basis of the spans emitted by the [opentelemetry-plugin](https://github.com/jenkinsci/opentelemetry-plugin/)
+by filtering on a `cicd_pipeline_run_info` metric produced on the basis of the spans emitted by the [opentelemetry-plugin](https://github.com/jenkinsci/opentelemetry-plugin/)
 using an opentelemetry-collector pipeline (eg. using the [collector.yaml](collector.yaml) config).
 
 The dashboard json can be imported into Grafana and then the dashboard URL configured either in the global Jenkins onMonit config

@@ -2519,14 +2519,14 @@
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "definition": "label_values(cicd_pipeline_run_info_total{cicd_pipeline_name=\"$job\", cicd_pipeline_run_id=\"$jobid\",k8s_namespace_name!=\"-\"}, k8s_namespace_name)",
+          "definition": "label_values(cicd_pipeline_run_info{cicd_pipeline_name=\"$job\", cicd_pipeline_run_id=\"$jobid\",k8s_namespace_name!=\"-\"}, k8s_namespace_name)",
           "hide": 0,
           "includeAll": false,
           "multi": false,
           "name": "namespace",
           "options": [],
           "query": {
-            "query": "label_values(cicd_pipeline_run_info_total{cicd_pipeline_name=\"$job\", cicd_pipeline_run_id=\"$jobid\",k8s_namespace_name!=\"-\"}, k8s_namespace_name)",
+            "query": "label_values(cicd_pipeline_run_info{cicd_pipeline_name=\"$job\", cicd_pipeline_run_id=\"$jobid\",k8s_namespace_name!=\"-\"}, k8s_namespace_name)",
             "refId": "StandardVariableQuery"
           },
           "refresh": 2,
@@ -2548,14 +2548,14 @@
             "type": "prometheus",
             "uid": "$datasource"
           },
-          "definition": "label_values(cicd_pipeline_run_info_total{cicd_pipeline_name=\"$job\", cicd_pipeline_run_id=\"$jobid\",k8s_pod_name!=\"-\"}, k8s_pod_name)",
+          "definition": "label_values(cicd_pipeline_run_info{cicd_pipeline_name=\"$job\", cicd_pipeline_run_id=\"$jobid\",k8s_pod_name!=\"-\"}, k8s_pod_name)",
           "hide": 0,
           "includeAll": false,
           "multi": false,
           "name": "pod",
           "options": [],
           "query": {
-            "query": "label_values(cicd_pipeline_run_info_total{cicd_pipeline_name=\"$job\", cicd_pipeline_run_id=\"$jobid\",k8s_pod_name!=\"-\"}, k8s_pod_name)",
+            "query": "label_values(cicd_pipeline_run_info{cicd_pipeline_name=\"$job\", cicd_pipeline_run_id=\"$jobid\",k8s_pod_name!=\"-\"}, k8s_pod_name)",
             "refId": "StandardVariableQuery"
           },
           "refresh": 2,
@@ -2577,7 +2577,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "definition": "label_values(cicd_pipeline_run_info_total, cicd_pipeline_group)",
+          "definition": "label_values(cicd_pipeline_run_info, cicd_pipeline_group)",
           "hide": 0,
           "includeAll": false,
           "label": "Job group",
@@ -2585,7 +2585,7 @@
           "name": "jobgroup",
           "options": [],
           "query": {
-            "query": "label_values(cicd_pipeline_run_info_total, cicd_pipeline_group)",
+            "query": "label_values(cicd_pipeline_run_info, cicd_pipeline_group)",
             "refId": "StandardVariableQuery"
           },
           "refresh": 1,
@@ -2604,7 +2604,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "definition": "label_values(cicd_pipeline_run_info_total{cicd_pipeline_group=\"$jobgroup\"}, cicd_pipeline_name)",
+          "definition": "label_values(cicd_pipeline_run_info{cicd_pipeline_group=\"$jobgroup\"}, cicd_pipeline_name)",
           "hide": 0,
           "includeAll": false,
           "label": "Job",
@@ -2612,7 +2612,7 @@
           "name": "job",
           "options": [],
           "query": {
-            "query": "label_values(cicd_pipeline_run_info_total{cicd_pipeline_group=\"$jobgroup\"}, cicd_pipeline_name)",
+            "query": "label_values(cicd_pipeline_run_info{cicd_pipeline_group=\"$jobgroup\"}, cicd_pipeline_name)",
             "refId": "StandardVariableQuery"
           },
           "refresh": 1,
@@ -2631,7 +2631,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "definition": "label_values(cicd_pipeline_run_info_total{cicd_pipeline_name=\"$job\"}, cicd_pipeline_run_id)",
+          "definition": "label_values(cicd_pipeline_run_info{cicd_pipeline_name=\"$job\"}, cicd_pipeline_run_id)",
           "hide": 0,
           "includeAll": true,
           "label": "Job ID",
@@ -2639,7 +2639,7 @@
           "name": "jobid",
           "options": [],
           "query": {
-            "query": "label_values(cicd_pipeline_run_info_total{cicd_pipeline_name=\"$job\"}, cicd_pipeline_run_id)",
+            "query": "label_values(cicd_pipeline_run_info{cicd_pipeline_name=\"$job\"}, cicd_pipeline_run_id)",
             "refId": "StandardVariableQuery"
           },
           "refresh": 2,
