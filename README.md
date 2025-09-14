@@ -152,13 +152,13 @@ The dashboard to which this plugin links should be able to display the metrics g
 [Node Exporter Full](https://grafana.com/grafana/dashboards/1860-node-exporter-full/) was used as a basis to develop [node-exporter-full-ci.json](node-exporter-full-ci.json).
 You can use this dashboard by importing the JSON file defining the dashboard linked above.
 
-This dashboard additionally allows selecting by jobGroup, jobName, jobId and executor.
+This dashboard additionally allows selecting by jobGroup, jobName, jobId and worker.
 
 * The jobGroup variable is useful for multi-branch pipeline jobs to narrow the selection of jobNames to only
 those of the selected multibranch pipeline.
 * The jobName corresponds to the Jenkins job name
 * The jobId is the job ID as assigned by Jenkins to each build
-* The executor allows to select which agent of a build the metrics were gathered on.
+* The workerId allows to select which agent of a build the metrics were gathered on.
   This is useful for builds involving multiple agents (eg. using parallel stages).
   The `onMonit` step needs to be explicitly used for each stage running on a different node.
 

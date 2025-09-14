@@ -179,7 +179,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "irate(node_pressure_cpu_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+          "expr": "irate(node_pressure_cpu_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
           "format": "time_series",
           "instant": true,
           "intervalFactor": 1,
@@ -191,7 +191,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "irate(node_pressure_memory_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+          "expr": "irate(node_pressure_memory_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -204,7 +204,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "irate(node_pressure_io_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+          "expr": "irate(node_pressure_io_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -217,7 +217,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "irate(node_pressure_irq_stalled_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+          "expr": "irate(node_pressure_irq_stalled_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -388,7 +388,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "scalar(node_load1{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) * 100 / count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu))",
+          "expr": "scalar(node_load1{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) * 100 / count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu))",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -463,7 +463,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(1 - (node_memory_MemAvailable_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} / node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"})) * 100",
+          "expr": "(1 - (node_memory_MemAvailable_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} / node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"})) * 100",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -548,7 +548,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "((node_memory_SwapTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_memory_SwapFree_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) / (node_memory_SwapTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"})) * 100",
+          "expr": "((node_memory_SwapTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_memory_SwapFree_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) / (node_memory_SwapTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"})) * 100",
           "instant": true,
           "intervalFactor": 1,
           "range": false,
@@ -631,7 +631,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(\n  (node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"}\n   - node_filesystem_avail_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"})\n  / node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"}\n) * 100\n",
+          "expr": "(\n  (node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"}\n   - node_filesystem_avail_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"})\n  / node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", mountpoint=\"/\", fstype!=\"rootfs\"}\n) * 100\n",
           "format": "time_series",
           "instant": true,
           "intervalFactor": 1,
@@ -707,7 +707,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu))",
+          "expr": "count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu))",
           "instant": true,
           "legendFormat": "__auto",
           "range": false,
@@ -782,7 +782,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "node_reboot_required{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+          "expr": "node_reboot_required{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
           "instant": true,
           "intervalFactor": 1,
           "range": false,
@@ -862,7 +862,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "node_time_seconds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_boot_time_seconds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+          "expr": "node_time_seconds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_boot_time_seconds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
           "instant": true,
           "intervalFactor": 1,
           "range": false,
@@ -946,7 +946,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",mountpoint=\"/\",fstype!=\"rootfs\"}",
+          "expr": "node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",mountpoint=\"/\",fstype!=\"rootfs\"}",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -1028,7 +1028,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+          "expr": "node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
           "instant": true,
           "intervalFactor": 1,
           "range": false,
@@ -1108,7 +1108,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "node_memory_SwapTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+          "expr": "node_memory_SwapTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
           "instant": true,
           "intervalFactor": 1,
           "range": false,
@@ -1293,7 +1293,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", mode=\"system\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", mode=\"system\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1305,7 +1305,7 @@
         },
         {
           "editorMode": "code",
-          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", mode=\"user\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", mode=\"user\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1316,7 +1316,7 @@
         },
         {
           "editorMode": "code",
-          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", mode=\"iowait\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", mode=\"iowait\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Busy Iowait",
@@ -1326,7 +1326,7 @@
         },
         {
           "editorMode": "code",
-          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", mode=~\".*irq\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", mode=~\".*irq\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Busy IRQs",
@@ -1336,7 +1336,7 @@
         },
         {
           "editorMode": "code",
-          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",  mode!='idle',mode!='user',mode!='system',mode!='iowait',mode!='irq',mode!='softirq'}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",  mode!='idle',mode!='user',mode!='system',mode!='iowait',mode!='irq',mode!='softirq'}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Busy Other",
@@ -1346,7 +1346,7 @@
         },
         {
           "editorMode": "code",
-          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", mode=\"idle\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+          "expr": "sum(irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", mode=\"idle\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Idle",
@@ -1514,7 +1514,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+          "expr": "node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1525,7 +1525,7 @@
         },
         {
           "editorMode": "code",
-          "expr": "node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_memory_MemFree_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - (node_memory_Cached_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} + node_memory_Buffers_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} + node_memory_SReclaimable_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"})",
+          "expr": "node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_memory_MemFree_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - (node_memory_Cached_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} + node_memory_Buffers_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} + node_memory_SReclaimable_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"})",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1536,7 +1536,7 @@
         },
         {
           "editorMode": "code",
-          "expr": "node_memory_Cached_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} + node_memory_Buffers_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} + node_memory_SReclaimable_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+          "expr": "node_memory_Cached_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} + node_memory_Buffers_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} + node_memory_SReclaimable_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Cache + Buffer",
@@ -1546,7 +1546,7 @@
         },
         {
           "editorMode": "code",
-          "expr": "node_memory_MemFree_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+          "expr": "node_memory_MemFree_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Free",
@@ -1556,7 +1556,7 @@
         },
         {
           "editorMode": "code",
-          "expr": "(node_memory_SwapTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_memory_SwapFree_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"})",
+          "expr": "(node_memory_SwapTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_memory_SwapFree_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Swap used",
@@ -1663,7 +1663,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "rate(node_network_receive_bytes_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])*8",
+          "expr": "rate(node_network_receive_bytes_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])*8",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Rx {{device}}",
@@ -1673,7 +1673,7 @@
         },
         {
           "editorMode": "code",
-          "expr": "rate(node_network_transmit_bytes_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])*8",
+          "expr": "rate(node_network_transmit_bytes_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])*8",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "Tx {{device}} ",
@@ -1769,7 +1769,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "((node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", device!~\"rootfs\"} - node_filesystem_avail_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", device!~\"rootfs\"}) / node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", device!~\"rootfs\"}) * 100",
+          "expr": "((node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", device!~\"rootfs\"} - node_filesystem_avail_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", device!~\"rootfs\"}) / node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", device!~\"rootfs\"}) * 100",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{mountpoint}}",
@@ -2029,7 +2029,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum(irate(node_cpu_seconds_total{mode=\"system\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+              "expr": "sum(irate(node_cpu_seconds_total{mode=\"system\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -2040,7 +2040,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "sum(irate(node_cpu_seconds_total{mode=\"user\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+              "expr": "sum(irate(node_cpu_seconds_total{mode=\"user\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "User - Normal processes executing in user mode",
@@ -2050,7 +2050,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "sum(irate(node_cpu_seconds_total{mode=\"nice\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+              "expr": "sum(irate(node_cpu_seconds_total{mode=\"nice\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Nice - Niced processes executing in user mode",
@@ -2060,7 +2060,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "sum(irate(node_cpu_seconds_total{mode=\"iowait\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+              "expr": "sum(irate(node_cpu_seconds_total{mode=\"iowait\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Iowait - Waiting for I/O to complete",
@@ -2070,7 +2070,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "sum(irate(node_cpu_seconds_total{mode=\"irq\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+              "expr": "sum(irate(node_cpu_seconds_total{mode=\"irq\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Irq - Servicing interrupts",
@@ -2080,7 +2080,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "sum(irate(node_cpu_seconds_total{mode=\"softirq\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+              "expr": "sum(irate(node_cpu_seconds_total{mode=\"softirq\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Softirq - Servicing softirqs",
@@ -2090,7 +2090,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "sum(irate(node_cpu_seconds_total{mode=\"steal\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+              "expr": "sum(irate(node_cpu_seconds_total{mode=\"steal\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Steal - Time spent in other operating systems when running in a virtualized environment",
@@ -2100,7 +2100,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "sum(irate(node_cpu_seconds_total{mode=\"idle\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
+              "expr": "sum(irate(node_cpu_seconds_total{mode=\"idle\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / scalar(count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu)))",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2111,7 +2111,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "sum by(instance) (irate(node_cpu_guest_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / on(instance) group_left sum by (instance)((irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval]))) > 0",
+              "expr": "sum by(instance) (irate(node_cpu_guest_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])) / on(instance) group_left sum by (instance)((irate(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval]))) > 0",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2513,7 +2513,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_memory_MemFree_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_memory_Buffers_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_memory_Cached_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_memory_Slab_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_memory_PageTables_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_memory_SwapCached_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_memory_MemFree_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_memory_Buffers_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_memory_Cached_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_memory_Slab_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_memory_PageTables_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_memory_SwapCached_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2524,7 +2524,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_PageTables_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_PageTables_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2535,7 +2535,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_SwapCached_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_SwapCached_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "SwapCache - Memory that keeps track of pages that have been fetched from swap but not yet been modified",
@@ -2545,7 +2545,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Slab_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Slab_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2556,7 +2556,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Cached_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Cached_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2567,7 +2567,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Buffers_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Buffers_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2578,7 +2578,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_MemFree_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_MemFree_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2589,7 +2589,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "(node_memory_SwapTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} - node_memory_SwapFree_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"})",
+              "expr": "(node_memory_SwapTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} - node_memory_SwapFree_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"})",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2600,7 +2600,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_HardwareCorrupted_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_HardwareCorrupted_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2712,7 +2712,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_receive_bytes_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])*8",
+              "expr": "rate(node_network_receive_bytes_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])*8",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Rx in",
@@ -2722,7 +2722,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_network_transmit_bytes_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])*8",
+              "expr": "rate(node_network_transmit_bytes_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])*8",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Tx out",
@@ -2833,7 +2833,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "(rate(node_network_receive_bytes_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])\n / ignoring(speed) node_network_speed_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", speed!=\"-1\"}) * 100",
+              "expr": "(rate(node_network_receive_bytes_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])\n / ignoring(speed) node_network_speed_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", speed!=\"-1\"}) * 100",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Rx in",
@@ -2843,7 +2843,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "(rate(node_network_transmit_bytes_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])\n / ignoring(speed) node_network_speed_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\", speed!=\"-1\"}) * 100",
+              "expr": "(rate(node_network_transmit_bytes_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])\n / ignoring(speed) node_network_speed_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\", speed!=\"-1\"}) * 100",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2955,7 +2955,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_reads_completed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device=~\"$diskdevices\"}[$__rate_interval])",
+              "expr": "irate(node_disk_reads_completed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device=~\"$diskdevices\"}[$__rate_interval])",
               "intervalFactor": 4,
               "legendFormat": "{{device}} - Read",
               "range": true,
@@ -2964,7 +2964,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_writes_completed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device=~\"$diskdevices\"}[$__rate_interval])",
+              "expr": "irate(node_disk_writes_completed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device=~\"$diskdevices\"}[$__rate_interval])",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Write",
               "range": true,
@@ -3074,7 +3074,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_read_bytes_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device=~\"$diskdevices\"}[$__rate_interval])",
+              "expr": "irate(node_disk_read_bytes_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device=~\"$diskdevices\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -3085,7 +3085,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_written_bytes_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device=~\"$diskdevices\"}[$__rate_interval])",
+              "expr": "irate(node_disk_written_bytes_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device=~\"$diskdevices\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -3185,7 +3185,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_filesystem_avail_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
+              "expr": "node_filesystem_avail_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -3197,7 +3197,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_filesystem_free_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
+              "expr": "node_filesystem_free_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
               "format": "time_series",
               "hide": true,
               "intervalFactor": 1,
@@ -3208,7 +3208,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
+              "expr": "node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
               "format": "time_series",
               "hide": true,
               "intervalFactor": 1,
@@ -3308,7 +3308,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device!~'rootfs'} - node_filesystem_avail_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
+              "expr": "node_filesystem_size_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device!~'rootfs'} - node_filesystem_avail_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{mountpoint}}",
@@ -3407,7 +3407,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_io_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device=~\"$diskdevices\"} [$__rate_interval])",
+              "expr": "irate(node_disk_io_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device=~\"$diskdevices\"} [$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -3532,7 +3532,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_pressure_cpu_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_pressure_cpu_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "CPU - Some",
@@ -3542,7 +3542,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_pressure_memory_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_pressure_memory_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -3553,7 +3553,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_pressure_memory_stalled_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_pressure_memory_stalled_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -3564,7 +3564,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_pressure_io_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_pressure_io_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -3575,7 +3575,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_pressure_io_stalled_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_pressure_io_stalled_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -3586,7 +3586,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_pressure_irq_stalled_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_pressure_irq_stalled_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -3721,7 +3721,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_Committed_AS_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Committed_AS_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Committed_AS – Memory promised to processes (not necessarily used)",
@@ -3731,7 +3731,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_CommitLimit_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_CommitLimit_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "CommitLimit - Max allowable committed memory",
@@ -3830,7 +3830,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_Writeback_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Writeback_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Writeback – Memory currently being flushed to disk",
@@ -3840,7 +3840,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_WritebackTmp_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_WritebackTmp_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "WritebackTmp – FUSE temporary writeback buffers",
@@ -3850,7 +3850,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Dirty_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Dirty_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Dirty – Memory marked dirty (pending write to disk)",
@@ -3860,7 +3860,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_NFS_Unstable_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_NFS_Unstable_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -3960,7 +3960,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_SUnreclaim_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_SUnreclaim_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "SUnreclaim – Non-reclaimable slab memory (kernel objects)",
@@ -3970,7 +3970,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_SReclaimable_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_SReclaimable_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "SReclaimable – Potentially reclaimable slab memory (e.g., inode cache)",
@@ -4070,7 +4070,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_Mapped_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Mapped_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Mapped – Memory mapped from files (e.g., libraries, mmap)",
@@ -4080,7 +4080,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Shmem_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Shmem_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Shmem – Shared memory used by processes and tmpfs",
@@ -4090,7 +4090,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_ShmemHugePages_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_ShmemHugePages_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -4101,7 +4101,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_ShmemPmdMapped_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_ShmemPmdMapped_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -4233,7 +4233,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "(node_memory_Inactive_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) \n/ \n(node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"})",
+              "expr": "(node_memory_Inactive_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) \n/ \n(node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"})",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Inactive – Less recently used memory, more likely to be reclaimed",
@@ -4243,7 +4243,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "(node_memory_Active_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) \n/ \n(node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"})\n",
+              "expr": "(node_memory_Active_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) \n/ \n(node_memory_MemTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"})\n",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Active – Recently used memory, retained unless under pressure",
@@ -4343,7 +4343,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_Inactive_file_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Inactive_file_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -4354,7 +4354,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Inactive_anon_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Inactive_anon_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -4365,7 +4365,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Active_file_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Active_file_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -4376,7 +4376,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Active_anon_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Active_anon_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -4477,7 +4477,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_KernelStack_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_KernelStack_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "KernelStack – Kernel stack memory (per-thread, non-reclaimable)",
@@ -4487,7 +4487,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Percpu_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Percpu_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -4498,7 +4498,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Bounce_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Bounce_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -4629,7 +4629,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_VmallocChunk_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_VmallocChunk_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -4640,7 +4640,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_VmallocTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_VmallocTotal_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -4651,7 +4651,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_VmallocUsed_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_VmallocUsed_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -4751,7 +4751,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_AnonHugePages_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_AnonHugePages_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "AnonHugePages – Anonymous memory using HugePages",
@@ -4761,7 +4761,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_AnonPages_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_AnonPages_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "AnonPages – Anonymous memory (non-file-backed)",
@@ -4877,7 +4877,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_Unevictable_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Unevictable_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Unevictable – Kernel-pinned memory (not swappable)",
@@ -4887,7 +4887,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_Mlocked_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_Mlocked_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Mlocked – Application-locked memory via mlock()",
@@ -5261,7 +5261,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_DirectMap1G_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_DirectMap1G_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "DirectMap 1G – Memory mapped with 1GB pages",
@@ -5271,7 +5271,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_DirectMap2M_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_DirectMap2M_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -5282,7 +5282,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_DirectMap4k_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_DirectMap4k_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -5382,7 +5382,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_memory_HugePages_Free{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * node_memory_Hugepagesize_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_HugePages_Free{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * node_memory_Hugepagesize_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "HugePages Used – Currently allocated",
@@ -5392,7 +5392,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_HugePages_Rsvd{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * node_memory_Hugepagesize_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_HugePages_Rsvd{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * node_memory_Hugepagesize_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "HugePages Reserved – Promised but unused",
@@ -5402,7 +5402,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_HugePages_Surp{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * node_memory_Hugepagesize_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_HugePages_Surp{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * node_memory_Hugepagesize_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "HugePages Surplus – Dynamic pool extension",
@@ -5412,7 +5412,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_memory_HugePages_Total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * node_memory_Hugepagesize_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_memory_HugePages_Total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * node_memory_Hugepagesize_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -5538,7 +5538,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_vmstat_pgpgin{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_vmstat_pgpgin{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Pagesin - Page in ops",
@@ -5548,7 +5548,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_vmstat_pgpgout{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_vmstat_pgpgout{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Pagesout - Page out ops",
@@ -5659,7 +5659,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_vmstat_pswpin{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_vmstat_pswpin{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Pswpin - Pages swapped in",
@@ -5669,7 +5669,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_vmstat_pswpout{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_vmstat_pswpout{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Pswpout - Pages swapped out",
@@ -5806,7 +5806,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_vmstat_pgfault{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_vmstat_pgfault{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -5817,7 +5817,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_vmstat_pgmajfault{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_vmstat_pgmajfault{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -5828,7 +5828,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_vmstat_pgfault{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])  - irate(node_vmstat_pgmajfault{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_vmstat_pgfault{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])  - irate(node_vmstat_pgmajfault{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -5944,7 +5944,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_vmstat_oom_kill{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_vmstat_oom_kill{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -6057,7 +6057,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_timex_estimated_error_seconds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_estimated_error_seconds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -6069,7 +6069,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_timex_offset_seconds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_offset_seconds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -6081,7 +6081,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_timex_maxerror_seconds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_maxerror_seconds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -6181,7 +6181,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_timex_loop_time_constant{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_loop_time_constant{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -6280,7 +6280,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_timex_sync_status{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_sync_status{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -6291,7 +6291,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_timex_frequency_adjustment_ratio{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_frequency_adjustment_ratio{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -6302,7 +6302,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_timex_tick_seconds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_tick_seconds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": true,
               "interval": "",
@@ -6314,7 +6314,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_timex_tai_offset_seconds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_tai_offset_seconds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": true,
               "interval": "",
@@ -6414,7 +6414,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_timex_pps_frequency_hertz{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_pps_frequency_hertz{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -6425,7 +6425,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_timex_pps_stability_hertz{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_pps_stability_hertz{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -6524,7 +6524,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_timex_pps_jitter_seconds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_pps_jitter_seconds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -6535,7 +6535,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_timex_pps_shift_seconds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_timex_pps_shift_seconds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -6638,7 +6638,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_timex_pps_calibration_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_timex_pps_calibration_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -6649,7 +6649,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_timex_pps_error_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_timex_pps_error_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -6660,7 +6660,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_timex_pps_stability_exceeded_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_timex_pps_stability_exceeded_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -6672,7 +6672,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_timex_pps_jitter_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_timex_pps_jitter_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -6791,7 +6791,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_procs_blocked{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_procs_blocked{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Blocked (I/O Wait)",
@@ -6801,7 +6801,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_procs_running{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_procs_running{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Runnable (Ready for CPU)",
@@ -6985,7 +6985,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_processes_state{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_processes_state{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -7085,7 +7085,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_forks_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_forks_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -7201,7 +7201,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_schedstat_running_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_schedstat_running_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": true,
               "interval": "",
@@ -7213,7 +7213,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_schedstat_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_schedstat_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": true,
               "interval": "",
@@ -7225,7 +7225,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_schedstat_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])\n/\n(irate(node_schedstat_running_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval]) + irate(node_schedstat_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval]))\n",
+              "expr": "irate(node_schedstat_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])\n/\n(irate(node_schedstat_running_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval]) + irate(node_schedstat_waiting_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval]))\n",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -7356,7 +7356,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_processes_pids{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_processes_pids{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -7367,7 +7367,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_processes_max_processes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_processes_max_processes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -7497,7 +7497,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_processes_threads{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_processes_threads{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -7508,7 +7508,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_processes_max_threads{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_processes_max_threads{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -7622,7 +7622,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_context_switches_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_context_switches_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Context switches",
@@ -7632,7 +7632,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_intr_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_intr_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -7762,7 +7762,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_load1{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_load1{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Load 1m",
@@ -7772,7 +7772,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_load5{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_load5{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Load 5m",
@@ -7782,7 +7782,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_load15{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_load15{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Load 15m",
@@ -7792,7 +7792,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}) by (cpu))",
+              "expr": "count(count(node_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}) by (cpu))",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -7958,7 +7958,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_cpu_scaling_frequency_hertz{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_cpu_scaling_frequency_hertz{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -7970,7 +7970,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "avg(node_cpu_scaling_frequency_max_hertz{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"})",
+              "expr": "avg(node_cpu_scaling_frequency_max_hertz{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"})",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -7982,7 +7982,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "avg(node_cpu_scaling_frequency_min_hertz{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"})",
+              "expr": "avg(node_cpu_scaling_frequency_min_hertz{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"})",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -8082,7 +8082,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_schedstat_timeslices_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_schedstat_timeslices_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -8182,7 +8182,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_interrupts_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_interrupts_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -8312,7 +8312,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_entropy_available_bits{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_entropy_available_bits{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Entropy available",
@@ -8322,7 +8322,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_entropy_pool_size_bits{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_entropy_pool_size_bits{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -8456,7 +8456,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_hwmon_temp_celsius{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_hwmon_temp_celsius{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -8466,7 +8466,7 @@
               "step": 240
             },
             {
-              "expr": "node_hwmon_temp_crit_alarm_celsius{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_hwmon_temp_crit_alarm_celsius{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": true,
               "interval": "",
@@ -8477,7 +8477,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_hwmon_temp_crit_celsius{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_hwmon_temp_crit_celsius{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -8487,7 +8487,7 @@
               "step": 240
             },
             {
-              "expr": "node_hwmon_temp_crit_hyst_celsius{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_hwmon_temp_crit_hyst_celsius{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": true,
               "interval": "",
@@ -8497,7 +8497,7 @@
               "step": 240
             },
             {
-              "expr": "node_hwmon_temp_max_celsius{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_hwmon_temp_max_celsius{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": true,
               "interval": "",
@@ -8616,7 +8616,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "100 * node_cooling_device_cur_state{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} / node_cooling_device_max_state{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "100 * node_cooling_device_cur_state{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} / node_cooling_device_max_state{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -8720,7 +8720,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_power_supply_online{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_power_supply_online{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -8821,7 +8821,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_hwmon_fan_rpm{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_hwmon_fan_rpm{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -8832,7 +8832,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_hwmon_fan_min_rpm{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_hwmon_fan_min_rpm{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * on(chip) group_left(chip_name) node_hwmon_chip_names{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": true,
               "interval": "",
@@ -9022,7 +9022,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_systemd_units{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",state=\"activating\"}",
+              "expr": "node_systemd_units{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",state=\"activating\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -9033,7 +9033,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_systemd_units{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",state=\"active\"}",
+              "expr": "node_systemd_units{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",state=\"active\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -9044,7 +9044,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_systemd_units{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",state=\"deactivating\"}",
+              "expr": "node_systemd_units{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",state=\"deactivating\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -9055,7 +9055,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_systemd_units{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",state=\"failed\"}",
+              "expr": "node_systemd_units{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",state=\"failed\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -9066,7 +9066,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_systemd_units{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",state=\"inactive\"}",
+              "expr": "node_systemd_units{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",state=\"inactive\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -9166,7 +9166,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_systemd_socket_current_connections{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_systemd_socket_current_connections{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -9266,7 +9266,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_systemd_socket_accepted_connections_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_systemd_socket_accepted_connections_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -9366,7 +9366,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_systemd_socket_refused_connections_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_systemd_socket_refused_connections_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -9507,7 +9507,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_reads_completed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_reads_completed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Read",
               "range": true,
@@ -9516,7 +9516,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_writes_completed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_writes_completed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Write",
               "range": true,
@@ -9641,7 +9641,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_read_bytes_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_read_bytes_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Read",
@@ -9652,7 +9652,7 @@
             {
               "editorMode": "code",
               "exemplar": false,
-              "expr": "irate(node_disk_written_bytes_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_written_bytes_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "instant": false,
               "intervalFactor": 1,
@@ -9779,7 +9779,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_read_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval]) / irate(node_disk_reads_completed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_read_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval]) / irate(node_disk_reads_completed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -9790,7 +9790,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_write_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval]) / irate(node_disk_writes_completed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_write_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval]) / irate(node_disk_writes_completed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -9906,7 +9906,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_io_time_weighted_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_io_time_weighted_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "{{device}}",
@@ -10032,7 +10032,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_reads_merged_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_reads_merged_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Read",
               "range": true,
@@ -10041,7 +10041,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_writes_merged_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_writes_merged_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Write",
               "range": true,
@@ -10155,7 +10155,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_io_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_io_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - General IO",
@@ -10165,7 +10165,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_discard_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_discard_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Discard/TRIM",
@@ -10175,7 +10175,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_flush_requests_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_flush_requests_time_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -10290,7 +10290,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_discards_completed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_discards_completed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Discards completed",
@@ -10300,7 +10300,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_discards_merged_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_discards_merged_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Discards merged",
@@ -10310,7 +10310,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_flush_requests_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_flush_requests_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -10425,7 +10425,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_disk_discarded_sectors_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_disk_discarded_sectors_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "{{device}}",
@@ -10540,7 +10540,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_disk_io_now{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_disk_io_now{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "{{device}}",
@@ -10683,7 +10683,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_filefd_maximum{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_filefd_maximum{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Max open files",
@@ -10693,7 +10693,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_filefd_allocated{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_filefd_allocated{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "Open files",
@@ -10792,7 +10792,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_filesystem_files_free{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
+              "expr": "node_filesystem_files_free{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -10893,7 +10893,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_filesystem_readonly{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
+              "expr": "node_filesystem_readonly{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{mountpoint}} - ReadOnly",
@@ -10903,7 +10903,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_filesystem_device_error{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device!~'rootfs',fstype!~'tmpfs'}",
+              "expr": "node_filesystem_device_error{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device!~'rootfs',fstype!~'tmpfs'}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -11003,7 +11003,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_filesystem_files{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
+              "expr": "node_filesystem_files{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",device!~'rootfs'}",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -11130,7 +11130,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_receive_packets_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_receive_packets_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -11141,7 +11141,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_network_transmit_packets_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_transmit_packets_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -11254,7 +11254,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_receive_errs_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_receive_errs_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Rx in",
@@ -11264,7 +11264,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_network_transmit_errs_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_transmit_errs_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Tx out",
@@ -11376,7 +11376,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_receive_drop_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_receive_drop_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Rx in",
@@ -11386,7 +11386,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_network_transmit_drop_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_transmit_drop_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Tx out",
@@ -11498,7 +11498,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_receive_compressed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_receive_compressed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Rx in",
@@ -11508,7 +11508,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_network_transmit_compressed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_transmit_compressed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Tx out",
@@ -11620,7 +11620,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_receive_multicast_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_receive_multicast_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Rx in",
@@ -11732,7 +11732,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_receive_nohandler_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_receive_nohandler_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Rx in",
@@ -11844,7 +11844,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_receive_frame_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_receive_frame_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -11957,7 +11957,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_receive_fifo_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_receive_fifo_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Rx in",
@@ -11967,7 +11967,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "rate(node_network_transmit_fifo_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_transmit_fifo_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Tx out",
@@ -12079,7 +12079,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_transmit_colls_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_transmit_colls_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Tx out",
@@ -12178,7 +12178,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "rate(node_network_transmit_carrier_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "rate(node_network_transmit_carrier_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{device}} - Tx out",
@@ -12277,7 +12277,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_arp_entries{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_arp_entries{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{ device }} ARP Table",
@@ -12406,7 +12406,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_nf_conntrack_entries{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_nf_conntrack_entries{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "NF conntrack entries",
@@ -12416,7 +12416,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_nf_conntrack_entries_limit{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_nf_conntrack_entries_limit{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "NF conntrack limit",
@@ -12515,7 +12515,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_network_up{operstate=\"up\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_network_up{operstate=\"up\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": true,
               "intervalFactor": 1,
@@ -12526,7 +12526,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_network_carrier{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_network_carrier{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "instant": false,
               "legendFormat": "{{device}} - Physical link",
@@ -12599,7 +12599,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_network_speed_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"} * 8",
+              "expr": "node_network_speed_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"} * 8",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{ device }}",
@@ -12673,7 +12673,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_network_mtu_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_network_mtu_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "{{ device }}",
@@ -12787,7 +12787,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_sockstat_TCP_alloc{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_TCP_alloc{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -12798,7 +12798,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_sockstat_TCP_inuse{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_TCP_inuse{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -12809,7 +12809,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_sockstat_TCP_orphan{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_TCP_orphan{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -12820,7 +12820,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_sockstat_TCP_tw{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_TCP_tw{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -12921,7 +12921,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_sockstat_UDPLITE_inuse{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_UDPLITE_inuse{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -12932,7 +12932,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_sockstat_UDP_inuse{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_UDP_inuse{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13033,7 +13033,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_sockstat_sockets_used{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_sockets_used{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13134,7 +13134,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_sockstat_FRAG_inuse{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_FRAG_inuse{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13145,7 +13145,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_sockstat_RAW_inuse{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_RAW_inuse{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13246,7 +13246,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_sockstat_TCP_mem{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_TCP_mem{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13257,7 +13257,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_sockstat_UDP_mem{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_UDP_mem{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13358,7 +13358,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_sockstat_TCP_mem_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_TCP_mem_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13369,7 +13369,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_sockstat_UDP_mem_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_UDP_mem_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13380,7 +13380,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_sockstat_FRAG_memory{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_sockstat_FRAG_memory{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "Fragmentation",
@@ -13491,7 +13491,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_softnet_processed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_softnet_processed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13502,7 +13502,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_softnet_dropped_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_softnet_dropped_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13606,7 +13606,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_softnet_times_squeezed_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_softnet_times_squeezed_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13726,7 +13726,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_softnet_received_rps_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_softnet_received_rps_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13737,7 +13737,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_softnet_flow_limit_count_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_softnet_flow_limit_count_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -13865,7 +13865,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_IpExt_InOctets{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_IpExt_InOctets{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -13876,7 +13876,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_IpExt_OutOctets{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_IpExt_OutOctets{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "intervalFactor": 1,
               "legendFormat": "IP Tx out",
@@ -13998,7 +13998,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Tcp_InSegs{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Tcp_InSegs{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -14009,7 +14009,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Tcp_OutSegs{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Tcp_OutSegs{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14121,7 +14121,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Udp_InDatagrams{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Udp_InDatagrams{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14132,7 +14132,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Udp_OutDatagrams{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Udp_OutDatagrams{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14248,7 +14248,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Icmp_InMsgs{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Icmp_InMsgs{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14259,7 +14259,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Icmp_OutMsgs{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Icmp_OutMsgs{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14359,7 +14359,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_TcpExt_ListenOverflows{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_TcpExt_ListenOverflows{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -14371,7 +14371,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_TcpExt_ListenDrops{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_TcpExt_ListenDrops{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -14383,7 +14383,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_TcpExt_TCPSynRetrans{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_TcpExt_TCPSynRetrans{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14394,7 +14394,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Tcp_RetransSegs{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Tcp_RetransSegs{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "interval": "",
               "legendFormat": "Segment Retransmits",
               "range": true,
@@ -14402,7 +14402,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Tcp_InErrs{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Tcp_InErrs{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "interval": "",
               "legendFormat": "Receive Errors",
               "range": true,
@@ -14410,7 +14410,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Tcp_OutRsts{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Tcp_OutRsts{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "interval": "",
               "legendFormat": "RST Sent",
               "range": true,
@@ -14418,7 +14418,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_TcpExt_TCPRcvQDrop{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_TcpExt_TCPRcvQDrop{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "hide": false,
               "interval": "",
               "legendFormat": "Receive Queue Drops",
@@ -14427,7 +14427,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_TcpExt_TCPOFOQueue{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_TcpExt_TCPOFOQueue{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "hide": false,
               "interval": "",
               "legendFormat": "Out-of-order Queued",
@@ -14436,7 +14436,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_TcpExt_TCPTimeouts{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_TcpExt_TCPTimeouts{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "hide": false,
               "interval": "",
               "legendFormat": "TCP Timeouts",
@@ -14537,7 +14537,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Udp_InErrors{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Udp_InErrors{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14548,7 +14548,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Udp_NoPorts{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Udp_NoPorts{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14559,7 +14559,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_UdpLite_InErrors{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_UdpLite_InErrors{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "interval": "",
               "legendFormat": "UDPLite Rx in Errors",
               "range": true,
@@ -14567,7 +14567,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Udp_RcvbufErrors{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Udp_RcvbufErrors{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14578,7 +14578,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Udp_SndbufErrors{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Udp_SndbufErrors{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14690,7 +14690,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Icmp_InErrors{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Icmp_InErrors{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -14805,7 +14805,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_TcpExt_SyncookiesFailed{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_TcpExt_SyncookiesFailed{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -14817,7 +14817,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_TcpExt_SyncookiesRecv{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_TcpExt_SyncookiesRecv{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -14829,7 +14829,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_TcpExt_SyncookiesSent{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_TcpExt_SyncookiesSent{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -14960,7 +14960,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_netstat_Tcp_CurrEstab{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_netstat_Tcp_CurrEstab{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -14972,7 +14972,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_netstat_Tcp_MaxConn{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_netstat_Tcp_MaxConn{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -15072,7 +15072,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_udp_queues{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",ip=\"v4\",queue=\"rx\"}",
+              "expr": "node_udp_queues{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",ip=\"v4\",queue=\"rx\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -15084,7 +15084,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_udp_queues{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\",ip=\"v4\",queue=\"tx\"}",
+              "expr": "node_udp_queues{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\",ip=\"v4\",queue=\"tx\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -15185,7 +15185,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Tcp_ActiveOpens{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Tcp_ActiveOpens{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -15196,7 +15196,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "irate(node_netstat_Tcp_PassiveOpens{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(node_netstat_Tcp_PassiveOpens{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -15297,7 +15297,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_tcp_connection_states{state=\"established\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_tcp_connection_states{state=\"established\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -15308,7 +15308,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_tcp_connection_states{state=\"fin_wait2\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_tcp_connection_states{state=\"fin_wait2\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -15320,7 +15320,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_tcp_connection_states{state=\"listen\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_tcp_connection_states{state=\"listen\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -15332,7 +15332,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_tcp_connection_states{state=\"time_wait\",cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_tcp_connection_states{state=\"time_wait\",cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -15344,7 +15344,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "node_tcp_connection_states{state=\"close_wait\", cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_tcp_connection_states{state=\"close_wait\", cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -15462,7 +15462,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_scrape_collector_duration_seconds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_scrape_collector_duration_seconds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -15562,7 +15562,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "irate(process_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
+              "expr": "irate(process_cpu_seconds_total{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}[$__rate_interval])",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
@@ -15716,7 +15716,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "process_virtual_memory_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "process_virtual_memory_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -15727,7 +15727,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "process_virtual_memory_max_bytes{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "process_virtual_memory_max_bytes{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "hide": false,
               "interval": "",
               "intervalFactor": 1,
@@ -15881,7 +15881,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "process_max_fds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "process_max_fds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "Maximum open file descriptors",
@@ -15891,7 +15891,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "process_open_fds{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "process_open_fds{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "interval": "",
               "intervalFactor": 1,
               "legendFormat": "Open file descriptors",
@@ -15971,7 +15971,7 @@
           "targets": [
             {
               "editorMode": "code",
-              "expr": "node_scrape_collector_success{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "node_scrape_collector_success{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -15983,7 +15983,7 @@
             },
             {
               "editorMode": "code",
-              "expr": "1 - node_textfile_scrape_error{cicd_pipeline_run_id=~\"$jobid\",executor=~\"$executor\",cicd_pipeline_name=\"$job\"}",
+              "expr": "1 - node_textfile_scrape_error{cicd_pipeline_run_id=~\"$jobid\",cicd_worker_id=~\"$workerid\",cicd_pipeline_name=\"$job\"}",
               "format": "time_series",
               "hide": false,
               "interval": "",
@@ -16103,14 +16103,14 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(node_uname_info{cicd_pipeline_name=\"$job\",cicd_pipeline_run_id=~\"$jobid\"}, executor)",
+        "definition": "label_values(node_uname_info{cicd_pipeline_name=\"$job\",cicd_pipeline_run_id=~\"$jobid\"}, cicd_worker_id)",
         "includeAll": true,
-        "label": "Executor",
-        "name": "executor",
+        "label": "Worker",
+        "name": "workerid",
         "options": [],
         "query": {
-          "query": "label_values(node_uname_info{cicd_pipeline_name=\"$job\",cicd_pipeline_run_id=~\"$jobid\"}, executor)",
-          "refId": "Prometheus-executor-Variable-Query"
+          "query": "label_values(node_uname_info{cicd_pipeline_name=\"$job\",cicd_pipeline_run_id=~\"$jobid\"}, cicd_worker_id)",
+          "refId": "Prometheus-worker-Variable-Query"
         },
         "refresh": 2,
         "regex": "",
