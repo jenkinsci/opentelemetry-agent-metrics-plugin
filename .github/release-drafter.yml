@@ -1,2 +1,4 @@
-_extends: .github
+# See https://github.com/jenkinsci/.github/blob/master/.github/release-drafter.adoc
+---
+_extends: github:jenkinsci/.github:/.github/release-drafter.yml
 tag-template: opentelemetry-agent-metrics-$NEXT_MINOR_VERSION
