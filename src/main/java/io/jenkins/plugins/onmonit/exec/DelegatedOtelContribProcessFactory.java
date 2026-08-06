@@ -8,7 +8,7 @@ import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteOtelContribProcess;
 import io.jenkins.plugins.onmonit.RemoteOtelContribProcessFactory;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

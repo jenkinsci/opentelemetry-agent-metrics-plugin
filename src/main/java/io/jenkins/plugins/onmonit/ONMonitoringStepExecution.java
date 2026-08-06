@@ -9,7 +9,7 @@ import io.jenkins.plugins.onmonit.util.AvailablePortRetriever;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.workflow.steps.BodyExecutionCallback;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.StepExecution;

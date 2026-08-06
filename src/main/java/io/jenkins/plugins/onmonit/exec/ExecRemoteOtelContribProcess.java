@@ -9,7 +9,7 @@ import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.RemoteOtelContribProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import org.apache.commons.io.output.TeeOutputStream;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
