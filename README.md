@@ -24,6 +24,21 @@ Usage
 3. Build the plugin using the maven wrapper script (`./mvnw clean package verify`).
 4. The plugin is created at `target/opentelemetry-agent-metrics.hpi`.
 
+## Running the tests
+
+* `./mvnw verify` runs the CI tier, as on ci.jenkins.io (Linux and Windows).
+  It needs no Docker and no network beyond `localhost`:
+  small Java stand-ins replace `otelcol-contrib`, `node_exporter` and `windows_exporter`.
+* `./mvnw verify -Preal-binaries` runs only the tests tagged `real-binaries`, using the real `otelcol-contrib` and `node_exporter`:
+  * The first run downloads the releases from GitHub into `~/.cache/onmonit-test-binaries`.
+    A cached file is trusted if it is not empty; delete the directory to download again.
+  * `PrometheusDashboardTest` needs Docker. Without Docker, and on Windows, it is skipped.
+    It runs every query of `node-exporter-full-ci.json` against Prometheus and writes the results to `target/dashboard-coverage.txt`.
+    Use `-Donmonit.test.prometheus.image=<image>` to choose the Prometheus image
+    and `-Donmonit.test.prometheus.config=<path to prometheus.yml>` to choose its configuration.
+* Tests annotated with `@Disabled` describe the correct behaviour for known plugin bugs.
+  The annotation says what is wrong.
+
 ## Installing the plugin
 
 ### Manual install
