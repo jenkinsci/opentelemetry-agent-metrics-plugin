@@ -10,12 +10,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -89,43 +94,83 @@ public final class StandIns {
 
     /** Reads all markers written into {@code markerDir} so far. */
     public static List<Marker> markers(Path markerDir) {
+        List<Marker> result = new ArrayList<>();
+        for (Properties p : markerProperties(markerDir)) {
+            String args = p.getProperty("args", "");
+            String configCopy = p.getProperty("configCopy");
+            String port = p.getProperty("port");
+            result.add(new Marker(
+                    StandIn.Role.valueOf(p.getProperty("role")),
+                    Long.parseLong(p.getProperty("pid")),
+                    Long.parseLong(p.getProperty("parentPid", "-1")),
+                    args.isEmpty() ? List.of() : List.of(args.split("\n", -1)),
+                    configCopy == null ? null : Path.of(configCopy),
+                    port == null ? null : Integer.valueOf(port)));
+        }
+        return result;
+    }
+
+    /**
+     * Test cleanup: forcibly destroys every recorded stand-in and its launcher that is still alive, and waits
+     * up to 10 seconds for them to exit (on Windows a process keeps its executable locked until it is gone).
+     * A PID is only killed if the process holding it has the start instant recorded in the marker, so a PID
+     * reused by an unrelated process is left alone; without a recorded start instant nothing is killed.
+     */
+    public static void killAll(Path markerDir) {
+        List<ProcessHandle> doomed = new ArrayList<>();
+        for (Properties p : markerProperties(markerDir)) {
+            matching(p.getProperty("pid"), p.getProperty("startInstant")).ifPresent(doomed::add);
+            matching(p.getProperty("parentPid"), p.getProperty("parentStartInstant")).ifPresent(doomed::add);
+        }
+        destroyAndWait(doomed);
+    }
+
+    /** Forcibly destroys {@code processes} and waits up to 10 seconds for all of them to exit. */
+    static void destroyAndWait(List<ProcessHandle> processes) {
+        List<CompletableFuture<ProcessHandle>> exits = new ArrayList<>();
+        for (ProcessHandle h : processes) {
+            h.destroyForcibly();
+            exits.add(h.onExit());
+        }
+        try {
+            CompletableFuture.allOf(exits.toArray(CompletableFuture[]::new)).get(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException | TimeoutException e) {
+            System.err.println("Stand-in processes did not exit within 10s: " + processes);
+        }
+    }
+
+    private static Optional<ProcessHandle> matching(String pid, String startInstant) {
+        if (pid == null || startInstant == null) {
+            return Optional.empty();
+        }
+        long id = Long.parseLong(pid);
+        if (id <= 0 || id == ProcessHandle.current().pid()) {
+            return Optional.empty();
+        }
+        Instant expected = Instant.parse(startInstant);
+        return ProcessHandle.of(id)
+                .filter(h -> h.info().startInstant().map(expected::equals).orElse(false));
+    }
+
+    private static List<Properties> markerProperties(Path markerDir) {
         if (!Files.isDirectory(markerDir)) {
             return List.of();
         }
-        List<Marker> result = new ArrayList<>();
+        List<Properties> result = new ArrayList<>();
         try (Stream<Path> files = Files.list(markerDir)) {
             for (Path f : files.filter(p -> p.getFileName().toString().endsWith(".properties")).sorted().toList()) {
                 Properties p = new Properties();
                 try (InputStream in = Files.newInputStream(f)) {
                     p.load(in);
                 }
-                String args = p.getProperty("args", "");
-                String configCopy = p.getProperty("configCopy");
-                String port = p.getProperty("port");
-                result.add(new Marker(
-                        StandIn.Role.valueOf(p.getProperty("role")),
-                        Long.parseLong(p.getProperty("pid")),
-                        Long.parseLong(p.getProperty("parentPid", "-1")),
-                        args.isEmpty() ? List.of() : List.of(args.split("\n", -1)),
-                        configCopy == null ? null : Path.of(configCopy),
-                        port == null ? null : Integer.valueOf(port)));
+                result.add(p);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
         return result;
-    }
-
-    /** Test cleanup: forcibly destroys every recorded stand-in and its launcher. */
-    public static void killAll(Path markerDir) {
-        long self = ProcessHandle.current().pid();
-        for (Marker m : markers(markerDir)) {
-            for (long pid : new long[] {m.pid(), m.parentPid()}) {
-                if (pid > 0 && pid != self) {
-                    ProcessHandle.of(pid).ifPresent(ProcessHandle::destroyForcibly);
-                }
-            }
-        }
     }
 
     private static void write(Path target, StandIn.Role role) throws IOException {

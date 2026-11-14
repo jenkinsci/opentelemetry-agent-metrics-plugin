@@ -9,14 +9,17 @@ import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,10 +42,13 @@ class StandInsTest {
 
     @AfterEach
     void cleanup() {
+        // Wait for the processes to exit: on Windows a running launcher exe cannot be deleted with @TempDir.
+        List<ProcessHandle> handles = new ArrayList<>();
         for (Process p : started) {
-            p.toHandle().descendants().forEach(ProcessHandle::destroyForcibly);
-            p.destroyForcibly();
+            p.toHandle().descendants().forEach(handles::add);
+            handles.add(p.toHandle());
         }
+        StandIns.destroyAndWait(handles);
         markerDirs.forEach(StandIns::killAll);
     }
 
@@ -111,6 +117,56 @@ class StandInsTest {
                 assertThat(isAlive(m.parentPid())).as("launcher pid %d", m.parentPid()).isFalse();
             }
         });
+    }
+
+    @Test
+    void killAllDestroysRecordedProcessesAndWaits(@TempDir Path t) throws Exception {
+        Path bin = StandIns.create(t.resolve("bin"));
+        Path markers = Files.createDirectories(t.resolve("markers"));
+        int port = freePort();
+        Running r = start(bin.resolve(EXPORTER), markers, "--web.listen-address=:" + port);
+        r.awaitOutput("Listening on");
+        Marker m = StandIns.markers(markers).get(0);
+
+        StandIns.killAll(markers);
+
+        assertThat(isAlive(m.pid())).as("stand-in pid %d right after killAll", m.pid()).isFalse();
+        if (m.parentPid() != -1) {
+            assertThat(isAlive(m.parentPid())).as("launcher pid %d right after killAll", m.parentPid()).isFalse();
+        }
+    }
+
+    @Test
+    void killAllSparesProcessThatReusedARecordedPid(@TempDir Path t) throws Exception {
+        Path bin = StandIns.create(t.resolve("bin"));
+        Path unrelatedMarkers = Files.createDirectories(t.resolve("unrelated"));
+        Path config = Files.writeString(t.resolve("c.yaml"), "x: 1");
+        // Stands in for an unrelated process that now holds a PID recorded in an old marker.
+        Running unrelated = start(bin.resolve(OTELCOL), unrelatedMarkers, "--config=file:" + config);
+        unrelated.awaitOutput("Everything is ready.");
+        long pid = StandIns.markers(unrelatedMarkers).get(0).pid();
+        Instant realStart = ProcessHandle.of(pid).flatMap(h -> h.info().startInstant()).orElseThrow();
+
+        Path stale = Files.createDirectories(t.resolve("stale"));
+        writeMarker(stale.resolve("OTELCOL-1.properties"), pid, realStart.minusSeconds(3600));
+        writeMarker(stale.resolve("OTELCOL-2.properties"), pid, null);
+        StandIns.killAll(stale);
+
+        assertThat(isAlive(pid)).as("process with reused pid %d", pid).isTrue();
+    }
+
+    private static void writeMarker(Path file, long pid, Instant startInstant) throws IOException {
+        Properties p = new Properties();
+        p.setProperty("role", "OTELCOL");
+        p.setProperty("pid", Long.toString(pid));
+        p.setProperty("parentPid", Long.toString(pid));
+        if (startInstant != null) {
+            p.setProperty("startInstant", startInstant.toString());
+            p.setProperty("parentStartInstant", startInstant.toString());
+        }
+        try (OutputStream out = Files.newOutputStream(file)) {
+            p.store(out, null);
+        }
     }
 
     private static boolean isAlive(long pid) {

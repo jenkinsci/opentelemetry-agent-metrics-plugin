@@ -79,10 +79,10 @@ public final class StandIn {
             return;
         }
 
-        long pid = ProcessHandle.current().pid();
-        long parentPid = Boolean.getBoolean(WRAPPED_PROPERTY)
-                ? ProcessHandle.current().parent().map(ProcessHandle::pid).orElse(-1L)
-                : -1L;
+        ProcessHandle self = ProcessHandle.current();
+        long pid = self.pid();
+        ProcessHandle parent = Boolean.getBoolean(WRAPPED_PROPERTY) ? self.parent().orElse(null) : null;
+        long parentPid = parent == null ? -1L : parent.pid();
         String markerEnv = System.getenv(MARKER_DIR_ENV);
         Path markerDir = markerEnv == null || markerEnv.isEmpty() ? null : Path.of(markerEnv);
         String baseName = role.name() + "-" + pid;
@@ -91,6 +91,11 @@ public final class StandIn {
         marker.setProperty("role", role.name());
         marker.setProperty("pid", Long.toString(pid));
         marker.setProperty("parentPid", Long.toString(parentPid));
+        // Start instants let StandIns.killAll tell a recorded process from a later one that reused its PID.
+        self.info().startInstant().ifPresent(i -> marker.setProperty("startInstant", i.toString()));
+        if (parent != null) {
+            parent.info().startInstant().ifPresent(i -> marker.setProperty("parentStartInstant", i.toString()));
+        }
         marker.setProperty("args", String.join("\n", args));
 
         String readyLine;
