@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+otlp:
+  translation_strategy: UnderscoreEscapingWithSuffixes
+  promote_resource_attributes:
+    - cicd.pipeline.name
+    - cicd.pipeline.run.id
+    - cicd.worker.id
+    - cicd.group.name
+    - host.name
