@@ -5,6 +5,7 @@ import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -21,6 +22,9 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
  */
 public final class RealBinaries {
 
+    // A stalled download fails instead of hanging @BeforeAll.
+    private static final int CONNECT_TIMEOUT_MS = 30_000;
+    private static final int READ_TIMEOUT_MS = 120_000;
     private static final Pattern VERSION = Pattern.compile("(\\d+\\.\\d+\\.\\d+)");
 
     private RealBinaries() {}
@@ -86,7 +90,10 @@ public final class RealBinaries {
             return cached;
         }
         Path part = cacheDir().resolve(name + ".part");
-        try (InputStream in = URI.create(url).toURL().openStream()) {
+        URLConnection connection = URI.create(url).toURL().openConnection();
+        connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout(READ_TIMEOUT_MS);
+        try (InputStream in = connection.getInputStream()) {
             Files.copy(in, part, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             Files.deleteIfExists(part);

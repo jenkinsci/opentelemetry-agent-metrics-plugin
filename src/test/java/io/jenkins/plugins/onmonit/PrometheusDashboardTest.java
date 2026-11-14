@@ -1,5 +1,6 @@
 package io.jenkins.plugins.onmonit;
 
+import static io.jenkins.plugins.onmonit.testing.JenkinsFixtures.globalEnv;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
@@ -8,12 +9,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.Functions;
 import hudson.slaves.DumbSlave;
-import hudson.slaves.EnvironmentVariablesNodeProperty;
 import io.jenkins.plugins.onmonit.testing.DashboardQueries;
 import io.jenkins.plugins.onmonit.testing.DashboardQueries.LabelValuesQuery;
 import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
+import io.jenkins.plugins.onmonit.testing.JenkinsFixtures;
+import io.jenkins.plugins.onmonit.testing.Lifecycle;
 import io.jenkins.plugins.onmonit.testing.RealBinaries;
 import io.jenkins.plugins.onmonit.testing.TestAgents;
+import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -72,7 +75,6 @@ class PrometheusDashboardTest {
             "node_network_receive_bytes_total",
             "node_disk_read_bytes_total");
     private static final Pattern METRIC = Pattern.compile("\\bnode_\\w+");
-    private static final Pattern LISTEN = Pattern.compile("node_exporter will listen on (\\d+)");
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @TempDir
@@ -119,11 +121,7 @@ class PrometheusDashboardTest {
                 String root = Path.of(agent.getRemoteFS()).toAbsolutePath().toString();
                 Awaitility.await()
                         .atMost(Duration.ofSeconds(15))
-                        .untilAsserted(() -> assertThat(ProcessHandle.allProcesses()
-                                        .filter(ProcessHandle::isAlive)
-                                        .map(p -> p.info().command().orElse(""))
-                                        .filter(c -> c.startsWith(root))
-                                        .collect(Collectors.toList()))
+                        .untilAsserted(() -> assertThat(Lifecycle.processesUnder(root))
                                 .as("otelcol/exporter processes left running under " + root)
                                 .isEmpty());
             }
@@ -136,18 +134,6 @@ class PrometheusDashboardTest {
 
     private String baseUrl() {
         return "http://localhost:" + prometheus.getMappedPort(9090);
-    }
-
-    /** The plugin reads {@code Run.getEnvironment}, which ignores {@code withEnv}; so OTLP settings are global. */
-    private static void globalEnv(JenkinsRule j, String key, String value) throws Exception {
-        EnvironmentVariablesNodeProperty prop =
-                j.jenkins.getGlobalNodeProperties().get(EnvironmentVariablesNodeProperty.class);
-        if (prop == null) {
-            prop = new EnvironmentVariablesNodeProperty();
-            j.jenkins.getGlobalNodeProperties().add(prop);
-        }
-        prop.getEnvVars().put(key, value);
-        j.jenkins.save();
     }
 
     /** Runs {@code f/p} with {@code sleep 20} inside {@code onMonit} and resolves the dashboard variables for it. */
@@ -171,9 +157,9 @@ class PrometheusDashboardTest {
             workers.addAll(labelValues("cicd_worker_id", runSelector));
             assertThat(workers).as("cicd_worker_id of " + runSelector).hasSize(1);
         });
-        Matcher port = LISTEN.matcher(JenkinsRule.getLog(run));
-        assertThat(port.find()).as("node_exporter port in build log").isTrue();
-        assertThat(workers.get(0)).endsWith(":" + port.group(1));
+        List<Integer> ports = JenkinsFixtures.ports(JenkinsRule.getLog(run));
+        assertThat(ports).as("node_exporter port in build log").isNotEmpty();
+        assertThat(workers.get(0)).endsWith(":" + ports.get(0));
 
         Map<String, String> vars = Map.of(
                 "job", job.getFullName(),
@@ -274,6 +260,13 @@ class PrometheusDashboardTest {
 
         assertThat(errors).as("queries Prometheus rejected").isEmpty();
         assertThat(core).as("core queries").isPositive();
-        assertThat(emptyCore).as("core queries without data at build end").isEmpty();
+        // The core metric set is Linux's (e.g. macOS has node_memory_total_bytes, not MemTotal/MemAvailable), so
+        // empty core queries fail the test on Linux only; elsewhere they are only reported.
+        if ("linux".equals(RemoteComputerInfoRetriever.getOs())) {
+            assertThat(emptyCore).as("core queries without data at build end").isEmpty();
+        } else {
+            emptyCore.forEach(q -> System.out.println("EMPTY core query (not enforced on "
+                    + RemoteComputerInfoRetriever.getOs() + "): " + q.replaceAll("\\s*\\n\\s*", " ").strip()));
+        }
     }
 }
