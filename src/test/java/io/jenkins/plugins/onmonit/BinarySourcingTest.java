@@ -70,10 +70,8 @@ class BinarySourcingTest {
     @Test
     void usesBinariesOnPath(JenkinsRule j) throws Exception {
         WorkflowRun run = buildOnPath(j);
-        if (!RemoteComputerInfoRetriever.isWindows()) {
-            j.assertLogContains("Exec otelcol-contrib (binary otelcol-contrib present on remote machine)", run);
-            j.assertLogContains("Exec node_exporter (binary node_exporter present on remote machine)", run);
-        }
+        j.assertLogContains("Exec otelcol-contrib (binary otelcol-contrib present on remote machine)", run);
+        j.assertLogContains("Exec node_exporter (binary node_exporter present on remote machine)", run);
         j.assertLogContains("node_exporter + otel-contrib started", run);
         j.assertLogContains("node_exporter + otel-contrib stopped", run);
         List<Marker> markers = StandIns.markers(markerDir);
