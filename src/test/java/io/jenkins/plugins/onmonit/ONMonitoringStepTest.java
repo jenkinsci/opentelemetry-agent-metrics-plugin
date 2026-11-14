@@ -1,12 +1,15 @@
 package io.jenkins.plugins.onmonit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static io.jenkins.plugins.onmonit.testing.JenkinsFixtures.globalEnv;
+import static io.jenkins.plugins.onmonit.testing.JenkinsFixtures.ports;
+import static io.jenkins.plugins.onmonit.testing.Lifecycle.assertAlive;
+import static io.jenkins.plugins.onmonit.testing.Lifecycle.awaitDead;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.cloudbees.hudson.plugins.folder.Folder;
 import hudson.model.Result;
 import hudson.slaves.DumbSlave;
-import hudson.slaves.EnvironmentVariablesNodeProperty;
 import io.jenkins.plugins.onmonit.testing.HeldBuilds;
 import io.jenkins.plugins.onmonit.testing.Marker;
 import io.jenkins.plugins.onmonit.testing.RenderedConfig;
@@ -20,10 +23,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -38,7 +40,7 @@ import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 @WithJenkins
 class ONMonitoringStepTest {
 
-    private static final Pattern LISTEN = Pattern.compile("node_exporter will listen on (\\d+)");
+    private static final Duration DEAD = Duration.ofSeconds(15);
 
     @TempDir
     Path tmp;
@@ -57,21 +59,6 @@ class ONMonitoringStepTest {
         if (markerDir != null) {
             StandIns.killAll(markerDir);
         }
-    }
-
-    /**
-     * The plugin reads {@code Run.getEnvironment}, which sees global environment variables but neither
-     * {@code withEnv} nor {@code env.X = ...}; so the OTLP settings are configured globally.
-     */
-    private static void globalEnv(JenkinsRule j, String key, String value) throws Exception {
-        EnvironmentVariablesNodeProperty prop = j.jenkins.getGlobalNodeProperties()
-                .get(EnvironmentVariablesNodeProperty.class);
-        if (prop == null) {
-            prop = new EnvironmentVariablesNodeProperty();
-            j.jenkins.getGlobalNodeProperties().add(prop);
-        }
-        prop.getEnvVars().put(key, value);
-        j.jenkins.save();
     }
 
     private DumbSlave agent(JenkinsRule j) throws Exception {
@@ -93,49 +80,9 @@ class ONMonitoringStepTest {
         return onNode("", body);
     }
 
-    private static List<Integer> ports(String log) {
-        List<Integer> ports = new ArrayList<>();
-        Matcher m = LISTEN.matcher(log);
-        while (m.find()) {
-            ports.add(Integer.parseInt(m.group(1)));
-        }
-        return ports;
-    }
-
-    private static boolean alive(long pid) {
-        return ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false);
-    }
-
-    private static void assertAlive(List<Marker> markers) {
-        for (Marker m : markers) {
-            assertThat(alive(m.pid())).as("pid %d of %s alive", m.pid(), m.role()).isTrue();
-            if (m.parentPid() > 0) {
-                assertThat(alive(m.parentPid())).as("parent pid %d of %s alive", m.parentPid(), m.role()).isTrue();
-            }
-        }
-    }
-
-    private static void awaitDead(List<Marker> markers) {
-        Awaitility.await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
-            for (Marker m : markers) {
-                assertThat(alive(m.pid())).as("pid %d of %s alive", m.pid(), m.role()).isFalse();
-                if (m.parentPid() > 0) {
-                    assertThat(alive(m.parentPid())).as("parent pid %d of %s alive", m.parentPid(), m.role())
-                            .isFalse();
-                }
-            }
-        });
-    }
-
     private List<Marker> awaitMarkers(int count) {
         Awaitility.await().atMost(Duration.ofSeconds(30)).until(() -> StandIns.markers(markerDir).size() >= count);
         return StandIns.markers(markerDir);
-    }
-
-    private static StandIn.Role exporterRole() {
-        return io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever.isWindows()
-                ? StandIn.Role.WINDOWS_EXPORTER
-                : StandIn.Role.NODE_EXPORTER;
     }
 
     private static RenderedConfig config(Marker otelcol) throws Exception {
@@ -215,8 +162,8 @@ class ONMonitoringStepTest {
         assertThat(ports).hasSize(2).doesNotHaveDuplicates();
         List<Marker> markers = StandIns.markers(markerDir);
         assertThat(markers).extracting(Marker::role)
-                .containsExactlyInAnyOrder(StandIn.Role.OTELCOL, StandIn.Role.OTELCOL, exporterRole(), exporterRole());
-        awaitDead(markers);
+                .containsExactlyInAnyOrder(StandIn.Role.OTELCOL, StandIn.Role.OTELCOL, StandIns.exporterRole(), StandIns.exporterRole());
+        awaitDead(markers, DEAD);
     }
 
     @Test
@@ -229,7 +176,7 @@ class ONMonitoringStepTest {
         j.assertLogContains("node_exporter + otel-contrib started", run);
         List<Marker> markers = StandIns.markers(markerDir);
         assertThat(markers).hasSize(2);
-        awaitDead(markers);
+        awaitDead(markers, DEAD);
     }
 
     @Test
@@ -245,7 +192,7 @@ class ONMonitoringStepTest {
             HeldBuilds.release(job, agent);
         }
         j.assertBuildStatusSuccess(j.waitForCompletion(run));
-        awaitDead(StandIns.markers(markerDir));
+        awaitDead(StandIns.markers(markerDir), DEAD);
     }
 
     private List<Marker> markers(int expected) {
@@ -270,21 +217,28 @@ class ONMonitoringStepTest {
         j.assertLogNotContains("Everything is ready.", run);
     }
 
+    /**
+     * The body sleeps instead of using {@link HeldBuilds#HOLD}: with {@code waitUntil} the abort was sometimes lost
+     * (2 of 5 local runs). The log then showed "Click here to forcibly terminate running steps" followed by more
+     * {@code waitUntil} retries, and the build never ended. {@code sleep} is the innermost step for the whole wait,
+     * so {@code doStop} reaches it and the abort propagates through {@code onMonit}.
+     */
     @Test
     void abortInsideBlockStopsProcesses(JenkinsRule j) throws Exception {
-        DumbSlave agent = agent(j);
-        WorkflowJob job = job(j, "p", onNode(HeldBuilds.HOLD));
+        agent(j);
+        WorkflowJob job = job(j, "p", onNode("echo 'inside'\nsleep 600"));
         WorkflowRun run = HeldBuilds.hold(j, job);
+        j.waitForMessage("Sleeping for", run);
         List<Marker> markers = awaitMarkers(2);
+        Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> assertAlive(markers(2)));
+        run.doStop();
         try {
-            Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> assertAlive(markers(2)));
-            run.doStop();
-            Awaitility.await().atMost(Duration.ofSeconds(30)).until(() -> !run.isBuilding());
-            j.assertBuildStatus(Result.ABORTED, run);
-        } finally {
-            HeldBuilds.release(job, agent);
+            Awaitility.await().atMost(Duration.ofSeconds(90)).until(() -> !run.isBuilding());
+        } catch (ConditionTimeoutException e) {
+            throw new AssertionError("Build still running 90s after doStop; build log:\n" + JenkinsRule.getLog(run), e);
         }
-        awaitDead(markers);
+        j.assertBuildStatus(Result.ABORTED, run);
+        awaitDead(markers, DEAD);
     }
 
     @Test
@@ -340,6 +294,6 @@ class ONMonitoringStepTest {
         j.assertBuildStatusSuccess(j.waitForCompletion(run1));
         j.assertBuildStatusSuccess(j.waitForCompletion(run2));
         assertThat(markers).hasSize(4);
-        awaitDead(StandIns.markers(markerDir));
+        awaitDead(StandIns.markers(markerDir), DEAD);
     }
 }
