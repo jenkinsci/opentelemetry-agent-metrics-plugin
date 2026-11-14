@@ -31,7 +31,7 @@ import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 class BinarySourcingTest {
 
     private static final String PIPELINE =
-            "node('t') { withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317']) { onMonit { echo 'inside' } } }";
+            "node('t') { onMonit { echo 'inside' } }";
 
     @TempDir
     Path tmp;

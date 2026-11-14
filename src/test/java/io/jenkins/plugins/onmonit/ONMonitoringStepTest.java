@@ -29,6 +29,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -182,6 +183,18 @@ class ONMonitoringStepTest {
         WorkflowJob job = job(j, "p", onNode("echo 'x'"));
         j.buildAndAssertSuccess(job);
         assertThat(config(otelcol()).otlpHeaders()).isEqualTo(Map.of("Authorization", "Bearer test-token"));
+    }
+
+    @Test
+    @Disabled("ONMonitoringStepExecution reads Run.getEnvironment(), ignoring withEnv/environment{} OTEL_* variables; see issue <tbd>")
+    void withEnvEndpointAndHeadersReachRenderedConfig(JenkinsRule j) throws Exception {
+        TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
+        WorkflowJob job = job(j, "p", "node('t') { withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317', "
+                + "'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer test-token']) { onMonit { echo 'x' } } }");
+        j.buildAndAssertSuccess(job);
+        RenderedConfig cfg = config(otelcol());
+        assertThat(cfg.otlpEndpoint()).isEqualTo("http://localhost:4317");
+        assertThat(cfg.otlpHeaders()).isEqualTo(Map.of("Authorization", "Bearer test-token"));
     }
 
     @Test
