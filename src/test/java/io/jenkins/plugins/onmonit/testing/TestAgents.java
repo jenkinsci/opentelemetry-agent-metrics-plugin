@@ -20,6 +20,12 @@ public final class TestAgents {
      * binaries installed on the developer's machine are not picked up. Stand-ins write markers to {@code markerDir}.
      */
     public static DumbSlave agent(JenkinsRule j, String label, Path pathDir, Path markerDir) throws Exception {
+        return agent(j, label, pathDir, markerDir, 1);
+    }
+
+    /** Like {@link #agent(JenkinsRule, String, Path, Path)} with {@code numExecutors} executors. */
+    public static DumbSlave agent(JenkinsRule j, String label, Path pathDir, Path markerDir, int numExecutors)
+            throws Exception {
         String path = pathDir.toAbsolutePath().toString();
         if (RemoteComputerInfoRetriever.isWindows()) {
             path += java.io.File.pathSeparator + System.getenv("SystemRoot") + "\\System32";
@@ -27,7 +33,13 @@ public final class TestAgents {
         EnvVars env = new EnvVars();
         env.put("PATH", path);
         env.put("ONMONIT_STANDIN_DIR", markerDir.toAbsolutePath().toString());
-        DumbSlave agent = j.createSlave(label, env);
+        DumbSlave agent = new DumbSlave(
+                "agent" + j.jenkins.getNodes().size(),
+                j.createTmpDir().getPath(),
+                j.createComputerLauncher(env));
+        agent.setNumExecutors(numExecutors);
+        agent.setLabelString(label);
+        j.jenkins.addNode(agent);
         j.waitOnline(agent);
         return agent;
     }

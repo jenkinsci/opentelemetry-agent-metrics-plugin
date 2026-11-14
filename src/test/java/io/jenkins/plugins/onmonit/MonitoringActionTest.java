@@ -3,6 +3,7 @@ package io.jenkins.plugins.onmonit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.cloudbees.hudson.plugins.folder.Folder;
+import io.jenkins.plugins.onmonit.testing.HeldBuilds;
 import org.htmlunit.html.HtmlAnchor;
 import org.htmlunit.html.HtmlPage;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -12,15 +13,12 @@ import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.util.List;
 
 @WithJenkins
 class MonitoringActionTest {
 
     private static final String BODY = "echo 'hi'";
-    private static final String HOLD = "echo 'inside'\nwaitUntil(initialRecurrencePeriod: 200) { fileExists('release') }";
 
     private static WorkflowJob job(JenkinsRule j, String name, String body) throws Exception {
         WorkflowJob job = j.createProject(WorkflowJob.class, name);
@@ -36,19 +34,6 @@ class MonitoringActionTest {
         MonitoringAction a = run.getAction(MonitoringAction.class);
         assertThat(a).isNotNull();
         return a;
-    }
-
-    /** Starts a build that blocks until {@link #release} is called. */
-    private static WorkflowRun holdBuild(JenkinsRule j, WorkflowJob job) throws Exception {
-        WorkflowRun run = job.scheduleBuild2(0).waitForStart();
-        j.waitForMessage("inside", run);
-        return run;
-    }
-
-    private static void release(JenkinsRule j, WorkflowJob job) throws Exception {
-        File ws = new File(j.jenkins.getWorkspaceFor(job).getRemote());
-        Files.createDirectories(ws.toPath());
-        Files.writeString(new File(ws, "release").toPath(), "x");
     }
 
     @Test
@@ -86,12 +71,12 @@ class MonitoringActionTest {
     void endTimeIsNowWhileRunning(JenkinsRule j) throws Exception {
         ONMonitConfig.get().setGrafanaDashboard("https://g/d?to={endTime}");
         WorkflowJob job = j.createProject(WorkflowJob.class, "p");
-        job.setDefinition(new CpsFlowDefinition("node {\n" + wrap(HOLD, "launchCollector: false") + "\n}", true));
-        WorkflowRun run = holdBuild(j, job);
+        job.setDefinition(new CpsFlowDefinition("node {\n" + wrap(HeldBuilds.HOLD, "launchCollector: false") + "\n}", true));
+        WorkflowRun run = HeldBuilds.hold(j, job);
         try {
             assertThat(action(run).getLinks().get(0).getUrl()).contains("to=now");
         } finally {
-            release(j, job);
+            HeldBuilds.release(j, job);
             j.assertBuildStatusSuccess(j.waitForCompletion(run));
         }
     }
