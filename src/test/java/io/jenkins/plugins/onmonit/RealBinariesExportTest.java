@@ -1,23 +1,22 @@
 package io.jenkins.plugins.onmonit;
 
+import static io.jenkins.plugins.onmonit.testing.JenkinsFixtures.globalEnv;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.cloudbees.hudson.plugins.folder.Folder;
 import hudson.slaves.DumbSlave;
-import hudson.slaves.EnvironmentVariablesNodeProperty;
 import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
+import io.jenkins.plugins.onmonit.testing.JenkinsFixtures;
+import io.jenkins.plugins.onmonit.testing.Lifecycle;
 import io.jenkins.plugins.onmonit.testing.OtlpMetricsReceiver;
 import io.jenkins.plugins.onmonit.testing.RealBinaries;
 import io.jenkins.plugins.onmonit.testing.TestAgents;
 import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.awaitility.Awaitility;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -41,12 +40,15 @@ import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 @WithJenkins
 class RealBinariesExportTest {
 
-    private static final Pattern LISTEN = Pattern.compile("node_exporter will listen on (\\d+)");
     private static final String BODY = "sleep 10";
     private static final Duration TIMEOUT = Duration.ofSeconds(30);
+    private static final String INSECURE_TLS = "--set=exporters.otlp.tls.insecure=true";
     private static final String PLAINTEXT_TLS_BUG = "The built-in template's gRPC otlp exporter has no tls setting, so "
             + "otelcol 0.135.0 dials an http:// endpoint with TLS and every export fails with 'transport: "
-            + "authentication handshake failed: tls: first record does not look like a TLS handshake'; see issue <tbd>";
+            + "authentication handshake failed: tls: first record does not look like a TLS handshake'. The README "
+            + "documents the workaround (" + INSECURE_TLS + " via ocAdditionalOptions or the global 'Otel-contrib "
+            + "default additional options'), but out-of-the-box plaintext endpoints fail; maintainer to decide "
+            + "whether the default template should handle http:// endpoints; see issue <tbd>";
 
     @TempDir
     Path tmp;
@@ -80,35 +82,13 @@ class RealBinariesExportTest {
                 String root = Path.of(agent.getRemoteFS()).toAbsolutePath().toString();
                 Awaitility.await()
                         .atMost(Duration.ofSeconds(15))
-                        .untilAsserted(() -> assertThat(processesUnder(root))
+                        .untilAsserted(() -> assertThat(Lifecycle.processesUnder(root))
                                 .as("otelcol/exporter processes left running under " + root)
                                 .isEmpty());
             }
         } finally {
             receiver.close();
         }
-    }
-
-    private static List<String> processesUnder(String root) {
-        return ProcessHandle.allProcesses()
-                .filter(ProcessHandle::isAlive)
-                .map(p -> p.info().command().orElse(""))
-                .filter(c -> c.startsWith(root))
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * The plugin reads {@code Run.getEnvironment}, which ignores {@code withEnv}; so OTLP settings are global.
-     */
-    private static void globalEnv(JenkinsRule j, String key, String value) throws Exception {
-        EnvironmentVariablesNodeProperty prop =
-                j.jenkins.getGlobalNodeProperties().get(EnvironmentVariablesNodeProperty.class);
-        if (prop == null) {
-            prop = new EnvironmentVariablesNodeProperty();
-            j.jenkins.getGlobalNodeProperties().add(prop);
-        }
-        prop.getEnvVars().put(key, value);
-        j.jenkins.save();
     }
 
     /**
@@ -157,12 +137,7 @@ class RealBinariesExportTest {
     }
 
     private static List<Integer> ports(WorkflowRun run) throws Exception {
-        List<Integer> ports = new ArrayList<>();
-        Matcher m = LISTEN.matcher(JenkinsRule.getLog(run));
-        while (m.find()) {
-            ports.add(Integer.parseInt(m.group(1)));
-        }
-        return ports;
+        return JenkinsFixtures.ports(JenkinsRule.getLog(run));
     }
 
     @Test
@@ -310,14 +285,30 @@ class RealBinariesExportTest {
         runAndAwaitExports(j, job(j, onNode(BODY)));
     }
 
-    @Disabled(PLAINTEXT_TLS_BUG)
+    /**
+     * The built-in template, loaded through its own code path, with its 15s scrape interval. Plaintext gRPC needs the
+     * README's documented {@code tls.insecure} option, set here as the global default additional options.
+     */
     @Test
     void builtInTemplateSmoke(JenkinsRule j) throws Exception {
+        ONMonitConfig.get().setOcDefaultAdditionalOptions(INSECURE_TLS);
         setUpTemplateUnchanged(j, receiver.endpoint());
         assertThat(ONMonitConfig.get().getOtelConfigTemplate()).isEmpty();
-        WorkflowRun run = runAndAwaitExports(j, job(j, onNode("sleep 40")), Duration.ofSeconds(45));
-        assertThat(receiver.resourceAttributes(run.getId()))
-                .isNotEmpty()
-                .allSatisfy(a -> assertThat(a).containsEntry("cicd.pipeline.run.id", run.getId()));
+        Folder folder = j.createProject(Folder.class, "f");
+        WorkflowJob job = folder.createProject(WorkflowJob.class, "p");
+        job.setDefinition(new CpsFlowDefinition(onNode("sleep 40"), true));
+        WorkflowRun run = runAndAwaitExports(j, job, Duration.ofSeconds(45));
+        List<Integer> ports = ports(run);
+        assertThat(ports).hasSize(1);
+
+        assertThat(receiver.resourceAttributes(run.getId())).isNotEmpty().anySatisfy(attrs -> {
+            assertThat(attrs).containsEntry("cicd.pipeline.name", "f/p");
+            assertThat(attrs).containsEntry("cicd.group.name", "f");
+            assertThat(attrs).containsEntry("cicd.controller.url", j.getURL().toString());
+            assertThat(attrs.get("host.name")).isNotBlank();
+            assertThat(attrs).containsEntry("cicd.worker.id", attrs.get("host.name") + ":" + ports.get(0));
+        });
+        assertThat(receiver.metricNames(run.getId()))
+                .contains(RemoteComputerInfoRetriever.isWindows() ? "windows_cpu_time_total" : "node_cpu_seconds_total");
     }
 }
