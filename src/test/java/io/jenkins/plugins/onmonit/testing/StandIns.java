@@ -39,11 +39,16 @@ public final class StandIns {
     private static final boolean WINDOWS = RemoteComputerInfoRetriever.isWindows();
     private static final Map<StandIn.Role, byte[]> CACHE = new EnumMap<>(StandIn.Role.class);
     private static Boolean supported;
+    private static RuntimeException unsupportedCause;
     private static Path windowsBuildDir;
 
     private StandIns() {}
 
-    /** Whether launchers can be built here. Always true on Linux/macOS; on Windows needs PowerShell {@code Add-Type}. */
+    /**
+     * Whether launchers can be built here. Always true on Linux/macOS; on Windows needs PowerShell {@code Add-Type}.
+     * On Jenkins CI (environment variable {@code JENKINS_URL} set) an unusable toolchain is an error instead of
+     * {@code false}, so a broken Windows agent cannot pass by skipping every stand-in test.
+     */
     public static synchronized boolean supported() {
         if (supported == null) {
             if (!WINDOWS) {
@@ -54,11 +59,21 @@ public final class StandIns {
                     supported = true;
                 } catch (RuntimeException e) {
                     System.err.println("Stand-in launchers unsupported: " + e.getMessage());
+                    unsupportedCause = e;
                     supported = false;
                 }
             }
         }
+        if (!supported && System.getenv("JENKINS_URL") != null) {
+            throw new IllegalStateException("Stand-in launchers cannot be built on this Jenkins CI agent, so the "
+                    + "stand-in tests would all be skipped: " + unsupportedCause.getMessage(), unsupportedCause);
+        }
         return supported;
+    }
+
+    /** The exporter role for this OS: {@code windows_exporter} on Windows, else {@code node_exporter}. */
+    public static StandIn.Role exporterRole() {
+        return WINDOWS ? StandIn.Role.WINDOWS_EXPORTER : StandIn.Role.NODE_EXPORTER;
     }
 
     /** Writes the launchers for the current OS into {@code dir} under their PATH names and returns {@code dir}. */
@@ -83,8 +98,7 @@ public final class StandIns {
         String os = RemoteComputerInfoRetriever.getOs();
         boolean amd64 = RemoteComputerInfoRetriever.isAmd64();
         write(root.resolve(ResourceUtil.getOtelFilename(os, amd64)), StandIn.Role.OTELCOL);
-        write(root.resolve(ResourceUtil.getNodeExporterFilename(os, amd64)),
-                WINDOWS ? StandIn.Role.WINDOWS_EXPORTER : StandIn.Role.NODE_EXPORTER);
+        write(root.resolve(ResourceUtil.getNodeExporterFilename(os, amd64)), exporterRole());
     }
 
     /** The launcher bytes for {@code role} on the current OS, e.g. for serving from a download server. */

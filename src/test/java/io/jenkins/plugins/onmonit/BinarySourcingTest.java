@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import hudson.model.Result;
 import io.jenkins.plugins.onmonit.testing.DownloadServer;
+import io.jenkins.plugins.onmonit.testing.Lifecycle;
 import io.jenkins.plugins.onmonit.testing.Marker;
 import io.jenkins.plugins.onmonit.testing.StandIn;
 import io.jenkins.plugins.onmonit.testing.StandIns;
@@ -16,7 +17,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
-import org.awaitility.Awaitility;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -76,8 +76,7 @@ class BinarySourcingTest {
         j.assertLogContains("node_exporter + otel-contrib stopped", run);
         List<Marker> markers = StandIns.markers(markerDir);
         assertThat(markers).extracting(Marker::role).containsExactlyInAnyOrder(
-                StandIn.Role.OTELCOL,
-                RemoteComputerInfoRetriever.isWindows() ? StandIn.Role.WINDOWS_EXPORTER : StandIn.Role.NODE_EXPORTER);
+                StandIn.Role.OTELCOL, StandIns.exporterRole());
     }
 
     @Test
@@ -86,9 +85,8 @@ class BinarySourcingTest {
         boolean amd64 = RemoteComputerInfoRetriever.isAmd64();
         String ne = "/" + ResourceUtil.getNodeExporterFilename(os, amd64);
         String oc = "/" + ResourceUtil.getOtelFilename(os, amd64);
-        boolean win = RemoteComputerInfoRetriever.isWindows();
         try (DownloadServer server = DownloadServer.start(Map.of(
-                ne, StandIns.bytesFor(win ? StandIn.Role.WINDOWS_EXPORTER : StandIn.Role.NODE_EXPORTER),
+                ne, StandIns.bytesFor(StandIns.exporterRole()),
                 oc, StandIns.bytesFor(StandIn.Role.OTELCOL)))) {
             ONMonitConfig.get().setDownloadBaseUrl(server.baseUrl());
             WorkflowRun run = build(j, TestAgents.emptyDir(tmp), Result.SUCCESS);
@@ -111,6 +109,7 @@ class BinarySourcingTest {
             ONMonitConfig.get().setDownloadBaseUrl(server.baseUrl());
             WorkflowRun run = build(j, TestAgents.emptyDir(tmp), Result.SUCCESS);
             j.assertLogContains("(uploaded otelcol-contrib from master to remote machine)", run);
+            assertThat(server.requestedPaths()).isNotEmpty();
         }
     }
 
@@ -128,15 +127,6 @@ class BinarySourcingTest {
         buildOnPath(j);
         List<Marker> markers = StandIns.markers(markerDir);
         assertThat(markers).hasSize(2);
-        Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
-            for (Marker m : markers) {
-                assertThat(ProcessHandle.of(m.pid()).map(ProcessHandle::isAlive).orElse(false))
-                        .as("pid %d of %s alive", m.pid(), m.role()).isFalse();
-                if (m.parentPid() > 0) {
-                    assertThat(ProcessHandle.of(m.parentPid()).map(ProcessHandle::isAlive).orElse(false))
-                            .as("parent pid %d of %s alive", m.parentPid(), m.role()).isFalse();
-                }
-            }
-        });
+        Lifecycle.awaitDead(markers, Duration.ofSeconds(10));
     }
 }
