@@ -132,11 +132,12 @@ class ONTemplatingTest {
                 .isEqualTo(Map.of("Authorization", "Basic abc"));
     }
 
-    @Disabled("ONTemplating writes the value inside single quotes unescaped; see issue <tbd>")
+    @Disabled("ONTemplating HTML-escapes header values in TEXT mode (' becomes &#39;, \" becomes &quot;, & becomes "
+            + "&amp;), so the YAML stays valid but the header value is corrupted; see issue <tbd>")
     @Test
     void headerValueWithQuote(JenkinsRule j) throws Exception {
-        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=it's", null).otlpHeaders())
-                .isEqualTo(Map.of("Authorization", "it's"));
+        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=it's \"x\" & y", null).otlpHeaders())
+                .isEqualTo(Map.of("Authorization", "it's \"x\" & y"));
     }
 
     @Disabled("ONTemplating HTML-escapes the job name in TEXT mode (\" becomes &quot;, ' becomes &#39;), so the name is not preserved; see issue <tbd>")
