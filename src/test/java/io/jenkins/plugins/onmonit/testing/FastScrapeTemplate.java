@@ -22,6 +22,15 @@ public final class FastScrapeTemplate {
         return replaceOrFail(t, "exporters: [otlp, debug]", "exporters: [otlphttp, debug]");
     }
 
+    /**
+     * Like {@link #withInterval(String)}, with {@code tls.insecure: true} on the gRPC {@code otlp} exporter. The
+     * built-in template has no TLS setting, so otelcol 0.135.0 uses TLS even for an {@code http://} endpoint.
+     */
+    public static String withIntervalAndInsecureTls(String interval) {
+        String endpoint = "    endpoint: \"[[${otlpEndpoint}]]\"\n";
+        return replaceOrFail(withInterval(interval), endpoint, endpoint + "    tls:\n      insecure: true\n");
+    }
+
     public static void apply(String template) {
         ONMonitConfig.get().setOtelConfigTemplate(template);
     }

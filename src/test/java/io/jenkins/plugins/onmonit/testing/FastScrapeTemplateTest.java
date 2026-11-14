@@ -24,6 +24,14 @@ class FastScrapeTemplateTest {
     }
 
     @Test
+    void insecureTlsVariant() {
+        String t = FastScrapeTemplate.withIntervalAndInsecureTls("2s");
+        assertThat(t)
+                .contains("scrape_interval: 2s")
+                .contains("    endpoint: \"[[${otlpEndpoint}]]\"\n    tls:\n      insecure: true\n");
+    }
+
+    @Test
     void failsOnTemplateDrift() {
         assertThatThrownBy(() -> FastScrapeTemplate.replaceOrFail("no interval here", "scrape_interval: 15s", "x"))
                 .isInstanceOf(IllegalStateException.class);
