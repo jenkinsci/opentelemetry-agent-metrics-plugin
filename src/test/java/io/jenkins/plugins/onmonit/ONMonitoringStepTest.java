@@ -1,0 +1,332 @@
+package io.jenkins.plugins.onmonit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import com.cloudbees.hudson.plugins.folder.Folder;
+import hudson.model.Result;
+import hudson.slaves.DumbSlave;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import io.jenkins.plugins.onmonit.testing.HeldBuilds;
+import io.jenkins.plugins.onmonit.testing.Marker;
+import io.jenkins.plugins.onmonit.testing.RenderedConfig;
+import io.jenkins.plugins.onmonit.testing.StandIn;
+import io.jenkins.plugins.onmonit.testing.StandIns;
+import io.jenkins.plugins.onmonit.testing.TestAgents;
+import java.net.ServerSocket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.commons.io.FileUtils;
+import org.awaitility.Awaitility;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
+
+@WithJenkins
+class ONMonitoringStepTest {
+
+    private static final Pattern LISTEN = Pattern.compile("node_exporter will listen on (\\d+)");
+
+    @TempDir
+    Path tmp;
+
+    private Path markerDir;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        assumeTrue(StandIns.supported());
+        markerDir = Files.createDirectories(tmp.resolve("markers"));
+        FileUtils.deleteDirectory(TestAgents.jenkinsHomeEnv().resolve("opentelemetry-agent-metrics").toFile());
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (markerDir != null) {
+            StandIns.killAll(markerDir);
+        }
+    }
+
+    /**
+     * The plugin reads {@code Run.getEnvironment}, which sees global environment variables but neither
+     * {@code withEnv} nor {@code env.X = ...}; so the OTLP settings are configured globally.
+     */
+    private static void globalEnv(JenkinsRule j, String key, String value) throws Exception {
+        EnvironmentVariablesNodeProperty prop = j.jenkins.getGlobalNodeProperties()
+                .get(EnvironmentVariablesNodeProperty.class);
+        if (prop == null) {
+            prop = new EnvironmentVariablesNodeProperty();
+            j.jenkins.getGlobalNodeProperties().add(prop);
+        }
+        prop.getEnvVars().put(key, value);
+        j.jenkins.save();
+    }
+
+    private DumbSlave agent(JenkinsRule j) throws Exception {
+        globalEnv(j, "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317");
+        return TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
+    }
+
+    private static WorkflowJob job(JenkinsRule j, String name, String script) throws Exception {
+        WorkflowJob job = j.createProject(WorkflowJob.class, name);
+        job.setDefinition(new CpsFlowDefinition(script, true));
+        return job;
+    }
+
+    private static String onNode(String stepArgs, String body) {
+        return "node('t') { onMonit" + stepArgs + " {\n" + body + "\n} }";
+    }
+
+    private static String onNode(String body) {
+        return onNode("", body);
+    }
+
+    private static List<Integer> ports(String log) {
+        List<Integer> ports = new ArrayList<>();
+        Matcher m = LISTEN.matcher(log);
+        while (m.find()) {
+            ports.add(Integer.parseInt(m.group(1)));
+        }
+        return ports;
+    }
+
+    private static boolean alive(long pid) {
+        return ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false);
+    }
+
+    private static void assertAlive(List<Marker> markers) {
+        for (Marker m : markers) {
+            assertThat(alive(m.pid())).as("pid %d of %s alive", m.pid(), m.role()).isTrue();
+            if (m.parentPid() > 0) {
+                assertThat(alive(m.parentPid())).as("parent pid %d of %s alive", m.parentPid(), m.role()).isTrue();
+            }
+        }
+    }
+
+    private static void awaitDead(List<Marker> markers) {
+        Awaitility.await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
+            for (Marker m : markers) {
+                assertThat(alive(m.pid())).as("pid %d of %s alive", m.pid(), m.role()).isFalse();
+                if (m.parentPid() > 0) {
+                    assertThat(alive(m.parentPid())).as("parent pid %d of %s alive", m.parentPid(), m.role())
+                            .isFalse();
+                }
+            }
+        });
+    }
+
+    private List<Marker> awaitMarkers(int count) {
+        Awaitility.await().atMost(Duration.ofSeconds(30)).until(() -> StandIns.markers(markerDir).size() >= count);
+        return StandIns.markers(markerDir);
+    }
+
+    private static StandIn.Role exporterRole() {
+        return io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever.isWindows()
+                ? StandIn.Role.WINDOWS_EXPORTER
+                : StandIn.Role.NODE_EXPORTER;
+    }
+
+    private static RenderedConfig config(Marker otelcol) throws Exception {
+        return RenderedConfig.parse(Files.readString(otelcol.configCopy()));
+    }
+
+    private Marker otelcol() {
+        return StandIns.markers(markerDir).stream()
+                .filter(m -> m.role() == StandIn.Role.OTELCOL)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    @Test
+    void launchCollectorFalseStartsNothing(JenkinsRule j) throws Exception {
+        agent(j);
+        WorkflowJob job = job(j, "p", onNode("(launchCollector: false)", "echo 'x'"));
+        WorkflowRun run = j.buildAndAssertSuccess(job);
+        j.assertLogContains("[on-monit] Skipping launch of node_exporter and otel-contrib processes.", run);
+        assertThat(StandIns.markers(markerDir)).isEmpty();
+        assertThat(run.getAction(MonitoringAction.class)).isNotNull();
+    }
+
+    @Test
+    void renderedConfigMatchesBuild(JenkinsRule j) throws Exception {
+        agent(j);
+        Folder folder = j.createProject(Folder.class, "f");
+        WorkflowJob job = folder.createProject(WorkflowJob.class, "p");
+        job.setDefinition(new CpsFlowDefinition(onNode("echo 'x'"), true));
+        WorkflowRun run = j.buildAndAssertSuccess(job);
+        List<Integer> ports = ports(JenkinsRule.getLog(run));
+        assertThat(ports).hasSize(1);
+        RenderedConfig cfg = config(otelcol());
+        assertThat(cfg.scrapeTarget()).isEqualTo("localhost:" + ports.get(0));
+        assertThat(cfg.resourceAttribute("cicd.pipeline.name")).isEqualTo("f/p");
+        assertThat(cfg.resourceAttribute("cicd.group.name")).isEqualTo("f");
+        assertThat(cfg.resourceAttribute("cicd.pipeline.run.id")).isEqualTo("1");
+        assertThat(cfg.otlpEndpoint()).isEqualTo("http://localhost:4317");
+    }
+
+    @Test
+    void authHeaderReachesRenderedConfig(JenkinsRule j) throws Exception {
+        agent(j);
+        globalEnv(j, "OTEL_EXPORTER_OTLP_HEADERS", "Authorization=Bearer test-token");
+        WorkflowJob job = job(j, "p", onNode("echo 'x'"));
+        j.buildAndAssertSuccess(job);
+        assertThat(config(otelcol()).otlpHeaders()).isEqualTo(Map.of("Authorization", "Bearer test-token"));
+    }
+
+    @Test
+    void noAuthHeaderInRenderedConfig(JenkinsRule j) throws Exception {
+        agent(j);
+        j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
+        assertThat(config(otelcol()).otlpHeaders()).isEmpty();
+    }
+
+    @Test
+    void parallelOnMonitUsesDistinctPorts(JenkinsRule j) throws Exception {
+        agent(j);
+        String branch = "{ " + "onMonit { sleep 2 } }";
+        WorkflowJob job = job(j, "p", "node('t') {\n"
+                + "parallel a: " + branch + ", b: " + branch + "\n}");
+        WorkflowRun run = j.buildAndAssertSuccess(job);
+        List<Integer> ports = ports(JenkinsRule.getLog(run));
+        assertThat(ports).hasSize(2).doesNotHaveDuplicates();
+        List<Marker> markers = StandIns.markers(markerDir);
+        assertThat(markers).extracting(Marker::role)
+                .containsExactlyInAnyOrder(StandIn.Role.OTELCOL, StandIn.Role.OTELCOL, exporterRole(), exporterRole());
+        awaitDead(markers);
+    }
+
+    @Test
+    void declarativeOptionsWorks(JenkinsRule j) throws Exception {
+        agent(j);
+        WorkflowJob job = job(j, "p", "pipeline {\n  agent { label 't' }\n"
+                + "  options { onMonit() }\n"
+                + "  stages { stage('s') { steps { echo 'x' } } }\n}");
+        WorkflowRun run = j.buildAndAssertSuccess(job);
+        j.assertLogContains("node_exporter + otel-contrib started", run);
+        List<Marker> markers = StandIns.markers(markerDir);
+        assertThat(markers).hasSize(2);
+        awaitDead(markers);
+    }
+
+    @Test
+    void blockFormProcessesAliveInsideBody(JenkinsRule j) throws Exception {
+        DumbSlave agent = agent(j);
+        WorkflowJob job = job(j, "p", onNode(HeldBuilds.HOLD));
+        WorkflowRun run = HeldBuilds.hold(j, job);
+        List<Marker> markers;
+        try {
+            markers = awaitMarkers(2);
+            Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> assertAlive(markers(2)));
+        } finally {
+            HeldBuilds.release(job, agent);
+        }
+        j.assertBuildStatusSuccess(j.waitForCompletion(run));
+        awaitDead(StandIns.markers(markerDir));
+    }
+
+    private List<Marker> markers(int expected) {
+        List<Marker> markers = StandIns.markers(markerDir);
+        assertThat(markers).hasSize(expected);
+        return markers;
+    }
+
+    @Test
+    void debugPrintsConfigAndProcessOutput(JenkinsRule j) throws Exception {
+        agent(j);
+        WorkflowRun run = j.buildAndAssertSuccess(job(j, "p", onNode("(debug: true)", "echo 'x'")));
+        j.assertLogContains("[on-monit] otel-collector config:", run);
+        j.assertLogContains("Everything is ready.", run);
+    }
+
+    @Test
+    void withoutDebugNoConfigInLog(JenkinsRule j) throws Exception {
+        agent(j);
+        WorkflowRun run = j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
+        j.assertLogNotContains("[on-monit] otel-collector config:", run);
+        j.assertLogNotContains("Everything is ready.", run);
+    }
+
+    @Test
+    void abortInsideBlockStopsProcesses(JenkinsRule j) throws Exception {
+        DumbSlave agent = agent(j);
+        WorkflowJob job = job(j, "p", onNode(HeldBuilds.HOLD));
+        WorkflowRun run = HeldBuilds.hold(j, job);
+        List<Marker> markers = awaitMarkers(2);
+        try {
+            Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> assertAlive(markers(2)));
+            run.doStop();
+            Awaitility.await().atMost(Duration.ofSeconds(30)).until(() -> !run.isBuilding());
+            j.assertBuildStatus(Result.ABORTED, run);
+        } finally {
+            HeldBuilds.release(job, agent);
+        }
+        awaitDead(markers);
+    }
+
+    @Test
+    void occupiedDefaultPortIsSkipped(JenkinsRule j) throws Exception {
+        agent(j);
+        try (ServerSocket occupied = bind(9100)) {
+            WorkflowRun run = j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
+            List<Integer> ports = ports(JenkinsRule.getLog(run));
+            assertThat(ports).hasSize(1);
+            assertThat(ports.get(0)).isNotEqualTo(9100);
+            assertThat(config(otelcol()).scrapeTarget()).isEqualTo("localhost:" + ports.get(0));
+            assertThat(occupied.isClosed()).isFalse();
+        }
+    }
+
+    private static ServerSocket bind(int port) {
+        try {
+            return new ServerSocket(port);
+        } catch (java.io.IOException e) {
+            assumeTrue(false, "port " + port + " is not available: " + e);
+            return null;
+        }
+    }
+
+    @Test
+    void jobNameWithSpaceWorks(JenkinsRule j) throws Exception {
+        agent(j);
+        j.buildAndAssertSuccess(job(j, "with space", onNode("echo 'x'")));
+        Marker oc = otelcol();
+        assertThat(oc.args()).anySatisfy(a -> assertThat(a).startsWith("--config=file:").contains("with space"));
+        assertThat(oc.configCopy()).exists();
+        assertThat(Files.size(oc.configCopy())).isPositive();
+    }
+
+    @Test
+    void concurrentJobsOnSameAgentUseDistinctPorts(JenkinsRule j) throws Exception {
+        DumbSlave agent = TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir, 2);
+        globalEnv(j, "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317");
+        WorkflowJob job1 = job(j, "p1", onNode(HeldBuilds.HOLD));
+        WorkflowJob job2 = job(j, "p2", onNode(HeldBuilds.HOLD));
+        WorkflowRun run1 = HeldBuilds.hold(j, job1);
+        WorkflowRun run2 = HeldBuilds.hold(j, job2);
+        List<Marker> markers;
+        try {
+            markers = awaitMarkers(4);
+            List<Integer> ports = new ArrayList<>(ports(JenkinsRule.getLog(run1)));
+            ports.addAll(ports(JenkinsRule.getLog(run2)));
+            assertThat(ports).hasSize(2).doesNotHaveDuplicates();
+        } finally {
+            HeldBuilds.release(job1, agent);
+            HeldBuilds.release(job2, agent);
+        }
+        j.assertBuildStatusSuccess(j.waitForCompletion(run1));
+        j.assertBuildStatusSuccess(j.waitForCompletion(run2));
+        assertThat(markers).hasSize(4);
+        awaitDead(StandIns.markers(markerDir));
+    }
+}
