@@ -81,7 +81,10 @@ This variable specifies the target to which agent metrics are sent in the otlp g
 While this env var may be specified manually, the easiest way is to use the [opentelemetry-plugin](https://github.com/jenkinsci/opentelemetry-plugin/):
 configure the _OTLP Endpoint_ setting and enable the _Export OpenTelemetry configuration as environment variables_ setting.
 
-Optionally the Authentication header may be configured and passed to onMonit via the `OTEL_EXPORTER_OTLP_HEADERS` environment variable (also configurable in the opentelemetry-plugin).
+Optionally, headers such as an authentication header may be passed to onMonit via the `OTEL_EXPORTER_OTLP_HEADERS` environment variable (also configurable in the opentelemetry-plugin).
+It follows the [OTLP exporter format](https://opentelemetry.io/docs/specs/otel/protocol/exporter/#specifying-headers-via-environment-variables):
+comma-separated `key=value` pairs whose values may be percent-encoded (`%20` for a space, `%2C` for a comma); a `+` is kept as is.
+For example: `OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer%20abc,X-Tenant=t1`.
 
 ### Setup the executable source
 

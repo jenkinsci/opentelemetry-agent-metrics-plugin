@@ -11,7 +11,7 @@ exporters:
     verbosity: detailed
   otlp:
     endpoint: "[[${otlpEndpoint}]]"
-    [(${otlpAuthHeaderBefore})][[${otlpAuthHeader}]][(${otlpAuthHeaderAfter})]
+    [(${otlpHeadersYaml})]
 
 processors:
   resourcedetection:
