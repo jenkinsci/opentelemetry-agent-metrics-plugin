@@ -32,6 +32,11 @@ class FastScrapeTemplateTest {
     }
 
     @Test
+    void builtInHasUnixLineEndings() {
+        assertThat(FastScrapeTemplate.builtIn()).doesNotContain("\r");
+    }
+
+    @Test
     void failsOnTemplateDrift() {
         assertThatThrownBy(() -> FastScrapeTemplate.replaceOrFail("no interval here", "scrape_interval: 15s", "x"))
                 .isInstanceOf(IllegalStateException.class);
