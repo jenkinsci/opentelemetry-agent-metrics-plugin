@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import com.cloudbees.hudson.plugins.folder.Folder;
 import hudson.model.Result;
 import hudson.slaves.DumbSlave;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
 import io.jenkins.plugins.onmonit.testing.HeldBuilds;
 import io.jenkins.plugins.onmonit.testing.Marker;
 import io.jenkins.plugins.onmonit.testing.RenderedConfig;
@@ -133,12 +134,27 @@ class ONMonitoringStepTest {
     }
 
     @Test
-    @Disabled("ONMonitoringStepExecution reads Run.getEnvironment(), ignoring withEnv/environment{} OTEL_* variables; see issue <tbd>")
+    @Disabled("ONMonitoringStepExecution reads Run.getEnvironment(), ignoring withEnv/environment{} OTEL_* variables; "
+            + "it should read the step context's EnvVars; see issue <tbd>")
     void withEnvEndpointAndHeadersReachRenderedConfig(JenkinsRule j) throws Exception {
         TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
         WorkflowJob job = job(j, "p", "node('t') { withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317', "
                 + "'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer test-token']) { onMonit { echo 'x' } } }");
         j.buildAndAssertSuccess(job);
+        RenderedConfig cfg = config(otelcol());
+        assertThat(cfg.otlpEndpoint()).isEqualTo("http://localhost:4317");
+        assertThat(cfg.otlpHeaders()).isEqualTo(Map.of("Authorization", "Bearer test-token"));
+    }
+
+    @Test
+    @Disabled("ONMonitoringStepExecution reads Run.getEnvironment(), which does not include the agent's node-property "
+            + "environment variables; it should read the step context's EnvVars; see issue <tbd>")
+    void agentNodePropertyEndpointAndHeadersReachRenderedConfig(JenkinsRule j) throws Exception {
+        DumbSlave agent = TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
+        agent.getNodeProperties().add(new EnvironmentVariablesNodeProperty(
+                new EnvironmentVariablesNodeProperty.Entry("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"),
+                new EnvironmentVariablesNodeProperty.Entry("OTEL_EXPORTER_OTLP_HEADERS", "Authorization=Bearer test-token")));
+        j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
         RenderedConfig cfg = config(otelcol());
         assertThat(cfg.otlpEndpoint()).isEqualTo("http://localhost:4317");
         assertThat(cfg.otlpHeaders()).isEqualTo(Map.of("Authorization", "Bearer test-token"));
