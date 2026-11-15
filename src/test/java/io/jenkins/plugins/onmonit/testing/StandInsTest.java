@@ -128,6 +128,22 @@ class StandInsTest {
         });
     }
 
+    /** Like the plugin, kills only the launcher process; on Windows its job object must take the stand-in JVM down. */
+    @Test
+    void killingOnlyTheLauncherKillsTheStandIn(@TempDir Path t) throws Exception {
+        Path bin = bin(t);
+        Path markers = Files.createDirectories(t.resolve("markers"));
+        Path config = Files.writeString(t.resolve("c.yaml"), "x: 1");
+        Running r = start(bin.resolve(OTELCOL), markers, "--config=file:" + config);
+        r.awaitOutput("Everything is ready.");
+        Marker m = StandIns.markers(markers).get(0);
+
+        r.process.destroyForcibly();
+
+        await().atMost(Duration.ofSeconds(10))
+                .untilAsserted(() -> assertThat(isAlive(m.pid())).as("stand-in pid %d", m.pid()).isFalse());
+    }
+
     @Test
     void killAllDestroysRecordedProcessesAndWaits(@TempDir Path t) throws Exception {
         Path bin = bin(t);
