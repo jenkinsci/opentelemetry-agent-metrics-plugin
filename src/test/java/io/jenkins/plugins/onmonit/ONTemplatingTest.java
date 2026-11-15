@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import hudson.EnvVars;
 import hudson.model.ItemGroup;
 import hudson.model.TaskListener;
+import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
 import io.jenkins.plugins.onmonit.testing.RenderedConfig;
 import java.util.Map;
 import org.junit.jupiter.api.Disabled;
@@ -111,33 +112,39 @@ class ONTemplatingTest {
                 .isEqualTo(Map.of("Authorization", "Bearer test-token"));
     }
 
-    @Disabled("ONTemplating ignores the header key and always emits Authorization; see issue #121")
     @Test
     void customHeaderKey(JenkinsRule j) throws Exception {
         assertThat(renderTopLevel(j, ENDPOINT, "X-Api-Key=abc", null).otlpHeaders())
                 .isEqualTo(Map.of("X-Api-Key", "abc"));
     }
 
-    @Disabled("ONTemplating does not split comma-separated headers; see issue #121")
     @Test
     void multipleHeaders(JenkinsRule j) throws Exception {
         assertThat(renderTopLevel(j, ENDPOINT, "a=b,Authorization=Bearer x", null).otlpHeaders())
                 .isEqualTo(Map.of("a", "b", "Authorization", "Bearer x"));
     }
 
-    @Disabled("ONTemplating does not URL-decode header values; see issue #121")
     @Test
     void urlEncodedHeaderValue(JenkinsRule j) throws Exception {
         assertThat(renderTopLevel(j, ENDPOINT, "Authorization=Basic%20abc", null).otlpHeaders())
                 .isEqualTo(Map.of("Authorization", "Basic abc"));
     }
 
-    @Disabled("ONTemplating HTML-escapes header values in TEXT mode (' becomes &#39;, \" becomes &quot;, & becomes "
-            + "&amp;), so the YAML stays valid but the header value is corrupted; see issue #122")
     @Test
     void headerValueWithQuote(JenkinsRule j) throws Exception {
         assertThat(renderTopLevel(j, ENDPOINT, "Authorization=it's \"x\" & y", null).otlpHeaders())
                 .isEqualTo(Map.of("Authorization", "it's \"x\" & y"));
+    }
+
+    /** A custom template copied from the old default, using the deprecated otlpAuthHeader* variables. */
+    @Test
+    void legacyTemplateVariablesRenderAllHeaders(JenkinsRule j) throws Exception {
+        String legacyLine = "[(${otlpAuthHeaderBefore})][[${otlpAuthHeader}]][(${otlpAuthHeaderAfter})]";
+        String template = FastScrapeTemplate.builtIn().replace("[(${otlpHeadersYaml})]", legacyLine);
+        assertThat(template).contains(legacyLine);
+        FastScrapeTemplate.apply(template);
+        assertThat(renderTopLevel(j, ENDPOINT, "a=b,X-Api-Key=abc", null).otlpHeaders())
+                .isEqualTo(Map.of("a", "b", "X-Api-Key", "abc"));
     }
 
     @Disabled("ONTemplating HTML-escapes the job name in TEXT mode (\" becomes &quot;, ' becomes &#39;), so the name is not preserved; see issue #122")

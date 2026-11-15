@@ -1,4 +1,9 @@
 <div>
     If empty, the default OTEL config template is loaded from the <a href="https://github.com/jenkinsci/opentelemetry-agent-metrics-plugin/blob/main/src/main/resources/io/jenkins/plugins/onmonit/otel.yaml.tmpl">plugin resources</a>.
     By setting a value this overrides the OTEL config template.
+    <p>
+    The headers from <code>OTEL_EXPORTER_OTLP_HEADERS</code> are available as <code>otlpHeadersYaml</code>, a ready-made
+    <code>headers:</code> block to insert under the exporter with <code>[(${otlpHeadersYaml})]</code>, and as
+    <code>otlpHeaders</code>, a map of header names to decoded values.
+    The <code>otlpAuthHeaderBefore</code>, <code>otlpAuthHeader</code> and <code>otlpAuthHeaderAfter</code> variables are deprecated.
 </div>

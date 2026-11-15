@@ -103,17 +103,14 @@ public class ONTemplating {
         context.setVariable("jobName", jobName);
         context.setVariable("jobGroupName", trimWithDefault(jobName, jobBaseName, "-"));
         context.setVariable("otlpEndpoint", toOtelCompatibleUrl(otlpEndpoint));
-        if (otlpHeader == null || otlpHeader.isEmpty()) {
-            context.setVariable("otlpAuthHeaderBefore", "");
-            context.setVariable("otlpAuthHeader", "");
-            context.setVariable("otlpAuthHeaderAfter", "");
-        } else {
-            var otlpAuthHeader = otlpHeader.substring(otlpHeader.indexOf("=") + 1);
-            context.setVariable("otlpAuthHeaderBefore", "headers:\n" +
-                    "      Authorization: '");
-            context.setVariable("otlpAuthHeader", otlpAuthHeader);
-            context.setVariable("otlpAuthHeaderAfter", "'" );
-        }
+        Map<String, String> otlpHeaders = OtlpHeaders.parse(otlpHeader);
+        String otlpHeadersYaml = OtlpHeaders.toYamlBlock(otlpHeaders);
+        context.setVariable("otlpHeaders", otlpHeaders);
+        context.setVariable("otlpHeadersYaml", otlpHeadersYaml);
+        // Deprecated: kept so custom templates copied from the old default still render every header.
+        context.setVariable("otlpAuthHeaderBefore", otlpHeadersYaml);
+        context.setVariable("otlpAuthHeader", "");
+        context.setVariable("otlpAuthHeaderAfter", "");
         return context;
     }
 
