@@ -48,9 +48,15 @@ public final class StandIns {
     private StandIns() {}
 
     /**
+     * Environment variable that turns an unusable launcher toolchain into an error. The {@code Jenkinsfile} sets it to
+     * {@code true}; developers can export it to get the same strictness locally.
+     */
+    public static final String REQUIRE_ENV = "ONMONIT_REQUIRE_STAND_INS";
+
+    /**
      * Whether launchers can be built here. Always true on Linux/macOS; on Windows needs PowerShell {@code Add-Type}.
-     * On Jenkins CI (environment variable {@code JENKINS_URL} set) an unusable toolchain is an error instead of
-     * {@code false}, so a broken Windows agent cannot pass by skipping every stand-in test.
+     * When {@link #REQUIRE_ENV} is {@code true} an unusable toolchain is an error instead of {@code false}, so a
+     * broken Windows CI agent cannot pass by skipping every stand-in test.
      */
     public static synchronized boolean supported() {
         if (supported == null) {
@@ -67,11 +73,17 @@ public final class StandIns {
                 }
             }
         }
-        if (!supported && System.getenv("JENKINS_URL") != null) {
-            throw new IllegalStateException("Stand-in launchers cannot be built on this Jenkins CI agent, so the "
-                    + "stand-in tests would all be skipped: " + unsupportedCause.getMessage(), unsupportedCause);
+        if (!supported && required(System.getenv())) {
+            throw new IllegalStateException("Stand-in launchers cannot be built here although " + REQUIRE_ENV
+                    + "=true, so the stand-in tests would all be skipped: " + unsupportedCause.getMessage(),
+                    unsupportedCause);
         }
         return supported;
+    }
+
+    /** Whether {@code env} demands working launchers (see {@link #REQUIRE_ENV}). */
+    static boolean required(Map<String, String> env) {
+        return "true".equalsIgnoreCase(env.get(REQUIRE_ENV));
     }
 
     /** The exporter role for this OS: {@code windows_exporter} on Windows, else {@code node_exporter}. */
