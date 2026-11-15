@@ -33,7 +33,6 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -147,8 +146,6 @@ class ONMonitoringStepTest {
     }
 
     @Test
-    @Disabled("ONMonitoringStepExecution reads Run.getEnvironment(), ignoring withEnv/environment{} OTEL_* variables; "
-            + "it should read the step context's EnvVars; see issue #123")
     void withEnvEndpointAndHeadersReachRenderedConfig(JenkinsRule j) throws Exception {
         TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
         WorkflowJob job = job(j, "p", "node('t') { withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317', "
@@ -160,14 +157,36 @@ class ONMonitoringStepTest {
     }
 
     @Test
-    @Disabled("ONMonitoringStepExecution reads Run.getEnvironment(), which does not include the agent's node-property "
-            + "environment variables; it should read the step context's EnvVars; see issue #123")
     void agentNodePropertyEndpointAndHeadersReachRenderedConfig(JenkinsRule j) throws Exception {
         DumbSlave agent = TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
         agent.getNodeProperties().add(new EnvironmentVariablesNodeProperty(
                 new EnvironmentVariablesNodeProperty.Entry("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"),
                 new EnvironmentVariablesNodeProperty.Entry("OTEL_EXPORTER_OTLP_HEADERS", "Authorization=Bearer test-token")));
         j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
+        RenderedConfig cfg = config(otelcol());
+        assertThat(cfg.otlpEndpoint()).isEqualTo("http://localhost:4317");
+        assertThat(cfg.otlpHeaders()).isEqualTo(Map.of("Authorization", "Bearer test-token"));
+    }
+
+    @Test
+    void withEnvOverridesGlobalEndpoint(JenkinsRule j) throws Exception {
+        agent(j);
+        j.buildAndAssertSuccess(job(j, "p", "node('t') { withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://override:4317']) "
+                + "{ onMonit { echo 'x' } } }"));
+        assertThat(config(otelcol()).otlpEndpoint()).isEqualTo("http://override:4317");
+    }
+
+    @Test
+    void declarativeEnvironmentEndpointReachesRenderedConfig(JenkinsRule j) throws Exception {
+        TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
+        WorkflowJob job = job(j, "p", "pipeline {\n  agent { label 't' }\n"
+                + "  environment {\n"
+                + "    OTEL_EXPORTER_OTLP_ENDPOINT = 'http://localhost:4317'\n"
+                + "    OTEL_EXPORTER_OTLP_HEADERS = 'Authorization=Bearer test-token'\n"
+                + "  }\n"
+                + "  options { onMonit() }\n"
+                + "  stages { stage('s') { steps { echo 'x' } } }\n}");
+        j.buildAndAssertSuccess(job);
         RenderedConfig cfg = config(otelcol());
         assertThat(cfg.otlpEndpoint()).isEqualTo("http://localhost:4317");
         assertThat(cfg.otlpHeaders()).isEqualTo(Map.of("Authorization", "Bearer test-token"));

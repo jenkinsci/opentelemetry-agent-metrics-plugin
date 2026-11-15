@@ -86,6 +86,23 @@ It follows the [OTLP exporter format](https://opentelemetry.io/docs/specs/otel/p
 comma-separated `key=value` pairs whose values may be percent-encoded (`%20` for a space, `%2C` for a comma); a `+` is kept as is.
 For example: `OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer%20abc,X-Tenant=t1`.
 
+onMonit reads these variables from its own step environment, so they can come from any of these sources:
+* the opentelemetry-plugin export or global Jenkins environment variables
+* the "Environment variables" node property of the agent running the step
+* an enclosing `withEnv` or declarative `environment {}` block
+
+When the same variable is set in several places, the innermost scope wins:
+
+```groovy
+node {
+  withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317']) {
+    onMonit {
+      sh 'make'
+    }
+  }
+}
+```
+
 ### Setup the executable source
 
 In order for this plugin to work 2 executables are run on the agents.

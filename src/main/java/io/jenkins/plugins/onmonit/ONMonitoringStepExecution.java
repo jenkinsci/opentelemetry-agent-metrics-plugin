@@ -1,6 +1,7 @@
 package io.jenkins.plugins.onmonit;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.EnvVars;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.exec.ExecRemoteNodeExporterProcess;
 import io.jenkins.plugins.onmonit.exec.ExecRemoteOtelContribProcess;
@@ -234,7 +235,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		if (build == null) {
 			throw new NullPointerException("build is null");
 		}
-		String config = templating.renderTemplate(templating.getJobContext(build, build.getEnvironment(listener), usedPort.getPort()));
+		String config = templating.renderTemplate(templating.getJobContext(build, getEnvironment(), usedPort.getPort()));
 		if (debug) {
 			listener.getLogger().println("[on-monit] otel-collector config:\n" + config);
 		}
@@ -251,10 +252,8 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 	}
 
 	private void addActionOnce() throws IOException, InterruptedException {
-		TaskListener listener = getListener();
 		Run<?, ?> build = getBuild();
-		var environment = build.getEnvironment(listener);
-		ONTemplating.UrlContext urlContext = templating.getUrlContext(environment);
+		ONTemplating.UrlContext urlContext = templating.getUrlContext(getEnvironment());
 		build.addOrReplaceAction(new MonitoringAction(urlContext, dashboardUrl));
 	}
 
@@ -292,6 +291,16 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 
 	public TaskListener getListener() throws IOException, InterruptedException {
 		return getContext().get(TaskListener.class);
+	}
+
+	/**
+	 * The environment of this step: build-level variables, then the enclosing {@code node} block's computer
+	 * variables (including agent node properties), then enclosing wrappers such as {@code withEnv} or a declarative
+	 * {@code environment} block, with the innermost one winning.
+	 */
+	EnvVars getEnvironment() throws IOException, InterruptedException {
+		EnvVars environment = getContext().get(EnvVars.class);
+		return environment != null ? environment : getBuild().getEnvironment(getListener());
 	}
 
 	public Run<?, ?> getBuild() throws IOException, InterruptedException {
