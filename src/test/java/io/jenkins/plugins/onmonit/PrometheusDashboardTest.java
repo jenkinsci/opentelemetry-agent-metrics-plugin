@@ -12,6 +12,7 @@ import hudson.slaves.DumbSlave;
 import io.jenkins.plugins.onmonit.testing.DashboardQueries;
 import io.jenkins.plugins.onmonit.testing.DashboardQueries.LabelValuesQuery;
 import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
+import io.jenkins.plugins.onmonit.testing.HeldBuilds;
 import io.jenkins.plugins.onmonit.testing.JenkinsFixtures;
 import io.jenkins.plugins.onmonit.testing.Lifecycle;
 import io.jenkins.plugins.onmonit.testing.RealBinaries;
@@ -54,7 +55,8 @@ import org.testcontainers.utility.MountableFile;
 
 /**
  * Runs a build with the real collector and node_exporter exporting over OTLP/HTTP into a Prometheus reference
- * backend, then runs every query of {@code node-exporter-full-ci.json} against it. Local-only:
+ * backend, then runs every query of {@code node-exporter-full-ci.json} against it while the build is still held inside
+ * {@code onMonit}. Local-only:
  * {@code ./mvnw verify -Preal-binaries -Dtest=PrometheusDashboardTest}.
  */
 @Tag("real-binaries")
@@ -85,8 +87,14 @@ class PrometheusDashboardTest {
     private JenkinsRule jenkins;
     private DumbSlave agent;
 
-    /** What a finished build looks like to the dashboard. */
-    private record Build(WorkflowRun run, Map<String, String> vars, double endSeconds) {}
+    /** Upper bound for start-up (uploading and unpacking the binaries, starting otelcol) plus enough samples. */
+    private static final Duration READY = Duration.ofSeconds(120);
+
+    /**
+     * A build held inside {@code onMonit}, its dashboard variables, and the time to evaluate queries at: a moment
+     * when Prometheus already had several samples for the build.
+     */
+    private record Build(WorkflowJob job, WorkflowRun run, Map<String, String> vars, double evalSeconds) {}
 
     @BeforeAll
     static void installBinaries() throws Exception {
@@ -114,6 +122,7 @@ class PrometheusDashboardTest {
                 for (WorkflowJob job : jenkins.jenkins.getAllItems(WorkflowJob.class)) {
                     for (WorkflowRun run : job.getBuilds()) {
                         if (run.isBuilding()) {
+                            HeldBuilds.release(job, agent);
                             jenkins.waitForCompletion(run);
                         }
                     }
@@ -136,7 +145,12 @@ class PrometheusDashboardTest {
         return "http://localhost:" + prometheus.getMappedPort(9090);
     }
 
-    /** Runs {@code f/p} with {@code sleep 20} inside {@code onMonit} and resolves the dashboard variables for it. */
+    /**
+     * Starts {@code f/p} held inside {@code onMonit}, waits until Prometheus has at least 3 samples within the
+     * dashboard's 10s rate interval, and resolves the dashboard variables for it. Queries are evaluated while the
+     * collector still runs: at build end the collector's shutdown may have marked the series stale, which empties
+     * instant queries.
+     */
     private Build runBuild(JenkinsRule j) throws Exception {
         jenkins = j;
         FastScrapeTemplate.apply(FastScrapeTemplate.withIntervalAndOtlpHttp("2s"));
@@ -146,17 +160,21 @@ class PrometheusDashboardTest {
 
         Folder folder = j.createProject(Folder.class, "f");
         WorkflowJob job = folder.createProject(WorkflowJob.class, "p");
-        job.setDefinition(new CpsFlowDefinition("node('t') { onMonit {\nsleep 20\n} }", true));
-        WorkflowRun run = j.buildAndAssertSuccess(job);
-        double end = (run.getStartTimeInMillis() + run.getDuration()) / 1000.0;
+        job.setDefinition(new CpsFlowDefinition("node('t') { onMonit {\n" + HeldBuilds.HOLD + "\n} }", true));
+        WorkflowRun run = job.scheduleBuild2(0).waitForStart();
 
         String runSelector = "node_uname_info{cicd_pipeline_run_id=\"" + run.getId() + "\"}";
-        List<String> workers = new ArrayList<>();
-        Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
-            workers.clear();
-            workers.addAll(labelValues("cicd_worker_id", runSelector));
-            assertThat(workers).as("cicd_worker_id of " + runSelector).hasSize(1);
+        String ready = "min(count_over_time(node_load1{cicd_pipeline_run_id=\"" + run.getId() + "\"}[10s])) >= 3";
+        double[] evalSeconds = {0};
+        Awaitility.await().atMost(READY).pollInterval(Duration.ofSeconds(1)).untilAsserted(() -> {
+            assertThat(run.isBuilding()).as("build still held inside onMonit").isTrue();
+            double now = System.currentTimeMillis() / 1000.0;
+            JsonNode body = get("/api/v1/query", Map.of("query", ready, "time", String.valueOf(now)));
+            assertThat(body.path("data").path("result").isEmpty()).as(ready + ": " + body).isFalse();
+            evalSeconds[0] = now;
         });
+        List<String> workers = labelValues("cicd_worker_id", runSelector);
+        assertThat(workers).as("cicd_worker_id of " + runSelector).hasSize(1);
         List<Integer> ports = JenkinsFixtures.ports(JenkinsRule.getLog(run));
         assertThat(ports).as("node_exporter port in build log").isNotEmpty();
         assertThat(workers.get(0)).endsWith(":" + ports.get(0));
@@ -166,7 +184,13 @@ class PrometheusDashboardTest {
                 "jobid", run.getId(),
                 "jobgroup", folder.getFullName(),
                 "workerid", workers.get(0));
-        return new Build(run, vars, end);
+        return new Build(job, run, vars, evalSeconds[0]);
+    }
+
+    /** Releases the held build and checks it succeeds. */
+    private void finish(Build build) throws Exception {
+        HeldBuilds.release(build.job(), agent);
+        jenkins.assertBuildStatusSuccess(jenkins.waitForCompletion(build.run()));
     }
 
     private JsonNode get(String path, Map<String, String> params) throws IOException, InterruptedException {
@@ -213,6 +237,7 @@ class PrometheusDashboardTest {
                     .as("label_values(%s, %s) for $%s", selector, v.label(), v.variable())
                     .contains(build.vars().get(v.variable()));
         }
+        finish(build);
     }
 
     @Test
@@ -231,7 +256,7 @@ class PrometheusDashboardTest {
         for (String expr : exprs) {
             String q = dashboard.substitute(expr, build.vars());
             String line = q.replaceAll("\\s*\\n\\s*", " ").strip();
-            JsonNode body = get("/api/v1/query", Map.of("query", q, "time", String.valueOf(build.endSeconds())));
+            JsonNode body = get("/api/v1/query", Map.of("query", q, "time", String.valueOf(build.evalSeconds())));
             if (!"success".equals(body.path("status").asText())) {
                 errors.add(body.path("errorType").asText() + ": " + body.path("error").asText() + "\n    " + q);
                 coverage.add("ERROR\t" + line);
@@ -251,6 +276,7 @@ class PrometheusDashboardTest {
                 }
             }
         }
+        finish(build);
         Path out = Path.of(System.getProperty("basedir", "."), "target", "dashboard-coverage.txt");
         Files.createDirectories(out.getParent());
         Files.write(out, coverage, StandardCharsets.UTF_8);
@@ -263,7 +289,7 @@ class PrometheusDashboardTest {
         // The core metric set is Linux's (e.g. macOS has node_memory_total_bytes, not MemTotal/MemAvailable), so
         // empty core queries fail the test on Linux only; elsewhere they are only reported.
         if ("linux".equals(RemoteComputerInfoRetriever.getOs())) {
-            assertThat(emptyCore).as("core queries without data at build end").isEmpty();
+            assertThat(emptyCore).as("core queries without data while monitoring").isEmpty();
         } else {
             emptyCore.forEach(q -> System.out.println("EMPTY core query (not enforced on "
                     + RemoteComputerInfoRetriever.getOs() + "): " + q.replaceAll("\\s*\\n\\s*", " ").strip()));

@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.cloudbees.hudson.plugins.folder.Folder;
 import hudson.slaves.DumbSlave;
 import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
+import io.jenkins.plugins.onmonit.testing.HeldBuilds;
 import io.jenkins.plugins.onmonit.testing.JenkinsFixtures;
 import io.jenkins.plugins.onmonit.testing.Lifecycle;
 import io.jenkins.plugins.onmonit.testing.OtlpMetricsReceiver;
@@ -17,6 +18,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.awaitility.Awaitility;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -40,8 +43,13 @@ import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 @WithJenkins
 class RealBinariesExportTest {
 
-    private static final String BODY = "sleep 10";
-    private static final Duration TIMEOUT = Duration.ofSeconds(30);
+    /** Holds the build inside {@code onMonit} until the test has seen what it waits for (see {@link HeldBuilds}). */
+    private static final String BODY = HeldBuilds.HOLD;
+    /**
+     * Upper bound for start-up plus first export. Start-up alone (uploading and unpacking the binaries, starting
+     * otelcol) took 19-25s on a WSL2 checkout under /mnt/c, and the plugin allows each process 1 minute to start.
+     */
+    private static final Duration TIMEOUT = Duration.ofSeconds(90);
     private static final String INSECURE_TLS = "--set=exporters.otlp.tls.insecure=true";
     private static final String PLAINTEXT_TLS_BUG = "The built-in template's gRPC otlp exporter has no tls setting, so "
             + "otelcol 0.135.0 dials an http:// endpoint with TLS and every export fails with 'transport: "
@@ -71,10 +79,11 @@ class RealBinariesExportTest {
     void tearDown() throws Exception {
         try {
             if (agent != null) {
-                // A failed test may leave its build inside onMonit; let it finish so the plugin stops the processes.
+                // A failed test may leave its build held inside onMonit; release it so the plugin stops the processes.
                 for (WorkflowJob job : jenkins.jenkins.getAllItems(WorkflowJob.class)) {
                     for (WorkflowRun run : job.getBuilds()) {
                         if (run.isBuilding()) {
+                            HeldBuilds.release(job, agent);
                             jenkins.waitForCompletion(run);
                         }
                     }
@@ -122,18 +131,30 @@ class RealBinariesExportTest {
         return "node('t') { onMonit {\n" + body + "\n} }";
     }
 
-    /** Starts the build, waits until it has exported something, then waits for it to succeed. */
-    private WorkflowRun runAndAwaitExports(JenkinsRule j, WorkflowJob job, Duration timeout) throws Exception {
+    /**
+     * Starts the held build, waits until {@code arrived} holds while the build is still inside {@code onMonit}, then
+     * releases it and waits for it to succeed.
+     */
+    private WorkflowRun runAndAwait(
+            JenkinsRule j, WorkflowJob job, Duration timeout, Function<WorkflowRun, Callable<Boolean>> arrived)
+            throws Exception {
         WorkflowRun run = job.scheduleBuild2(0).waitForStart();
-        Awaitility.await()
-                .atMost(timeout)
-                .until(() -> !receiver.requestsForRun(run.getId()).isEmpty());
+        Awaitility.await().atMost(timeout).until(arrived.apply(run));
+        assertThat(run.isBuilding()).as("build still inside onMonit when the exports arrived").isTrue();
+        HeldBuilds.release(job, agent);
         j.assertBuildStatusSuccess(j.waitForCompletion(run));
         return run;
     }
 
+    /** {@link #runAndAwait} until the first export of the build arrived. */
     private WorkflowRun runAndAwaitExports(JenkinsRule j, WorkflowJob job) throws Exception {
-        return runAndAwaitExports(j, job, TIMEOUT);
+        return runAndAwait(j, job, TIMEOUT, run -> () -> !receiver.requestsForRun(run.getId()).isEmpty());
+    }
+
+    /** {@link #runAndAwait} until the exports of the build contain all of {@code metrics}. */
+    private WorkflowRun runAndAwaitMetrics(JenkinsRule j, WorkflowJob job, Duration timeout, Set<String> metrics)
+            throws Exception {
+        return runAndAwait(j, job, timeout, run -> () -> receiver.metricNames(run.getId()).containsAll(metrics));
     }
 
     private static List<Integer> ports(WorkflowRun run) throws Exception {
@@ -143,10 +164,8 @@ class RealBinariesExportTest {
     @Test
     void metricsArriveDuringBlock(JenkinsRule j) throws Exception {
         setUp(j);
-        WorkflowRun run = job(j, onNode(BODY)).scheduleBuild2(0).waitForStart();
-        Awaitility.await().atMost(TIMEOUT).until(() -> !receiver.requestsForRun(run.getId()).isEmpty());
-        assertThat(run.isBuilding()).as("build still inside onMonit when first export arrived").isTrue();
-        j.assertBuildStatusSuccess(j.waitForCompletion(run));
+        // runAndAwait checks the build is still inside the held block when the first export arrives.
+        runAndAwaitExports(j, job(j, onNode(BODY)));
     }
 
     @Test
@@ -173,7 +192,6 @@ class RealBinariesExportTest {
     @Test
     void coreHostMetricsPresent(JenkinsRule j) throws Exception {
         setUp(j);
-        WorkflowRun run = runAndAwaitExports(j, job(j, onNode(BODY)));
         Set<String> expected;
         if (RemoteComputerInfoRetriever.isWindows()) {
             expected = Set.of("windows_cpu_time_total", "windows_memory_physical_total_bytes");
@@ -182,6 +200,7 @@ class RealBinariesExportTest {
         } else {
             expected = Set.of("node_cpu_seconds_total", "node_memory_MemTotal_bytes", "node_load1");
         }
+        WorkflowRun run = runAndAwaitMetrics(j, job(j, onNode(BODY)), TIMEOUT, expected);
         assertThat(receiver.metricNames(run.getId())).containsAll(expected);
     }
 
@@ -251,11 +270,11 @@ class RealBinariesExportTest {
     @Test
     void parallelBlocksProduceTwoWorkers(JenkinsRule j) throws Exception {
         setUp(j);
-        String branch = "{ onMonit { " + BODY + " } }";
+        String branch = "{ onMonit { " + BODY.replace("\n", "; ") + " } }";
         WorkflowJob job = job(j, "node('t') {\nparallel a: " + branch + ", b: " + branch + "\n}");
-        // onMonit start-up runs one branch after the other (the second collector starts ~15s after the first here),
-        // so check the worker ids once the build is done: each collector exports only while its block runs.
-        WorkflowRun run = j.buildAndAssertSuccess(job);
+        // Both blocks stay held until both workers have exported, so the two collectors run at the same time.
+        // onMonit start-up runs one branch after the other, hence twice the timeout.
+        WorkflowRun run = runAndAwait(j, job, TIMEOUT.multipliedBy(2), r -> () -> workerIds(r.getId()).size() == 2);
         assertThat(workerIds(run.getId())).hasSize(2);
         List<Integer> ports = ports(run);
         assertThat(ports).hasSize(2).doesNotHaveDuplicates();
@@ -296,8 +315,10 @@ class RealBinariesExportTest {
         assertThat(ONMonitConfig.get().getOtelConfigTemplate()).isEmpty();
         Folder folder = j.createProject(Folder.class, "f");
         WorkflowJob job = folder.createProject(WorkflowJob.class, "p");
-        job.setDefinition(new CpsFlowDefinition(onNode("sleep 40"), true));
-        WorkflowRun run = runAndAwaitExports(j, job, Duration.ofSeconds(45));
+        job.setDefinition(new CpsFlowDefinition(onNode(BODY), true));
+        String cpu = RemoteComputerInfoRetriever.isWindows() ? "windows_cpu_time_total" : "node_cpu_seconds_total";
+        // The built-in template scrapes every 15s, on top of start-up.
+        WorkflowRun run = runAndAwaitMetrics(j, job, TIMEOUT.plusSeconds(30), Set.of(cpu));
         List<Integer> ports = ports(run);
         assertThat(ports).hasSize(1);
 
@@ -308,7 +329,6 @@ class RealBinariesExportTest {
             assertThat(attrs.get("host.name")).isNotBlank();
             assertThat(attrs).containsEntry("cicd.worker.id", attrs.get("host.name") + ":" + ports.get(0));
         });
-        assertThat(receiver.metricNames(run.getId()))
-                .contains(RemoteComputerInfoRetriever.isWindows() ? "windows_cpu_time_total" : "node_cpu_seconds_total");
+        assertThat(receiver.metricNames(run.getId())).contains(cpu);
     }
 }
