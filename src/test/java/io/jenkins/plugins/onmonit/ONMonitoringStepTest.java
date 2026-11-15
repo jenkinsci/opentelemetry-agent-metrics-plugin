@@ -135,7 +135,7 @@ class ONMonitoringStepTest {
 
     @Test
     @Disabled("ONMonitoringStepExecution reads Run.getEnvironment(), ignoring withEnv/environment{} OTEL_* variables; "
-            + "it should read the step context's EnvVars; see issue <tbd>")
+            + "it should read the step context's EnvVars; see issue #123")
     void withEnvEndpointAndHeadersReachRenderedConfig(JenkinsRule j) throws Exception {
         TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
         WorkflowJob job = job(j, "p", "node('t') { withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317', "
@@ -148,7 +148,7 @@ class ONMonitoringStepTest {
 
     @Test
     @Disabled("ONMonitoringStepExecution reads Run.getEnvironment(), which does not include the agent's node-property "
-            + "environment variables; it should read the step context's EnvVars; see issue <tbd>")
+            + "environment variables; it should read the step context's EnvVars; see issue #123")
     void agentNodePropertyEndpointAndHeadersReachRenderedConfig(JenkinsRule j) throws Exception {
         DumbSlave agent = TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
         agent.getNodeProperties().add(new EnvironmentVariablesNodeProperty(

@@ -56,7 +56,7 @@ class RealBinariesExportTest {
             + "authentication handshake failed: tls: first record does not look like a TLS handshake'. The README "
             + "documents the workaround (" + INSECURE_TLS + " via ocAdditionalOptions or the global 'Otel-contrib "
             + "default additional options'), but out-of-the-box plaintext endpoints fail; maintainer to decide "
-            + "whether the default template should handle http:// endpoints; see issue <tbd>";
+            + "whether the default template should handle http:// endpoints; see issue #124";
 
     @TempDir
     Path tmp;
@@ -223,7 +223,7 @@ class RealBinariesExportTest {
                 .allSatisfy(h -> assertThat(h).containsEntry("authorization", "Bearer test-token"));
     }
 
-    @Disabled("ONTemplating ignores the header key and always emits Authorization; see issue <tbd>")
+    @Disabled("ONTemplating ignores the header key and always emits Authorization; see issue #121")
     @Test
     void customHeaderKeyOnWire(JenkinsRule j) throws Exception {
         setUp(j);
@@ -234,7 +234,7 @@ class RealBinariesExportTest {
                 .allSatisfy(h -> assertThat(h).containsEntry("x-api-key", "abc").doesNotContainKey("authorization"));
     }
 
-    @Disabled("ONTemplating does not split comma-separated headers; see issue <tbd>")
+    @Disabled("ONTemplating does not split comma-separated headers; see issue #121")
     @Test
     void multipleHeadersOnWire(JenkinsRule j) throws Exception {
         setUp(j);
@@ -245,7 +245,7 @@ class RealBinariesExportTest {
                 .allSatisfy(h -> assertThat(h).containsEntry("a", "b").containsEntry("authorization", "Bearer x"));
     }
 
-    @Disabled("ONTemplating does not URL-decode header values; see issue <tbd>")
+    @Disabled("ONTemplating does not URL-decode header values; see issue #121")
     @Test
     void urlEncodedHeaderOnWire(JenkinsRule j) throws Exception {
         setUp(j);
