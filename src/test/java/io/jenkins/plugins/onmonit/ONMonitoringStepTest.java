@@ -11,6 +11,7 @@ import com.cloudbees.hudson.plugins.folder.Folder;
 import hudson.model.Result;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
+import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
 import io.jenkins.plugins.onmonit.testing.HeldBuilds;
 import io.jenkins.plugins.onmonit.testing.Marker;
 import io.jenkins.plugins.onmonit.testing.RenderedConfig;
@@ -122,6 +123,18 @@ class ONMonitoringStepTest {
         assertThat(cfg.resourceAttribute("cicd.group.name")).isEqualTo("f");
         assertThat(cfg.resourceAttribute("cicd.pipeline.run.id")).isEqualTo("1");
         assertThat(cfg.otlpEndpoint()).isEqualTo("http://localhost:4317");
+    }
+
+    /** A custom template from the global settings is used, and its template expressions are rendered. */
+    @Test
+    void customGlobalTemplateLabelReachesRenderedConfig(JenkinsRule j) throws Exception {
+        agent(j);
+        FastScrapeTemplate.apply(FastScrapeTemplate.withResourceAttribute(
+                FastScrapeTemplate.builtIn(), "test.custom.label", "custom-[[${env.BUILD_ID}]]"));
+        j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
+        RenderedConfig cfg = config(otelcol());
+        assertThat(cfg.resourceAttribute("test.custom.label")).isEqualTo("custom-1");
+        assertThat(cfg.resourceAttribute("cicd.pipeline.name")).isEqualTo("p");
     }
 
     @Test

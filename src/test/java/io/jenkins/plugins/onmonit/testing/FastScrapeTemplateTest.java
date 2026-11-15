@@ -37,6 +37,14 @@ class FastScrapeTemplateTest {
     }
 
     @Test
+    void resourceAttributeVariant() {
+        String t = FastScrapeTemplate.withResourceAttribute(FastScrapeTemplate.builtIn(), "test.custom.label", "v");
+        assertThat(t).contains("  resource/ci:\n    attributes:\n"
+                + "    - action: insert\n      key: test.custom.label\n      value: \"v\"\n"
+                + "    - action: insert\n");
+    }
+
+    @Test
     void failsOnTemplateDrift() {
         assertThatThrownBy(() -> FastScrapeTemplate.replaceOrFail("no interval here", "scrape_interval: 15s", "x"))
                 .isInstanceOf(IllegalStateException.class);

@@ -290,6 +290,18 @@ class RealBinariesExportTest {
                 .collect(Collectors.toSet());
     }
 
+    /** A label added through a custom template in the global settings arrives on the exported resource. */
+    @Test
+    void customTemplateLabelOnWire(JenkinsRule j) throws Exception {
+        FastScrapeTemplate.apply(FastScrapeTemplate.withResourceAttribute(
+                FastScrapeTemplate.withIntervalAndInsecureTls("2s"), "test.custom.label", "custom-[[${env.BUILD_ID}]]"));
+        setUpTemplateUnchanged(j, receiver.endpoint());
+        WorkflowRun run = runAndAwaitExports(j, job(j, onNode(BODY)));
+        assertThat(receiver.resourceAttributes(run.getId()))
+                .isNotEmpty()
+                .allSatisfy(attrs -> assertThat(attrs).containsEntry("test.custom.label", "custom-" + run.getId()));
+    }
+
     @Test
     void endpointWithTrailingSlashDelivers(JenkinsRule j) throws Exception {
         setUp(j, receiver.endpoint() + "/");
