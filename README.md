@@ -83,6 +83,23 @@ configure the _OTLP Endpoint_ setting and enable the _Export OpenTelemetry confi
 
 Optionally the Authentication header may be configured and passed to onMonit via the `OTEL_EXPORTER_OTLP_HEADERS` environment variable (also configurable in the opentelemetry-plugin).
 
+onMonit reads these variables from its own step environment, so they can come from any of these sources:
+* the opentelemetry-plugin export or global Jenkins environment variables
+* the "Environment variables" node property of the agent running the step
+* an enclosing `withEnv` or declarative `environment {}` block
+
+When the same variable is set in several places, the innermost scope wins:
+
+```groovy
+node {
+  withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317']) {
+    onMonit {
+      sh 'make'
+    }
+  }
+}
+```
+
 ### Setup the executable source
 
 In order for this plugin to work 2 executables are run on the agents.

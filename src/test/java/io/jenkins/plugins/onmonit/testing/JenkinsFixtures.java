@@ -14,10 +14,7 @@ public final class JenkinsFixtures {
 
     private JenkinsFixtures() {}
 
-    /**
-     * Sets a global environment variable. The plugin reads {@code Run.getEnvironment}, which sees global environment
-     * variables but neither {@code withEnv} nor {@code env.X = ...}; so tests configure the OTLP settings globally.
-     */
+    /** Sets a global environment variable, visible to every build and every step. */
     public static void globalEnv(JenkinsRule j, String key, String value) throws Exception {
         EnvironmentVariablesNodeProperty prop =
                 j.jenkins.getGlobalNodeProperties().get(EnvironmentVariablesNodeProperty.class);
