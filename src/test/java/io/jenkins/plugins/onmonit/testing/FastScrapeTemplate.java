@@ -5,12 +5,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-/** Derives faster-scraping variants of the built-in otelcol template for tests. */
+/**
+ * Derives variants of the built-in otelcol template for tests: faster scraping, other exporters, extra resource
+ * attributes.
+ */
 public final class FastScrapeTemplate {
 
     private static final String RESOURCE = "/io/jenkins/plugins/onmonit/otel.yaml.tmpl";
 
     private FastScrapeTemplate() {}
+
+    /**
+     * Inserts a {@code resource/ci} attribute. {@code value} is written inside double quotes and may contain template
+     * expressions such as {@code [[${env.BUILD_ID}]]}.
+     */
+    public static String withResourceAttribute(String template, String key, String value) {
+        String anchor = "  resource/ci:\n    attributes:\n";
+        return replaceOrFail(template, anchor,
+                anchor + "    - action: insert\n      key: " + key + "\n      value: \"" + value + "\"\n");
+    }
 
     public static String withInterval(String interval) {
         return replaceOrFail(builtIn(), "scrape_interval: 15s", "scrape_interval: " + interval);
