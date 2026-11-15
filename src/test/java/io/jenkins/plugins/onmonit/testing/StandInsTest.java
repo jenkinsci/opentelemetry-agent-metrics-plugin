@@ -34,6 +34,7 @@ class StandInsTest {
 
     private final List<Process> started = new ArrayList<>();
     private final List<Path> markerDirs = new ArrayList<>();
+    private final List<Path> binDirs = new ArrayList<>();
 
     @BeforeEach
     void supported() {
@@ -42,7 +43,8 @@ class StandInsTest {
 
     @AfterEach
     void cleanup() {
-        // Wait for the processes to exit: on Windows a running launcher exe cannot be deleted with @TempDir.
+        // Wait for the processes to exit, then delete the launchers with retries: on Windows an exe stays locked
+        // while its process runs and can stay locked briefly after it exited, which fails the @TempDir cleanup.
         List<ProcessHandle> handles = new ArrayList<>();
         for (Process p : started) {
             p.toHandle().descendants().forEach(handles::add);
@@ -50,18 +52,25 @@ class StandInsTest {
         }
         StandIns.destroyAndWait(handles);
         markerDirs.forEach(StandIns::killAll);
+        binDirs.forEach(StandIns::deleteWithRetry);
+    }
+
+    private Path bin(Path t) throws IOException {
+        Path bin = StandIns.create(t.resolve("bin"));
+        binDirs.add(bin);
+        return bin;
     }
 
     @Test
     void versionMatchesResourceUtil(@TempDir Path t) throws Exception {
-        Path bin = StandIns.create(t.resolve("bin"));
+        Path bin = bin(t);
         assertVersion(bin.resolve(OTELCOL), "version 0.135.0");
         assertVersion(bin.resolve(EXPORTER), WINDOWS ? "version 0.31.3" : "version 1.9.1");
     }
 
     @Test
     void otelcolCopiesConfigAndSignalsReady(@TempDir Path t) throws Exception {
-        Path bin = StandIns.create(t.resolve("bin"));
+        Path bin = bin(t);
         Path markers = Files.createDirectories(t.resolve("markers"));
         Path config = Files.writeString(t.resolve("c.yaml"), "x: 1");
         Running r = start(bin.resolve(OTELCOL), markers, "--config=file:" + config);
@@ -80,7 +89,7 @@ class StandInsTest {
 
     @Test
     void exporterBindsItsPort(@TempDir Path t) throws Exception {
-        Path bin = StandIns.create(t.resolve("bin"));
+        Path bin = bin(t);
         Path markers = Files.createDirectories(t.resolve("markers"));
         int port = freePort();
         Running r = start(bin.resolve(EXPORTER), markers,
@@ -100,7 +109,7 @@ class StandInsTest {
 
     @Test
     void killingLauncherTreeLeavesNothingAlive(@TempDir Path t) throws Exception {
-        Path bin = StandIns.create(t.resolve("bin"));
+        Path bin = bin(t);
         Path markers = Files.createDirectories(t.resolve("markers"));
         Path config = Files.writeString(t.resolve("c.yaml"), "x: 1");
         Running r = start(bin.resolve(OTELCOL), markers, "--config=file:" + config);
@@ -121,7 +130,7 @@ class StandInsTest {
 
     @Test
     void killAllDestroysRecordedProcessesAndWaits(@TempDir Path t) throws Exception {
-        Path bin = StandIns.create(t.resolve("bin"));
+        Path bin = bin(t);
         Path markers = Files.createDirectories(t.resolve("markers"));
         int port = freePort();
         Running r = start(bin.resolve(EXPORTER), markers, "--web.listen-address=:" + port);
@@ -138,7 +147,7 @@ class StandInsTest {
 
     @Test
     void killAllSparesProcessThatReusedARecordedPid(@TempDir Path t) throws Exception {
-        Path bin = StandIns.create(t.resolve("bin"));
+        Path bin = bin(t);
         Path unrelatedMarkers = Files.createDirectories(t.resolve("unrelated"));
         Path config = Files.writeString(t.resolve("c.yaml"), "x: 1");
         // Stands in for an unrelated process that now holds a PID recorded in an old marker.

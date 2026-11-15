@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -25,6 +26,8 @@ import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Stream;
+import org.apache.commons.io.FileUtils;
+import org.awaitility.Awaitility;
 
 /**
  * Builds launchers that start {@link StandIn} in place of the real {@code otelcol-contrib},
@@ -137,6 +140,22 @@ public final class StandIns {
             matching(p.getProperty("parentPid"), p.getProperty("parentStartInstant")).ifPresent(doomed::add);
         }
         destroyAndWait(doomed);
+    }
+
+    /**
+     * Deletes {@code dir} recursively, retrying for up to 30 seconds. On Windows a launcher executable can stay
+     * locked for a moment after its process has exited, so an immediate delete (such as {@code @TempDir} cleanup)
+     * fails with {@code AccessDeniedException}.
+     */
+    public static void deleteWithRetry(Path dir) {
+        Awaitility.await("delete " + dir)
+                .atMost(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofMillis(500))
+                .ignoreExceptions()
+                .until(() -> {
+                    FileUtils.deleteDirectory(dir.toFile());
+                    return !Files.exists(dir);
+                });
     }
 
     /** Forcibly destroys {@code processes} and waits up to 10 seconds for all of them to exit. */

@@ -42,12 +42,16 @@ public final class FastScrapeTemplate {
         return text.replace(from, to);
     }
 
-    private static String builtIn() {
+    /**
+     * The built-in template with {@code \n} line endings. A Windows checkout with {@code core.autocrlf} has
+     * {@code \r\n} in the resource, which the {@code \n}-based replacements here would not match.
+     */
+    public static String builtIn() {
         try (InputStream in = FastScrapeTemplate.class.getResourceAsStream(RESOURCE)) {
             if (in == null) {
                 throw new IllegalStateException("Missing " + RESOURCE);
             }
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8).replace("\r\n", "\n");
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
