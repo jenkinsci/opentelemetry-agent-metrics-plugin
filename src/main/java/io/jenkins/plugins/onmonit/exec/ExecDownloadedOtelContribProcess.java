@@ -7,8 +7,8 @@ import hudson.util.ArgumentListBuilder;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.ONMonitConfig;
 import io.jenkins.plugins.onmonit.ResourceUtil;
+import io.jenkins.plugins.onmonit.util.BinaryCache;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
-import io.jenkins.plugins.onmonit.util.DownloadOnSlaveCallable;
 
 import java.io.IOException;
 
@@ -20,15 +20,15 @@ public class ExecDownloadedOtelContribProcess extends ExecRemoteOtelContribProce
 
 	@Override
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
-		FilePath executableFile = this.createTempExecutableFile();
-		String url = ONMonitConfig.get().getDownloadBaseUrl() + "/" + ResourceUtil.getOtelFilename(info.getOs(), info.isAmd64());
+		String filename = ResourceUtil.getOtelFilename(info.getOs(), info.isAmd64());
+		String url = ONMonitConfig.get().getDownloadBaseUrl() + "/" + filename;
 		try {
 			VirtualChannel channel = launcherProvider.getLauncher().getChannel();
 			if (channel == null) {
 				throw new RuntimeException("Could not access channel");
 			}
-			channel.call(new DownloadOnSlaveCallable(url, executableFile.getRemote()));
-			executableFile.chmod(0755);
+			FilePath executableFile = BinaryCache.obtain(temp, listener, "otelcol-contrib", BinaryCache.sha256Hex(url),
+					filename, this::createTempExecutableFile, BinaryCache.download(channel, url));
 			return new ArgumentListBuilder(executableFile.getRemote());
 		} catch (InterruptedException e) {
 			listener.fatalError("InterruptedException while writing otelcol-contrib executable %s", e);

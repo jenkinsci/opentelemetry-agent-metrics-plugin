@@ -95,12 +95,17 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 		return new ArgumentListBuilder("win".equals(info.getOs()) ? "windows_exporter.exe" : "node_exporter");
 	}
 
+	/** The name of the exporter executable without extension: {@code windows_exporter} or {@code node_exporter}. */
+	protected String getExecutableName() {
+		return "win".equals(info.getOs()) ? "windows_exporter" : "node_exporter";
+	}
+
 	protected FilePath createTempExecutableFile() throws IOException, InterruptedException {
 		FilePath result;
 		if ("win".equals(info.getOs())) {
-			result = this.temp.createTempFile("windows_exporter", "exe");
+			result = this.temp.createTempFile(getExecutableName(), "exe");
 		} else {
-			result = this.temp.createTempFile("node_exporter", "");
+			result = this.temp.createTempFile(getExecutableName(), "");
 		}
 		this.executableTmpChild = result;
 		return result;
