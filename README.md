@@ -143,6 +143,29 @@ When running build agents on Linux amd64 and Mac Os arm64, then either
   * `$JENKINS_HOME/opentelemetry-agent-metrics/otelcol-contrib_0.135.0_darwin_arm64`
   * `$JENKINS_HOME/opentelemetry-agent-metrics/otelcol-contrib_0.135.0_linux_amd64`
 
+#### Binary cache on agents
+
+Executables that are downloaded or uploaded are cached on each agent, so they are transferred only by the
+first build on that agent instead of by every build. The build log shows either
+`[on-monit] Caching otelcol-contrib in <path>` (first transfer) or `[on-monit] Using cached otelcol-contrib from <path>`.
+
+* **Location:** `<agent root>/caches/opentelemetry-agent-metrics/<key>/<filename>`, where `<agent root>` is the
+  agent's remote root directory (for the built-in node: `$JENKINS_HOME`). If the agent root is not known, the plugin
+  falls back to a per-build copy in the workspace `@tmp` directory, deleted at the end of the `onMonit` block.
+* **Keys:**
+  * uploaded from the controller: the SHA-256 (hex) of the file under `$JENKINS_HOME/opentelemetry-agent-metrics/`.
+    Replacing a file there with a different one under the same name therefore uses a new cache entry.
+  * downloaded: the SHA-256 (hex) of the full download URL (base URL + file name). Changing the base URL uses a new
+    cache entry; replacing the file served at the same URL does **not**, so clean the cache after doing that.
+* **Concurrency:** a file is written to a temporary name and atomically renamed into place, so concurrent builds on
+  the same agent are safe and a file under its final name is always complete.
+* **No automatic cleanup:** old versions and keys are intentionally never deleted, so that after a plugin rollback
+  the agents reuse the version they already have. Administrators can clean
+  `<agent root>/caches/opentelemetry-agent-metrics/` themselves when needed. It is safe to delete while no build
+  using `onMonit` runs on that agent; the next build populates it again.
+* **Off switch:** start the Jenkins **controller** JVM with `-Dio.jenkins.plugins.onmonit.cacheBinaries=false` to
+  disable the cache and go back to a per-build copy in the workspace `@tmp` directory.
+
 ### (Optional) Using insecure http protocol
 
 When used inside a trusted network the insecure http protocol may be used to transmit the agent metrics.
