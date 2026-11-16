@@ -147,6 +147,17 @@ class ONTemplatingTest {
                 .isEqualTo(Map.of("a", "b", "X-Api-Key", "abc"));
     }
 
+    /** A custom template that uses the deprecated otlpAuthHeader on its own still gets the header value. */
+    @Test
+    void legacyStandaloneAuthHeaderVariableKeepsValue(JenkinsRule j) throws Exception {
+        String standalone = "headers:\n      Authorization: '[[${otlpAuthHeader}]]'";
+        String template = FastScrapeTemplate.builtIn().replace("[(${otlpHeadersYaml})]", standalone);
+        assertThat(template).contains(standalone);
+        FastScrapeTemplate.apply(template);
+        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=Bearer test-token", null).otlpHeaders())
+                .isEqualTo(Map.of("Authorization", "Bearer test-token"));
+    }
+
     @Disabled("ONTemplating HTML-escapes the job name in TEXT mode (\" becomes &quot;, ' becomes &#39;), so the name is not preserved; see issue #122")
     @Test
     void jobNameWithQuotesKeepsYamlValid(JenkinsRule j) throws Exception {

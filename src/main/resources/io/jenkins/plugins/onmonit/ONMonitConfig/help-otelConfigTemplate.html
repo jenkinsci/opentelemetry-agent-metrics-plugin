@@ -6,4 +6,5 @@
     <code>headers:</code> block to insert under the exporter with <code>[(${otlpHeadersYaml})]</code>, and as
     <code>otlpHeaders</code>, a map of header names to decoded values.
     The <code>otlpAuthHeaderBefore</code>, <code>otlpAuthHeader</code> and <code>otlpAuthHeaderAfter</code> variables are deprecated.
+    A template that uses <code>otlpAuthHeader</code> without <code>otlpAuthHeaderBefore</code> receives the value of the first header in it.
 </div>
