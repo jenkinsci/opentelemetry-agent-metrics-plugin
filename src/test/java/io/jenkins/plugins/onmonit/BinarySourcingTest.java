@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import hudson.FilePath;
 import hudson.model.Result;
 import hudson.slaves.DumbSlave;
+import io.jenkins.plugins.onmonit.testing.DefaultPortLock;
 import io.jenkins.plugins.onmonit.testing.DownloadServer;
 import io.jenkins.plugins.onmonit.testing.Lifecycle;
 import io.jenkins.plugins.onmonit.testing.Marker;
@@ -29,10 +30,12 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
+@ExtendWith(DefaultPortLock.class)
 @WithJenkins
 class BinarySourcingTest {
 

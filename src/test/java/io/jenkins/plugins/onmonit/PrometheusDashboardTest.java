@@ -11,6 +11,7 @@ import hudson.Functions;
 import hudson.slaves.DumbSlave;
 import io.jenkins.plugins.onmonit.testing.DashboardQueries;
 import io.jenkins.plugins.onmonit.testing.DashboardQueries.LabelValuesQuery;
+import io.jenkins.plugins.onmonit.testing.DefaultPortLock;
 import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
 import io.jenkins.plugins.onmonit.testing.HeldBuilds;
 import io.jenkins.plugins.onmonit.testing.JenkinsFixtures;
@@ -43,6 +44,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
@@ -59,6 +61,7 @@ import org.testcontainers.utility.MountableFile;
  * {@code ./mvnw verify -Preal-binaries -Dtest=PrometheusDashboardTest}.
  */
 @Tag("real-binaries")
+@ExtendWith(DefaultPortLock.class)
 @WithJenkins
 @Testcontainers(disabledWithoutDocker = true)
 class PrometheusDashboardTest {
