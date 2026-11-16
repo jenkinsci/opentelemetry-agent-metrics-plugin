@@ -223,7 +223,6 @@ class RealBinariesExportTest {
                 .allSatisfy(h -> assertThat(h).containsEntry("authorization", "Bearer test-token"));
     }
 
-    @Disabled("ONTemplating ignores the header key and always emits Authorization; see issue #121")
     @Test
     void customHeaderKeyOnWire(JenkinsRule j) throws Exception {
         setUp(j);
@@ -234,7 +233,6 @@ class RealBinariesExportTest {
                 .allSatisfy(h -> assertThat(h).containsEntry("x-api-key", "abc").doesNotContainKey("authorization"));
     }
 
-    @Disabled("ONTemplating does not split comma-separated headers; see issue #121")
     @Test
     void multipleHeadersOnWire(JenkinsRule j) throws Exception {
         setUp(j);
@@ -245,7 +243,6 @@ class RealBinariesExportTest {
                 .allSatisfy(h -> assertThat(h).containsEntry("a", "b").containsEntry("authorization", "Bearer x"));
     }
 
-    @Disabled("ONTemplating does not URL-decode header values; see issue #121")
     @Test
     void urlEncodedHeaderOnWire(JenkinsRule j) throws Exception {
         setUp(j);
