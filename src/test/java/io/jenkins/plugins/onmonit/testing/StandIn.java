@@ -27,6 +27,15 @@ public final class StandIn {
     /** Environment variable naming the directory that receives marker files. */
     public static final String MARKER_DIR_ENV = "ONMONIT_STANDIN_DIR";
 
+    /**
+     * Command-line argument prefix naming a gate file: an otelcol stand-in given {@code <prefix><file>} (for example
+     * through the step's {@code ocAdditionalOptions}) writes its marker, then waits until the file exists before
+     * printing its ready line. It is an argument rather than an environment variable because the plugin launches
+     * the binaries with the agent's environment, so a {@code withEnv} in one {@code parallel} branch cannot reach
+     * them, while {@code ocAdditionalOptions} is per {@code onMonit} step.
+     */
+    public static final String GATE_FILE_ARG = "--onmonit.standin.gate-file=";
+
     /** System property set by the Windows launcher, which is a separate parent process of this JVM. */
     static final String WRAPPED_PROPERTY = "onmonit.standin.wrapped";
 
@@ -129,6 +138,17 @@ public final class StandIn {
             }
             Files.move(tmp, markerDir.resolve(baseName + ".properties"),
                     StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        }
+
+        Path gate = args.stream()
+                .filter(a -> a.startsWith(GATE_FILE_ARG))
+                .map(a -> Path.of(a.substring(GATE_FILE_ARG.length())))
+                .reduce((a, b) -> b)
+                .orElse(null);
+        if (gate != null && !role.isExporter()) {
+            while (!Files.exists(gate)) {
+                Thread.sleep(100);
+            }
         }
 
         out.println(readyLine);

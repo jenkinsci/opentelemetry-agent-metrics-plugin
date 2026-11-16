@@ -12,8 +12,8 @@ import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.workflow.steps.BodyExecutionCallback;
+import org.jenkinsci.plugins.workflow.steps.GeneralNonBlockingStepExecution;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
-import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Run;
@@ -28,8 +28,18 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class ONMonitoringStepExecution extends StepExecution implements LauncherProvider {
+/**
+ * Starts node_exporter and otel-contrib, runs the body, and stops the processes again.
+ *
+ * <p>Detecting the agent, transferring binaries and waiting for both processes to become ready can take many seconds,
+ * so it runs on a worker thread ({@link GeneralNonBlockingStepExecution}) rather than the CPS VM thread, which would
+ * otherwise block every other {@code parallel} branch of the build (#126). {@link #stop(Throwable)} may therefore run
+ * concurrently with a startup in progress; see {@link #cleanUp()}.
+ */
+public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution implements LauncherProvider {
 
 	@Serial
 	private static final long serialVersionUID = 1L;
@@ -50,19 +60,27 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 
 	private String ocCookie;
 
+	private static final Logger LOGGER = Logger.getLogger(ONMonitoringStepExecution.class.getName());
+
 	private static ONTemplating templating = new ONTemplating();
 
 	/**
 	 * The proxy for the real remote node_exporter process that is on the other side of the channel (as the process needs to
 	 * run on a remote machine)
 	 */
-	private transient RemoteNodeExporterProcess nodeExporter = null;
+	private transient volatile RemoteNodeExporterProcess nodeExporter = null;
 
 	/**
 	 * The proxy for the real remote otel-contrib process that is on the other side of the channel (as the process needs to
 	 * run on a remote machine)
 	 */
-	private transient RemoteOtelContribProcess otelContrib = null;
+	private transient volatile RemoteOtelContribProcess otelContrib = null;
+
+	/**
+	 * Set by {@link #stop(Throwable)} before it interrupts a startup in progress. A startup that finishes launching
+	 * after this is set cleans up itself instead of running the body.
+	 */
+	private transient volatile boolean stopping;
 
 	ONMonitoringStepExecution(StepContext context, int port, boolean debug, boolean launchCollector, String dashboardUrl, String neAdditionalOptions, String ocAdditionalOptions) {
 		super(context);
@@ -78,49 +96,80 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 
 	@Override
 	public boolean start() throws Exception {
-		StepContext context = getContext();
+		run(this::doStart);
+		return false;
+	}
+
+	/**
+	 * Runs on a worker thread: starts the processes, then the body. On failure the processes started so far are
+	 * stopped and the exception is rethrown, so that {@link GeneralNonBlockingStepExecution} fails the step.
+	 */
+	private void doStart() throws Exception {
 		try {
 			initRemoteProcesses();
 			addActionOnce();
+			if (stopping) {
+				throw new InterruptedException("onMonit was stopped while starting");
+			}
 		} catch (Exception e) {
-			getListener().getLogger().println(Messages.ONMonitoringStep_CouldNotStartProcesses());
-			cleanUp();
+			cleanUpAfterFailedStart();
 			throw e;
 		}
-		context.newBodyInvoker().
+		getContext().newBodyInvoker().
 				withCallback(new Callback(this)).start();
-		return false;
+	}
+
+	private void cleanUpAfterFailedStart() {
+		// An abort interrupts this thread; clear the flag so that the remote kill calls are not cut short.
+		boolean interrupted = Thread.interrupted();
+		try {
+			getListener().getLogger().println(Messages.ONMonitoringStep_CouldNotStartProcesses());
+			cleanUp();
+		} catch (Exception x) {
+			if (x instanceof InterruptedException) {
+				interrupted = true;
+			}
+			LOGGER.log(Level.WARNING, "Could not clean up after a failed onMonit start", x);
+		} finally {
+			if (interrupted) {
+				Thread.currentThread().interrupt();
+			}
+		}
 	}
 
 	@Override
 	public void stop(@NonNull Throwable cause) throws Exception {
+		stopping = true;
 		try {
-			cleanUp();
-		} finally {
+			// Interrupts a startup in progress (which then cleans up itself as well) and fails the step.
 			super.stop(cause);
+		} finally {
+			cleanUp();
 		}
 	}
 
 	@Override
 	public void onResume() {
+		// The base class fails the step if Jenkins went down while the processes were still being started.
+		boolean wasStarting = blocksRestart();
 		super.onResume();
-		try {
-			cleanUp();
-			initRemoteProcesses();
-		} catch (InterruptedException e) {
-			getContext().onFailure(e);
-			Thread.currentThread().interrupt();
-		} catch (Exception x) {
-			getContext().onFailure(x);
+		if (wasStarting) {
+			run(this::cleanUp);
+			return;
+		}
+		// The body is still running: restart the processes, which did not survive the restart of the controller.
+		run(() -> {
 			try {
+				cleanUp();
+				initRemoteProcesses();
+			} catch (InterruptedException e) {
+				throw e;
+			} catch (Exception x) {
 				x.printStackTrace(getListener().getLogger());
 				getListener().getLogger().println(Messages.ONMonitoringStep_CouldNotStartProcesses());
-			} catch (IOException e) {
-				// suppressed
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+				throw x;
 			}
-		}
+		});
 	}
 
 	private static class Callback extends BodyExecutionCallback.TailCall {
@@ -169,13 +218,17 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		ComputerInfo info = RemoteComputerInfoRetriever.getRemoteInfo(launcher);
 		Semaphore portSync = AvailablePortRetriever.getSyncOjbectForLauncher(launcher);
 		Map<String, Throwable> faults = new LinkedHashMap<>();
+		// The fields let stop() find the processes; stop() may also clear them concurrently, so use these locals here.
+		RemoteNodeExporterProcess ne = null;
+		RemoteOtelContribProcess oc = null;
 		listener.getLogger().println("[on-monit] Detected agent info: " + info);
 		listener.getLogger().println("[on-monit] Looking for node_exporter implementation...");
 		for (RemoteNodeExporterProcessFactory factory : Jenkins.get().getExtensionList(RemoteNodeExporterProcessFactory.class)) {
 			if (factory.isSupported(launcher, listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					nodeExporter = factory.create(this, listener, info, tempDir(workspace), neCookie, getEffectiveNeAdditionalOptions(), debug);
+					ne = factory.create(this, listener, info, tempDir(workspace), neCookie, getEffectiveNeAdditionalOptions(), debug);
+					nodeExporter = ne;
 					break;
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
@@ -187,14 +240,15 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			if (factory.isSupported(launcher, listener, info)) {
 				try {
 					listener.getLogger().println("[on-monit]   " + factory.getDisplayName());
-					otelContrib = factory.create(this, listener, info, tempDir(workspace), ocCookie, getEffectiveOcAdditionalOptions(), debug);
+					oc = factory.create(this, listener, info, tempDir(workspace), ocCookie, getEffectiveOcAdditionalOptions(), debug);
+					otelContrib = oc;
 					break;
 				} catch (Throwable t) {
 					faults.put(factory.getDisplayName(), t);
 				}
 			}
 		}
-		if (nodeExporter == null) {
+		if (ne == null) {
 			listener.getLogger().println("[on-monit] FATAL: Could not find a suitable node_exporter provider");
 			listener.getLogger().println("[on-monit] Diagnostic report");
 			for (Map.Entry<String, Throwable> fault : faults.entrySet()) {
@@ -207,7 +261,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			}
 			throw new RuntimeException("[on-monit] Could not find a suitable node_exporter provider.");
 		}
-		if (otelContrib == null) {
+		if (oc == null) {
 			listener.getLogger().println("[on-monit] FATAL: Could not find a suitable otel-contrib provider");
 			listener.getLogger().println("[on-monit] Diagnostic report");
 			for (Map.Entry<String, Throwable> fault : faults.entrySet()) {
@@ -221,11 +275,12 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 			throw new RuntimeException("[on-monit] Could not find a suitable otel-contrib provider.");
 		}
 		AvailablePort usedPort;
+		// Acquire outside the try: an interrupted acquire must not release a permit it never got.
+		portSync.acquire();
 		try {
-			portSync.acquire();
 			usedPort = AvailablePortRetriever.getAvailablePort(launcher, port, port + 100);
 			listener.getLogger().println("[on-monit] node_exporter will listen on " + usedPort.getPort());
-			nodeExporter.start(listener, usedPort.getPort());
+			ne.start(listener, usedPort.getPort());
 		} finally {
 			portSync.release();
 		}
@@ -239,7 +294,7 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 		if (debug) {
 			listener.getLogger().println("[on-monit] otel-collector config:\n" + config);
 		}
-		otelContrib.start(listener, config);
+		oc.start(listener, config);
 		listener.getLogger().println(Messages.ONMonitoringStep_Started());
 	}
 
@@ -258,9 +313,11 @@ public class ONMonitoringStepExecution extends StepExecution implements Launcher
 	}
 
 	/**
-	 * Shuts down the current remote processes.
+	 * Shuts down the current remote processes. Safe to call more than once and from several threads: {@link #stop}
+	 * and a failing startup may both call it. A process that was launched but not yet assigned to its field (or whose
+	 * field an earlier call already cleared) is killed through its environment cookie.
 	 */
-	private void cleanUp() throws Exception {
+	private synchronized void cleanUp() throws Exception {
 		if (!launchCollector) {
 			return;
 		}

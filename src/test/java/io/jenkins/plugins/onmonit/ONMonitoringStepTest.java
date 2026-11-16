@@ -214,6 +214,64 @@ class ONMonitoringStepTest {
         awaitDead(markers, DEAD);
     }
 
+    /** Step arguments that make the otelcol stand-in of this {@code onMonit} wait for {@code gate} before it is ready. */
+    private static String gated(Path gate) {
+        String arg = StandIn.GATE_FILE_ARG + gate.toAbsolutePath().toString().replace('\\', '/');
+        return "(ocAdditionalOptions: '\"" + arg + "\"')";
+    }
+
+    /**
+     * While one {@code parallel} branch is still waiting for its collector to become ready, another branch starts
+     * its own processes and runs its body (#126): starting the processes must not block the pipeline.
+     */
+    @Test
+    void parallelStartupDoesNotSerialize(JenkinsRule j) throws Exception {
+        agent(j);
+        Path gate = tmp.resolve("gate");
+        WorkflowJob job = job(j, "p", "node('t') {\n"
+                + "parallel a: { onMonit" + gated(gate) + " { echo 'a-body' } }, "
+                + "b: { onMonit { echo 'b-body' } }\n}");
+        WorkflowRun run = job.scheduleBuild2(0).waitForStart();
+        try {
+            try {
+                Awaitility.await().atMost(Duration.ofSeconds(45))
+                        .until(() -> JenkinsRule.getLog(run).contains("b-body"));
+            } catch (ConditionTimeoutException e) {
+                throw new AssertionError("Branch b did not run its body while branch a was starting; build log:\n"
+                        + JenkinsRule.getLog(run), e);
+            }
+            assertThat(JenkinsRule.getLog(run)).doesNotContain("a-body");
+        } finally {
+            Files.writeString(gate, "open");
+        }
+        j.assertBuildStatusSuccess(j.waitForCompletion(run));
+        j.assertLogContains("a-body", run);
+        List<Marker> markers = StandIns.markers(markerDir);
+        assertThat(markers).hasSize(4);
+        awaitDead(markers, DEAD);
+    }
+
+    /** Aborting the build while the collector is still starting kills the collector and node_exporter. */
+    @Test
+    void abortDuringStartupKillsProcesses(JenkinsRule j) throws Exception {
+        agent(j);
+        Path gate = tmp.resolve("gate");
+        WorkflowRun run = job(j, "p", onNode(gated(gate), "echo 'body-ran'")).scheduleBuild2(0).waitForStart();
+        List<Marker> markers = awaitMarkers(2);
+        assertThat(markers).extracting(Marker::role)
+                .containsExactlyInAnyOrder(StandIn.Role.OTELCOL, StandIns.exporterRole());
+        assertAlive(markers);
+        run.doStop();
+        try {
+            Awaitility.await().atMost(Duration.ofSeconds(30)).until(() -> !run.isBuilding());
+        } catch (ConditionTimeoutException e) {
+            throw new AssertionError("Build still running 30s after doStop; build log:\n" + JenkinsRule.getLog(run), e);
+        }
+        j.assertBuildStatus(Result.ABORTED, run);
+        j.assertLogNotContains("body-ran", run);
+        awaitDead(markers, DEAD);
+    }
+
     @Test
     void declarativeOptionsWorks(JenkinsRule j) throws Exception {
         agent(j);
