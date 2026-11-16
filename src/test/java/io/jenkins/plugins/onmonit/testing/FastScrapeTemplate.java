@@ -40,7 +40,7 @@ public final class FastScrapeTemplate {
      * built-in template has no TLS setting, so otelcol 0.135.0 uses TLS even for an {@code http://} endpoint.
      */
     public static String withIntervalAndInsecureTls(String interval) {
-        String endpoint = "    endpoint: \"[[${otlpEndpoint}]]\"\n";
+        String endpoint = "    endpoint: [(${yaml.quote(otlpEndpoint)})]\n";
         return replaceOrFail(withInterval(interval), endpoint, endpoint + "    tls:\n      insecure: true\n");
     }
 

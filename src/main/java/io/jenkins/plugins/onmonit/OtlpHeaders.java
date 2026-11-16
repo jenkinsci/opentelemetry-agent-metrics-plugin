@@ -22,6 +22,8 @@ final class OtlpHeaders {
 
     private static final String INDENT = "      ";
 
+    private static final YamlQuoting YAML = new YamlQuoting();
+
     private OtlpHeaders() {}
 
     /** Returns the headers in input order; a later duplicate key replaces an earlier one. Never throws. */
@@ -55,7 +57,7 @@ final class OtlpHeaders {
 
     /**
      * Renders the headers as a YAML {@code headers:} mapping for the OTLP exporter, or {@code ""} if there are none.
-     * Entries are indented by six spaces; keys and values are single-quoted.
+     * Entries are indented by six spaces; keys and values are quoted with {@link YamlQuoting#quote(Object)}.
      */
     static String toYamlBlock(Map<String, String> headers) {
         if (headers.isEmpty()) {
@@ -81,6 +83,6 @@ final class OtlpHeaders {
     }
 
     private static String quote(String s) {
-        return "'" + s.replace("'", "''") + "'";
+        return YAML.quote(s);
     }
 }

@@ -23,6 +23,7 @@ public class ONTemplating {
 
     private static volatile TemplateEngine defaultTemplateEngine = null;
     private static volatile TemplateEngine configTemplateEngine = null;
+    private static final YamlQuoting YAML_QUOTING = new YamlQuoting();
 
     TemplateEngine getDefaultTemplateEngine() {
         if (defaultTemplateEngine != null) {
@@ -103,6 +104,7 @@ public class ONTemplating {
         }
         String jobName = environment.get("JOB_NAME");
         String jobBaseName = environment.get("JOB_BASE_NAME");
+        context.setVariable("yaml", YAML_QUOTING);
         context.setVariable("JENKINS_URL", Jenkins.get().getRootUrl());
         context.setVariable("pageUrl", pageUrl);
         context.setVariable("env", environment);

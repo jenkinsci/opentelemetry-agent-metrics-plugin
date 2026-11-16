@@ -10,7 +10,7 @@ exporters:
   debug:
     verbosity: detailed
   otlp:
-    endpoint: "[[${otlpEndpoint}]]"
+    endpoint: [(${yaml.quote(otlpEndpoint)})]
     [(${otlpHeadersYaml})]
 
 processors:
@@ -23,20 +23,20 @@ processors:
     - action: insert
       # not yet defined in Otel SemConv
       key: cicd.controller.url
-      value: "[[${JENKINS_URL}]]"
+      value: [(${yaml.quote(JENKINS_URL)})]
     - action: insert
       key: cicd.pipeline.name
-      value: "[[${jobName}]]"
+      value: [(${yaml.quote(jobName)})]
     - action: insert
       # not yet defined in Otel SemConv
       key: cicd.group.name
-      value: "[[${jobGroupName}]]"
+      value: [(${yaml.quote(jobGroupName)})]
     - action: insert
       key: cicd.pipeline.run.id
-      value: "[[${env.BUILD_ID}]]"
+      value: [(${yaml.quote(env.BUILD_ID)})]
     - action: insert
       key: service.name
-      value: "[[${serviceName}]]"
+      value: [(${yaml.quote(serviceName)})]
   transform/ci:
     metric_statements:
     - context: resource
