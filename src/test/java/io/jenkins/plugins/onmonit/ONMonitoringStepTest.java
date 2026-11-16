@@ -258,17 +258,23 @@ class ONMonitoringStepTest {
     void parallelStartupDoesNotSerialize(JenkinsRule j) throws Exception {
         agent(j);
         Path gate = tmp.resolve("gate");
-        WorkflowJob job = job(j, "p", "node('t') {\n"
-                + "parallel a: { onMonit" + gated(gate) + " { echo 'a-body' } }, "
-                + "b: { onMonit { echo 'b-body' } }\n}");
+        WorkflowJob job = job(
+                j,
+                "p",
+                "node('t') {\n"
+                        + "parallel a: { onMonit" + gated(gate) + " { echo 'a-body' } }, "
+                        + "b: { onMonit { echo 'b-body' } }\n}");
         WorkflowRun run = job.scheduleBuild2(0).waitForStart();
         try {
             try {
-                Awaitility.await().atMost(Duration.ofSeconds(45))
+                Awaitility.await()
+                        .atMost(Duration.ofSeconds(45))
                         .until(() -> JenkinsRule.getLog(run).contains("b-body"));
             } catch (ConditionTimeoutException e) {
-                throw new AssertionError("Branch b did not run its body while branch a was starting; build log:\n"
-                        + JenkinsRule.getLog(run), e);
+                throw new AssertionError(
+                        "Branch b did not run its body while branch a was starting; build log:\n"
+                                + JenkinsRule.getLog(run),
+                        e);
             }
             assertThat(JenkinsRule.getLog(run)).doesNotContain("a-body");
         } finally {
@@ -286,9 +292,12 @@ class ONMonitoringStepTest {
     void abortDuringStartupKillsProcesses(JenkinsRule j) throws Exception {
         agent(j);
         Path gate = tmp.resolve("gate");
-        WorkflowRun run = job(j, "p", onNode(gated(gate), "echo 'body-ran'")).scheduleBuild2(0).waitForStart();
+        WorkflowRun run = job(j, "p", onNode(gated(gate), "echo 'body-ran'"))
+                .scheduleBuild2(0)
+                .waitForStart();
         List<Marker> markers = awaitMarkers(2);
-        assertThat(markers).extracting(Marker::role)
+        assertThat(markers)
+                .extracting(Marker::role)
                 .containsExactlyInAnyOrder(StandIn.Role.OTELCOL, StandIns.exporterRole());
         assertAlive(markers);
         run.doStop();

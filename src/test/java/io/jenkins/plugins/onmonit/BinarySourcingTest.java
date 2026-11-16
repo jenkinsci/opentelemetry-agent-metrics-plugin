@@ -161,7 +161,8 @@ class BinarySourcingTest {
             return List.of();
         }
         try (Stream<Path> files = Files.walk(root)) {
-            return files.filter(f -> f.getFileName().toString().endsWith(".tmp")).toList();
+            return files.filter(f -> f.getFileName().toString().endsWith(".tmp"))
+                    .toList();
         }
     }
 
@@ -218,14 +219,17 @@ class BinarySourcingTest {
         assertThat(before).hasSize(1);
 
         // The admin replaces the binary under the same name; trailing bytes keep the stand-in runnable.
-        Path source = TestAgents.jenkinsHomeEnv().resolve("opentelemetry-agent-metrics").resolve(otelFilename());
+        Path source = TestAgents.jenkinsHomeEnv()
+                .resolve("opentelemetry-agent-metrics")
+                .resolve(otelFilename());
         Files.write(source, "\n# replaced\n".getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
 
         WorkflowRun second = j.assertBuildStatus(Result.SUCCESS, job.scheduleBuild2(0));
         j.assertLogContains("[on-monit] Caching otelcol-contrib in ", second);
         List<Path> after = cached(agent, otelFilename());
         assertThat(after).as("old key kept, new key added").hasSize(2).contains(before.get(0));
-        Path added = after.stream().filter(p -> !p.equals(before.get(0))).findFirst().orElseThrow();
+        Path added =
+                after.stream().filter(p -> !p.equals(before.get(0))).findFirst().orElseThrow();
         assertThat(added).hasSameBinaryContentAs(source);
     }
 
@@ -255,7 +259,8 @@ class BinarySourcingTest {
             j.assertLogContains("[on-monit] Using cached otelcol-contrib from " + otel.get(0), second);
             j.assertLogContains("[on-monit] Using cached " + exporterBinary() + " from ", second);
             assertThat(Files.getLastModifiedTime(otel.get(0))).isEqualTo(mtime);
-            assertThat(server.requestedPaths()).as("second build downloads nothing")
+            assertThat(server.requestedPaths())
+                    .as("second build downloads nothing")
                     .containsExactlyInAnyOrder(ne, oc);
         }
     }
@@ -269,7 +274,9 @@ class BinarySourcingTest {
             WorkflowRun run = j.assertBuildStatus(Result.SUCCESS, job(j).scheduleBuild2(0));
             j.assertLogContains("(uploaded otelcol-contrib from master to remote machine)", run);
             assertThat(leftoverTmpFiles(agent)).isEmpty();
-            assertThat(cached(agent, otelFilename())).as("only the uploaded copy").hasSize(1);
+            assertThat(cached(agent, otelFilename()))
+                    .as("only the uploaded copy")
+                    .hasSize(1);
         }
     }
 
@@ -285,7 +292,9 @@ class BinarySourcingTest {
             j.assertLogNotContains("[on-monit] Using cached ", run);
             assertThat(cacheRoot(agent)).doesNotExist();
             // the per-build copies in @tmp are deleted again by stop()
-            Path wsTmp = Path.of(agent.getRootPath().getRemote()).resolve("workspace").resolve("p@tmp");
+            Path wsTmp = Path.of(agent.getRootPath().getRemote())
+                    .resolve("workspace")
+                    .resolve("p@tmp");
             if (Files.isDirectory(wsTmp)) {
                 try (Stream<Path> files = Files.list(wsTmp)) {
                     assertThat(files.map(f -> f.getFileName().toString()).toList())

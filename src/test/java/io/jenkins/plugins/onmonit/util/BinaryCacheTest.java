@@ -81,11 +81,13 @@ class BinaryCacheTest {
     void failedWriteLeavesNothingBehind() throws Exception {
         FilePath keyDir = new FilePath(tmp.resolve("key").toFile());
         assertThatThrownBy(() -> BinaryCache.populate(keyDir, "tool", target -> {
-            try (OutputStream out = target.write()) {
-                out.write(1);
-            }
-            throw new IOException("download failed");
-        })).isInstanceOf(IOException.class).hasMessageContaining("download failed");
+                    try (OutputStream out = target.write()) {
+                        out.write(1);
+                    }
+                    throw new IOException("download failed");
+                }))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("download failed");
         assertThat(names(tmp.resolve("key"))).isEmpty();
     }
 
