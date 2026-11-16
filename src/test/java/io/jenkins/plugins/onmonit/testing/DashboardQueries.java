@@ -3,12 +3,16 @@ package io.jenkins.plugins.onmonit.testing;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,11 +22,29 @@ public final class DashboardQueries {
     /** A {@code label_values(<metricSelector>, <label>)} query variable. */
     public record LabelValuesQuery(String variable, String metricSelector, String label) {}
 
+    /** Number of panel {@code expr}s in {@link #repoDashboard()}. */
+    public static final int REPO_DASHBOARD_EXPRS = 275;
+
+    /** Number of those that are {@linkplain #isCore core}. */
+    public static final int REPO_DASHBOARD_CORE_EXPRS = 27;
+
+    /** Linux node_exporter metrics that must have data while a build is monitored. */
+    public static final Set<String> CORE_METRICS = Set.of(
+            "node_cpu_seconds_total",
+            "node_memory_MemTotal_bytes",
+            "node_memory_MemAvailable_bytes",
+            "node_load1",
+            "node_filesystem_avail_bytes",
+            "node_network_receive_bytes_total",
+            "node_disk_read_bytes_total");
+
     /** Grafana built-ins fixed for tests, matching a 2s scrape interval. */
     static final Map<String, String> BUILT_INS =
             Map.of("__rate_interval", "10s", "__interval", "2s", "__range", "1m");
 
-    private static final Pattern LABEL_VALUES = Pattern.compile("^\\s*label_values\\((.*),\\s*([A-Za-z_]\\w*)\\s*\\)\\s*$");
+    private static final Pattern LABEL_VALUES =
+            Pattern.compile("^\\s*label_values\\((.*),\\s*([A-Za-z_]\\w*)\\s*\\)\\s*$");
+    private static final Pattern METRIC = Pattern.compile("\\bnode_\\w+");
 
     private final List<String> panelExprs;
     private final List<LabelValuesQuery> labelValuesVariables;
@@ -94,15 +116,40 @@ public final class DashboardQueries {
      * {@code $job}.
      */
     public String substitute(String expr, Map<String, String> vars) {
+        return substitution(vars).apply(expr);
+    }
+
+    /** Like {@link #substitute(String, Map)} for many expressions: the variable names are sorted once. */
+    public UnaryOperator<String> substitution(Map<String, String> vars) {
         Map<String, String> all = new LinkedHashMap<>(fixed);
         all.putAll(vars);
         List<String> names = new ArrayList<>(all.keySet());
         names.sort(Comparator.comparingInt(String::length).reversed());
-        String result = expr;
-        for (String name : names) {
-            String value = all.get(name);
-            result = result.replace("${" + name + "}", value).replace("$" + name, value);
+        return expr -> {
+            String result = expr;
+            for (String name : names) {
+                String value = all.get(name);
+                result = result.replace("${" + name + "}", value).replace("$" + name, value);
+            }
+            return result;
+        };
+    }
+
+    /** Whether every node_* metric in {@code expr} is one of {@link #CORE_METRICS}, and there is at least one. */
+    public static boolean isCore(String expr) {
+        Matcher m = METRIC.matcher(expr);
+        boolean any = false;
+        while (m.find()) {
+            if (!CORE_METRICS.contains(m.group())) {
+                return false;
+            }
+            any = true;
         }
-        return result;
+        return any;
+    }
+
+    /** {@code t} as Prometheus API time: decimal seconds, never in scientific notation. */
+    public static String promTime(Instant t) {
+        return BigDecimal.valueOf(t.toEpochMilli()).movePointLeft(3).toPlainString();
     }
 }
