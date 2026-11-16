@@ -8,10 +8,10 @@ import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
 import io.jenkins.plugins.onmonit.testing.RenderedConfig;
 import java.util.Map;
-import org.junit.jupiter.api.Test;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockFolder;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
@@ -63,7 +63,8 @@ class ONTemplatingTest {
         assertThat(cfg.resourceAttribute("cicd.pipeline.name")).isEqualTo("a/b/p");
         assertThat(cfg.resourceAttribute("cicd.group.name")).isEqualTo("a/b");
         assertThat(cfg.resourceAttribute("cicd.pipeline.run.id")).isEqualTo("1");
-        assertThat(cfg.resourceAttribute("cicd.controller.url")).isEqualTo(j.getURL().toString());
+        assertThat(cfg.resourceAttribute("cicd.controller.url"))
+                .isEqualTo(j.getURL().toString());
         assertThat(cfg.scrapeTarget()).isEqualTo("localhost:9100");
         assertThat(cfg.exporterNames()).contains("otlp", "debug");
     }
@@ -107,7 +108,8 @@ class ONTemplatingTest {
 
     @Test
     void simpleAuthorizationHeader(JenkinsRule j) throws Exception {
-        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=Bearer test-token", null).otlpHeaders())
+        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=Bearer test-token", null)
+                        .otlpHeaders())
                 .isEqualTo(Map.of("Authorization", "Bearer test-token"));
     }
 
@@ -119,19 +121,22 @@ class ONTemplatingTest {
 
     @Test
     void multipleHeaders(JenkinsRule j) throws Exception {
-        assertThat(renderTopLevel(j, ENDPOINT, "a=b,Authorization=Bearer x", null).otlpHeaders())
+        assertThat(renderTopLevel(j, ENDPOINT, "a=b,Authorization=Bearer x", null)
+                        .otlpHeaders())
                 .isEqualTo(Map.of("a", "b", "Authorization", "Bearer x"));
     }
 
     @Test
     void urlEncodedHeaderValue(JenkinsRule j) throws Exception {
-        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=Basic%20abc", null).otlpHeaders())
+        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=Basic%20abc", null)
+                        .otlpHeaders())
                 .isEqualTo(Map.of("Authorization", "Basic abc"));
     }
 
     @Test
     void headerValueWithQuote(JenkinsRule j) throws Exception {
-        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=it's \"x\" & y", null).otlpHeaders())
+        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=it's \"x\" & y", null)
+                        .otlpHeaders())
                 .isEqualTo(Map.of("Authorization", "it's \"x\" & y"));
     }
 
@@ -153,7 +158,8 @@ class ONTemplatingTest {
         String template = FastScrapeTemplate.builtIn().replace("[(${otlpHeadersYaml})]", standalone);
         assertThat(template).contains(standalone);
         FastScrapeTemplate.apply(template);
-        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=Bearer test-token", null).otlpHeaders())
+        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=Bearer test-token", null)
+                        .otlpHeaders())
                 .isEqualTo(Map.of("Authorization", "Bearer test-token"));
     }
 
@@ -172,7 +178,8 @@ class ONTemplatingTest {
     @Test
     void headerValueDollarIsEscapedForCollectorExpansion(JenkinsRule j) throws Exception {
         // otelcol expands ${env:...} in its config and reads $$ as a literal $, so every $ must be doubled.
-        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=a$b${env:HOME}", null).otlpHeaders())
+        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=a$b${env:HOME}", null)
+                        .otlpHeaders())
                 .isEqualTo(Map.of("Authorization", "a$$b$${env:HOME}"));
     }
 
@@ -187,6 +194,7 @@ class ONTemplatingTest {
                       value: [(${yaml.quote(serviceName)})]
                 """);
         String name = "say \"hi\" it's & more \\ #x";
-        assertThat(renderTopLevel(j, ENDPOINT, null, name).resourceAttribute("service.name")).isEqualTo(name);
+        assertThat(renderTopLevel(j, ENDPOINT, null, name).resourceAttribute("service.name"))
+                .isEqualTo(name);
     }
 }
