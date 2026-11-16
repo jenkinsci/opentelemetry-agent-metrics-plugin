@@ -77,20 +77,28 @@ public final class DefaultPortLock implements BeforeAllCallback, AfterAllCallbac
     /**
      * For tests, run in another JVM; exits {@link #BUSY} if another process holds the lock on {@code file}. Otherwise
      * {@code try <file>} exits 0, and {@code hold <file>} writes {@code L} to stdout and holds the lock until killed.
+     *
+     * <p>Uses only the JDK (unlike the enclosing extension, which needs JUnit to load), so the other JVM needs just the
+     * test-classes directory on its class path. The full test class path is longer than Windows allows on a command
+     * line (CreateProcess error=206).
      */
-    public static void main(String[] args) throws Exception {
-        Path file = Path.of(args[1]);
-        try (FileChannel channel = FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-            FileLock lock = channel.tryLock();
-            if (lock == null) {
-                System.exit(BUSY);
+    public static final class Probe {
+        private Probe() {}
+
+        public static void main(String[] args) throws Exception {
+            Path file = Path.of(args[1]);
+            try (FileChannel channel = FileChannel.open(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+                FileLock lock = channel.tryLock();
+                if (lock == null) {
+                    System.exit(BUSY);
+                }
+                if (args[0].equals("try")) {
+                    System.exit(0);
+                }
+                System.out.print('L');
+                System.out.flush();
+                Thread.sleep(Duration.ofMinutes(5).toMillis());
             }
-            if (args[0].equals("try")) {
-                System.exit(0);
-            }
-            System.out.print('L');
-            System.out.flush();
-            Thread.sleep(Duration.ofMinutes(5).toMillis());
         }
     }
 }

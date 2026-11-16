@@ -45,14 +45,15 @@ class DefaultPortLockTest {
                 .exitCode();
     }
 
-    private static ProcessBuilder otherJvm(Path file, String mode) {
+    /** Runs {@link DefaultPortLock.Probe} with only the test-classes directory on the class path. */
+    private static ProcessBuilder otherJvm(Path file, String mode) throws Exception {
         String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
-        return new ProcessBuilder(List.of(
-                java,
-                "-cp",
-                System.getProperty("java.class.path"),
-                DefaultPortLock.class.getName(),
-                mode,
-                file.toString()));
+        Path classes = Path.of(DefaultPortLock.Probe.class
+                .getProtectionDomain()
+                .getCodeSource()
+                .getLocation()
+                .toURI());
+        return new ProcessBuilder(
+                List.of(java, "-cp", classes.toString(), DefaultPortLock.Probe.class.getName(), mode, file.toString()));
     }
 }
