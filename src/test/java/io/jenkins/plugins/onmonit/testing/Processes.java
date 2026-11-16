@@ -1,5 +1,6 @@
 package io.jenkins.plugins.onmonit.testing;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,6 +15,10 @@ public final class Processes {
     /** Exit code and combined stdout/stderr of a finished command. */
     public record Completed(int exitCode, String output) {}
 
+    /** Commands get an empty stdin, so one that reads it (PowerShell can) does not wait for input. */
+    private static final File NULL_DEVICE =
+            new File(System.getProperty("os.name").startsWith("Windows") ? "NUL" : "/dev/null");
+
     private Processes() {}
 
     /**
@@ -27,6 +32,7 @@ public final class Processes {
             Process p = new ProcessBuilder(command)
                     .redirectErrorStream(true)
                     .redirectOutput(out.toFile())
+                    .redirectInput(ProcessBuilder.Redirect.from(NULL_DEVICE))
                     .start();
             if (!p.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
                 p.destroyForcibly().waitFor(10, TimeUnit.SECONDS);
@@ -43,7 +49,8 @@ public final class Processes {
         }
     }
 
+    /** Decodes leniently: malformed bytes (e.g. Windows OEM code page output) become U+FFFD instead of throwing. */
     private static String read(Path out) throws IOException {
-        return Files.readString(out, StandardCharsets.UTF_8);
+        return new String(Files.readAllBytes(out), StandardCharsets.UTF_8);
     }
 }
