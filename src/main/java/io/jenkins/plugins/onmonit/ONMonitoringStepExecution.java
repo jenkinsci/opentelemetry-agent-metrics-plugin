@@ -108,15 +108,20 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 		try {
 			initRemoteProcesses();
 			addActionOnce();
-			if (stopping) {
-				throw new InterruptedException("onMonit was stopped while starting");
+			// Check and start under the lock stop() sets the flag with, so a concurrent stop() either prevents the
+			// body from starting or comes after it. Starting the body only queues it on the CPS VM thread.
+			synchronized (this) {
+				if (!stopping) {
+					getContext().newBodyInvoker().
+							withCallback(new Callback(this)).start();
+					return;
+				}
 			}
+			throw new InterruptedException("onMonit was stopped while starting");
 		} catch (Exception e) {
 			cleanUpAfterFailedStart();
 			throw e;
 		}
-		getContext().newBodyInvoker().
-				withCallback(new Callback(this)).start();
 	}
 
 	private void cleanUpAfterFailedStart() {
@@ -139,7 +144,9 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 
 	@Override
 	public void stop(@NonNull Throwable cause) throws Exception {
-		stopping = true;
+		synchronized (this) {
+			stopping = true;
+		}
 		try {
 			// Interrupts a startup in progress (which then cleans up itself as well) and fails the step.
 			super.stop(cause);
