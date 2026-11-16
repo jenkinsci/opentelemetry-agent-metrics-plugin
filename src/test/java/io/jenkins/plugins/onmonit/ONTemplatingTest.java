@@ -159,9 +159,13 @@ class ONTemplatingTest {
 
     @Test
     void jobNameWithQuotesKeepsYamlValid(JenkinsRule j) throws Exception {
+        // Windows forbids '"' in file names, so the job itself can't carry it; the template reads JOB_NAME from env.
         String name = "say \"hi\" it's";
-        WorkflowRun run = runJob(j, j.jenkins, name);
-        RenderedConfig cfg = render(run, env(run, ENDPOINT, null, null));
+        WorkflowRun run = runJob(j, j.jenkins, "p");
+        EnvVars env = env(run, ENDPOINT, null, null);
+        env.put("JOB_NAME", name);
+        env.put("JOB_BASE_NAME", name);
+        RenderedConfig cfg = render(run, env);
         assertThat(cfg.resourceAttribute("cicd.pipeline.name")).isEqualTo(name);
     }
 
