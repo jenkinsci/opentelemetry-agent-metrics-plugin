@@ -171,11 +171,12 @@ class RealBinariesExportTest {
         List<Integer> ports = ports(run);
         assertThat(ports).hasSize(1);
 
+        // resourceAttributes() already filters on the run id, so check it against everything that arrived instead.
+        assertThat(receiver.runIds()).containsExactly(run.getId());
         List<Map<String, String>> resources = receiver.resourceAttributes(run.getId());
         assertThat(resources).isNotEmpty().anySatisfy(attrs -> {
             assertThat(attrs).containsEntry("cicd.pipeline.name", "f/p");
             assertThat(attrs).containsEntry("cicd.group.name", "f");
-            assertThat(attrs).containsEntry("cicd.pipeline.run.id", run.getId());
             assertThat(attrs).containsEntry("cicd.controller.url", j.getURL().toString());
             assertThat(attrs.get("host.name")).isNotBlank();
             assertThat(attrs).containsEntry("cicd.worker.id", attrs.get("host.name") + ":" + ports.get(0));
@@ -336,6 +337,7 @@ class RealBinariesExportTest {
         List<Integer> ports = ports(run);
         assertThat(ports).hasSize(1);
 
+        assertThat(receiver.runIds()).containsExactly(run.getId());
         assertThat(receiver.resourceAttributes(run.getId())).isNotEmpty().anySatisfy(attrs -> {
             assertThat(attrs).containsEntry("cicd.pipeline.name", "f/p");
             assertThat(attrs).containsEntry("cicd.group.name", "f");
