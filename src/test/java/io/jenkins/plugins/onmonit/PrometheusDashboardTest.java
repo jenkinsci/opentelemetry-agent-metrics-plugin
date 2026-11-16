@@ -28,12 +28,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.awaitility.Awaitility;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -68,15 +67,6 @@ class PrometheusDashboardTest {
     private static final String CONFIG = System.getProperty("onmonit.test.prometheus.config");
     private static final String CONFIG_RESOURCE = "io/jenkins/plugins/onmonit/testing/prometheus-reference.yml";
     private static final String CONFIG_IN_CONTAINER = "/etc/prometheus/prometheus.yml";
-    private static final Set<String> CORE_METRICS = Set.of(
-            "node_cpu_seconds_total",
-            "node_memory_MemTotal_bytes",
-            "node_memory_MemAvailable_bytes",
-            "node_load1",
-            "node_filesystem_avail_bytes",
-            "node_network_receive_bytes_total",
-            "node_disk_read_bytes_total");
-    private static final Pattern METRIC = Pattern.compile("\\bnode_\\w+");
     private static final ObjectMapper JSON = new ObjectMapper();
 
     @TempDir
@@ -94,7 +84,7 @@ class PrometheusDashboardTest {
      * A build held inside {@code onMonit}, its dashboard variables, and the time to evaluate queries at: a moment
      * when Prometheus already had several samples for the build.
      */
-    private record Build(WorkflowJob job, WorkflowRun run, Map<String, String> vars, double evalSeconds) {}
+    private record Build(WorkflowJob job, WorkflowRun run, Map<String, String> vars, Instant evalTime) {}
 
     @BeforeAll
     static void installBinaries() throws Exception {
@@ -158,26 +148,29 @@ class PrometheusDashboardTest {
 
         String runSelector = "node_uname_info{cicd_pipeline_run_id=\"" + run.getId() + "\"}";
         String ready = "min(count_over_time(node_load1{cicd_pipeline_run_id=\"" + run.getId() + "\"}[10s])) >= 3";
-        double[] evalSeconds = {0};
+        Instant[] evalTime = {null};
         Awaitility.await().atMost(READY).pollInterval(Duration.ofSeconds(1)).untilAsserted(() -> {
             assertThat(run.isBuilding()).as("build still held inside onMonit").isTrue();
-            double now = System.currentTimeMillis() / 1000.0;
-            JsonNode body = get("/api/v1/query", Map.of("query", ready, "time", String.valueOf(now)));
+            Instant now = Instant.now();
+            JsonNode body = get("/api/v1/query", Map.of("query", ready, "time", DashboardQueries.promTime(now)));
             assertThat(body.path("data").path("result").isEmpty()).as(ready + ": " + body).isFalse();
-            evalSeconds[0] = now;
+            evalTime[0] = now;
         });
         List<String> workers = labelValues("cicd_worker_id", runSelector);
         assertThat(workers).as("cicd_worker_id of " + runSelector).hasSize(1);
         List<Integer> ports = JenkinsFixtures.ports(JenkinsRule.getLog(run));
         assertThat(ports).as("node_exporter port in build log").isNotEmpty();
-        assertThat(workers.get(0)).endsWith(":" + ports.get(0));
+        // Derived from host_name and the build log, not from cicd_worker_id itself, so $workerid is checked for real.
+        List<String> hosts = labelValues("host_name", runSelector);
+        assertThat(hosts).as("host_name of " + runSelector).hasSize(1);
+        assertThat(workers).containsExactly(hosts.get(0) + ":" + ports.get(0));
 
         Map<String, String> vars = Map.of(
                 "job", job.getFullName(),
                 "jobid", run.getId(),
                 "jobgroup", folder.getFullName(),
                 "workerid", workers.get(0));
-        return new Build(job, run, vars, evalSeconds[0]);
+        return new Build(job, run, vars, evalTime[0]);
     }
 
     /** Releases the held build and checks it succeeds. */
@@ -207,25 +200,14 @@ class PrometheusDashboardTest {
         return values;
     }
 
-    private static boolean isCore(String expr) {
-        Matcher m = METRIC.matcher(expr);
-        boolean any = false;
-        while (m.find()) {
-            if (!CORE_METRICS.contains(m.group())) {
-                return false;
-            }
-            any = true;
-        }
-        return any;
-    }
-
     @Test
     void labelVariablesResolve(JenkinsRule j) throws Exception {
         Build build = runBuild(j);
         DashboardQueries dashboard = DashboardQueries.load(DashboardQueries.repoDashboard());
         assertThat(dashboard.labelValuesVariables()).isNotEmpty();
+        UnaryOperator<String> substitution = dashboard.substitution(build.vars());
         for (LabelValuesQuery v : dashboard.labelValuesVariables()) {
-            String selector = dashboard.substitute(v.metricSelector(), build.vars());
+            String selector = substitution.apply(v.metricSelector());
             assertThat(labelValues(v.label(), selector))
                     .as("label_values(%s, %s) for $%s", selector, v.label(), v.variable())
                     .contains(build.vars().get(v.variable()));
@@ -238,7 +220,8 @@ class PrometheusDashboardTest {
         Build build = runBuild(j);
         DashboardQueries dashboard = DashboardQueries.load(DashboardQueries.repoDashboard());
         List<String> exprs = dashboard.panelExprs();
-        assertThat(exprs).hasSize(275);
+        assertThat(exprs).hasSize(DashboardQueries.REPO_DASHBOARD_EXPRS);
+        UnaryOperator<String> substitution = dashboard.substitution(build.vars());
 
         List<String> coverage = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -247,9 +230,9 @@ class PrometheusDashboardTest {
         int empty = 0;
         int core = 0;
         for (String expr : exprs) {
-            String q = dashboard.substitute(expr, build.vars());
+            String q = substitution.apply(expr);
             String line = q.replaceAll("\\s*\\n\\s*", " ").strip();
-            JsonNode body = get("/api/v1/query", Map.of("query", q, "time", String.valueOf(build.evalSeconds())));
+            JsonNode body = get("/api/v1/query", Map.of("query", q, "time", DashboardQueries.promTime(build.evalTime())));
             if (!"success".equals(body.path("status").asText())) {
                 errors.add(body.path("errorType").asText() + ": " + body.path("error").asText() + "\n    " + q);
                 coverage.add("ERROR\t" + line);
@@ -262,7 +245,7 @@ class PrometheusDashboardTest {
                 empty++;
             }
             coverage.add((data ? "HAS_DATA" : "EMPTY") + "\t" + line);
-            if (isCore(expr)) {
+            if (DashboardQueries.isCore(expr)) {
                 core++;
                 if (!data) {
                     emptyCore.add(q);
@@ -278,7 +261,7 @@ class PrometheusDashboardTest {
                 exprs.size(), hasData, empty, errors.size(), core, emptyCore.size(), out);
 
         assertThat(errors).as("queries Prometheus rejected").isEmpty();
-        assertThat(core).as("core queries").isPositive();
+        assertThat(core).as("core queries").isEqualTo(DashboardQueries.REPO_DASHBOARD_CORE_EXPRS);
         // The core metric set is Linux's (e.g. macOS has node_memory_total_bytes, not MemTotal/MemAvailable), so
         // empty core queries fail the test on Linux only; elsewhere they are only reported.
         if ("linux".equals(RemoteComputerInfoRetriever.getOs())) {
