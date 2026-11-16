@@ -110,6 +110,8 @@ public final class StandIn {
         String readyLine;
         if (role.isExporter()) {
             int port = listenPort(args, role.defaultPort);
+            // Wildcard bind on purpose: the plugin's AvailablePortRetriever probes with a wildcard bind and the real
+            // exporters listen on ":port", so a loopback-only stand-in could hide port clashes.
             ServerSocket server = new ServerSocket(port);
             Thread acceptor = new Thread(() -> serve(server), "stand-in-http");
             acceptor.setDaemon(true);

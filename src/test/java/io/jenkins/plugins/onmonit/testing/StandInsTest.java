@@ -95,8 +95,7 @@ class StandInsTest {
         Running r = start(bin.resolve(EXPORTER), markers,
                 "--web.disable-exporter-metrics", "--web.listen-address=:" + port);
 
-        r.awaitOutput("Listening on");
-        r.awaitOutput(String.valueOf(port));
+        r.awaitOutput("Listening on :" + port);
 
         assertThatThrownBy(() -> new ServerSocket(port).close()).isInstanceOf(BindException.class);
         List<Marker> found = StandIns.markers(markers);
@@ -150,7 +149,7 @@ class StandInsTest {
         Path markers = Files.createDirectories(t.resolve("markers"));
         int port = freePort();
         Running r = start(bin.resolve(EXPORTER), markers, "--web.listen-address=:" + port);
-        r.awaitOutput("Listening on");
+        r.awaitOutput("Listening on :" + port);
         Marker m = StandIns.markers(markers).get(0);
 
         StandIns.killAll(markers);
@@ -178,6 +177,28 @@ class StandInsTest {
         StandIns.killAll(stale);
 
         assertThat(isAlive(pid)).as("process with reused pid %d", pid).isTrue();
+    }
+
+    @Test
+    void sameStartToleratesSubSecondDifferences() {
+        Instant t = Instant.parse("2026-01-01T00:00:00Z");
+        assertThat(StandIns.sameStart(t, t.plusMillis(500))).isTrue();
+        assertThat(StandIns.sameStart(t, t.minusMillis(999))).isTrue();
+        assertThat(StandIns.sameStart(t, t.plusSeconds(2))).isFalse();
+    }
+
+    /** A port taken between freePort() and the stand-in's bind must fail with the stand-in's own output. */
+    @Test
+    void awaitOutputShowsStandInOutputWhenItExits(@TempDir Path t) throws Exception {
+        Path bin = bin(t);
+        Path markers = Files.createDirectories(t.resolve("markers"));
+        try (ServerSocket taken = new ServerSocket(0)) {
+            int port = taken.getLocalPort();
+            Running r = start(bin.resolve(EXPORTER), markers, "--web.listen-address=:" + port);
+            assertThatThrownBy(() -> r.awaitOutput("Listening on :" + port))
+                    .hasMessageContaining("exited")
+                    .hasMessageContaining("BindException");
+        }
     }
 
     private static void writeMarker(Path file, long pid, Instant startInstant) throws IOException {
@@ -256,7 +277,12 @@ class StandInsTest {
         void awaitOutput(String text) {
             await().atMost(Duration.ofMinutes(1))
                     .pollInterval(Duration.ofMillis(100))
-                    .failFast("stand-in exited: " + text, () -> !process.isAlive())
+                    .failFast(() -> {
+                        if (!process.isAlive()) {
+                            throw new AssertionError(
+                                    "stand-in exited before printing '" + text + "'; output:\n" + output());
+                        }
+                    })
                     .until(() -> output().contains(text));
         }
     }

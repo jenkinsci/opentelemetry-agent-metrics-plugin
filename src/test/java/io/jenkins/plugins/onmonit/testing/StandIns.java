@@ -2,6 +2,7 @@ package io.jenkins.plugins.onmonit.testing;
 
 import io.jenkins.plugins.onmonit.ResourceUtil;
 import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -44,6 +45,7 @@ public final class StandIns {
     private static Boolean supported;
     private static RuntimeException unsupportedCause;
     private static Path windowsBuildDir;
+    private static final Duration START_TOLERANCE = Duration.ofSeconds(1);
 
     private StandIns() {}
 
@@ -196,7 +198,16 @@ public final class StandIns {
         }
         Instant expected = Instant.parse(startInstant);
         return ProcessHandle.of(id)
-                .filter(h -> h.info().startInstant().map(expected::equals).orElse(false));
+                .filter(h -> h.info().startInstant().map(actual -> sameStart(expected, actual)).orElse(false));
+    }
+
+    /**
+     * Whether a process start instant read now matches the one a stand-in recorded about itself. They are read through
+     * different handles and possibly rounded differently, so they only have to agree within {@link #START_TOLERANCE};
+     * an exact comparison could silently skip a kill.
+     */
+    static boolean sameStart(Instant recorded, Instant actual) {
+        return Duration.between(recorded, actual).abs().compareTo(START_TOLERANCE) <= 0;
     }
 
     private static List<Properties> markerProperties(Path markerDir) {
@@ -295,7 +306,7 @@ public final class StandIns {
         Path jar = dir.resolve("standin-classpath.jar");
         if (!Files.isRegularFile(jar)) {
             StringBuilder cp = new StringBuilder();
-            for (String entry : System.getProperty("java.class.path").split(java.io.File.pathSeparator)) {
+            for (String entry : System.getProperty("java.class.path").split(File.pathSeparator)) {
                 if (!entry.isEmpty()) {
                     cp.append(cp.length() == 0 ? "" : " ").append(Path.of(entry).toAbsolutePath().toUri());
                 }
@@ -304,15 +315,17 @@ public final class StandIns {
             manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
             manifest.getMainAttributes().put(Attributes.Name.CLASS_PATH, cp.toString());
             Path tmp = dir.resolve("standin-classpath.jar.tmp");
-            new JarOutputStream(Files.newOutputStream(tmp), manifest).close();
+            try (JarOutputStream ignored = new JarOutputStream(Files.newOutputStream(tmp), manifest)) {
+                // manifest only
+            }
             Files.move(tmp, jar, StandardCopyOption.REPLACE_EXISTING);
             jar.toFile().deleteOnExit();
         }
         return jar;
     }
 
-    private static java.io.File nullDevice() {
-        return new java.io.File(WINDOWS ? "NUL" : "/dev/null");
+    private static File nullDevice() {
+        return new File(WINDOWS ? "NUL" : "/dev/null");
     }
 
     /** Content of a C# verbatim string literal. */

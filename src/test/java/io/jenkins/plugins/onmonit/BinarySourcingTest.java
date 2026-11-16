@@ -23,7 +23,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import org.apache.commons.io.FileUtils;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -49,13 +48,14 @@ class BinarySourcingTest {
     void setUp() throws Exception {
         assumeTrue(StandIns.supported());
         markerDir = Files.createDirectories(tmp.resolve("markers"));
-        FileUtils.deleteDirectory(TestAgents.jenkinsHomeEnv().resolve("opentelemetry-agent-metrics").toFile());
+        TestAgents.deleteResourceRoot();
     }
 
     @AfterEach
     void tearDown() {
         if (markerDir != null) {
             StandIns.killAll(markerDir);
+            TestAgents.deleteResourceRoot();
         }
     }
 
@@ -123,10 +123,8 @@ class BinarySourcingTest {
     @Test
     void failsClearlyWhenNothingAvailable(JenkinsRule j) throws Exception {
         WorkflowRun run = build(j, TestAgents.emptyDir(tmp), Result.FAILURE);
-        String log = JenkinsRule.getLog(run);
-        assertThat(log).containsAnyOf(
-                "Could not find a suitable node_exporter provider",
-                "Could not find a suitable otel-contrib provider");
+        // The step looks for node_exporter first, so that is the provider it reports missing.
+        j.assertLogContains("[on-monit] FATAL: Could not find a suitable node_exporter provider", run);
     }
 
     @Test

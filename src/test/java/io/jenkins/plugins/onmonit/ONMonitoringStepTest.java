@@ -18,6 +18,7 @@ import io.jenkins.plugins.onmonit.testing.RenderedConfig;
 import io.jenkins.plugins.onmonit.testing.StandIn;
 import io.jenkins.plugins.onmonit.testing.StandIns;
 import io.jenkins.plugins.onmonit.testing.TestAgents;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,13 +26,13 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.io.FileUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -52,19 +53,24 @@ class ONMonitoringStepTest {
     void setUp() throws Exception {
         assumeTrue(StandIns.supported());
         markerDir = Files.createDirectories(tmp.resolve("markers"));
-        FileUtils.deleteDirectory(TestAgents.jenkinsHomeEnv().resolve("opentelemetry-agent-metrics").toFile());
+        TestAgents.deleteResourceRoot();
     }
 
     @AfterEach
     void tearDown() {
         if (markerDir != null) {
             StandIns.killAll(markerDir);
+            TestAgents.deleteResourceRoot();
         }
     }
 
     private DumbSlave agent(JenkinsRule j) throws Exception {
+        return agent(j, 1);
+    }
+
+    private DumbSlave agent(JenkinsRule j, int executors) throws Exception {
         globalEnv(j, "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317");
-        return TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
+        return TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir, executors);
     }
 
     private static WorkflowJob job(JenkinsRule j, String name, String script) throws Exception {
@@ -84,6 +90,12 @@ class ONMonitoringStepTest {
     private List<Marker> awaitMarkers(int count) {
         Awaitility.await().atMost(Duration.ofSeconds(30)).until(() -> StandIns.markers(markerDir).size() >= count);
         return StandIns.markers(markerDir);
+    }
+
+    private List<Marker> markers(int expected) {
+        List<Marker> markers = StandIns.markers(markerDir);
+        assertThat(markers).hasSize(expected);
+        return markers;
     }
 
     private static RenderedConfig config(Marker otelcol) throws Exception {
@@ -290,21 +302,14 @@ class ONMonitoringStepTest {
         DumbSlave agent = agent(j);
         WorkflowJob job = job(j, "p", onNode(HeldBuilds.HOLD));
         WorkflowRun run = HeldBuilds.hold(j, job);
-        List<Marker> markers;
         try {
-            markers = awaitMarkers(2);
+            awaitMarkers(2);
             Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> assertAlive(markers(2)));
         } finally {
             HeldBuilds.releaseOn(agent, job);
         }
         j.assertBuildStatusSuccess(j.waitForCompletion(run));
         awaitDead(StandIns.markers(markerDir), DEAD);
-    }
-
-    private List<Marker> markers(int expected) {
-        List<Marker> markers = StandIns.markers(markerDir);
-        assertThat(markers).hasSize(expected);
-        return markers;
     }
 
     @Test
@@ -363,9 +368,8 @@ class ONMonitoringStepTest {
     private static ServerSocket bind(int port) {
         try {
             return new ServerSocket(port);
-        } catch (java.io.IOException e) {
-            assumeTrue(false, "port " + port + " is not available: " + e);
-            return null;
+        } catch (IOException e) {
+            return Assumptions.abort("port " + port + " is not available: " + e);
         }
     }
 
@@ -381,8 +385,7 @@ class ONMonitoringStepTest {
 
     @Test
     void concurrentJobsOnSameAgentUseDistinctPorts(JenkinsRule j) throws Exception {
-        DumbSlave agent = TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir, 2);
-        globalEnv(j, "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317");
+        DumbSlave agent = agent(j, 2);
         WorkflowJob job1 = job(j, "p1", onNode(HeldBuilds.HOLD));
         WorkflowJob job2 = job(j, "p2", onNode(HeldBuilds.HOLD));
         WorkflowRun run1 = HeldBuilds.hold(j, job1);
