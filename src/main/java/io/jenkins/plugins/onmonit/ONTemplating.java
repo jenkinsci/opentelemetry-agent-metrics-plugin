@@ -5,6 +5,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import hudson.EnvVars;
 import hudson.model.Run;
@@ -16,6 +18,8 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.StringTemplateResolver;
 
 public class ONTemplating {
+
+    private static final Logger LOGGER = Logger.getLogger(ONTemplating.class.getName());
 
     private static volatile TemplateEngine defaultTemplateEngine = null;
     private static volatile TemplateEngine configTemplateEngine = null;
@@ -72,6 +76,10 @@ public class ONTemplating {
         }
     }
 
+    static boolean usesStandaloneAuthHeader(String template) {
+        return template.contains("otlpAuthHeader}") && !template.contains("otlpAuthHeaderBefore");
+    }
+
     private String trimSuffix(String original, String suffix) {
         if (original.endsWith(suffix)) {
             return original.substring(0, original.length() - suffix.length());
@@ -107,9 +115,19 @@ public class ONTemplating {
         String otlpHeadersYaml = OtlpHeaders.toYamlBlock(otlpHeaders);
         context.setVariable("otlpHeaders", otlpHeaders);
         context.setVariable("otlpHeadersYaml", otlpHeadersYaml);
-        // Deprecated: kept so custom templates copied from the old default still render every header.
-        context.setVariable("otlpAuthHeaderBefore", otlpHeadersYaml);
-        context.setVariable("otlpAuthHeader", "");
+        // Deprecated variables, kept for custom templates written against the old default.
+        if (usesStandaloneAuthHeader(ONMonitConfig.get().getOtelConfigTemplate())) {
+            // The template uses otlpAuthHeader without otlpAuthHeaderBefore, e.g. "Authorization: '[[${otlpAuthHeader}]]'":
+            // keep its old meaning, the value of the (first) header.
+            LOGGER.log(Level.WARNING, "The custom OTEL config template uses the deprecated otlpAuthHeader variable; "
+                    + "use otlpHeadersYaml or otlpHeaders instead");
+            context.setVariable("otlpAuthHeaderBefore", "");
+            context.setVariable("otlpAuthHeader", otlpHeaders.values().stream().findFirst().orElse(""));
+        } else {
+            // The old three-part line: the block alone renders every header.
+            context.setVariable("otlpAuthHeaderBefore", otlpHeadersYaml);
+            context.setVariable("otlpAuthHeader", "");
+        }
         context.setVariable("otlpAuthHeaderAfter", "");
         return context;
     }
