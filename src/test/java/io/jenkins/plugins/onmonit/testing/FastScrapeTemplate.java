@@ -31,26 +31,6 @@ public final class FastScrapeTemplate {
         return replaceOrFail(builtIn(), "scrape_interval: 15s", "scrape_interval: " + interval);
     }
 
-    public static String withIntervalAndOtlpHttp(String interval) {
-        String t = withInterval(interval);
-        t = replaceOrFail(t, "  otlp:\n", "  otlphttp:\n");
-        return replaceOrFail(t, "exporters: [otlp, debug]", "exporters: [otlphttp, debug]");
-    }
-
-    /**
-     * Like {@link #withInterval(String)}, with {@code tls.insecure: true} on the gRPC {@code otlp} exporter. The
-     * built-in template has no TLS setting, so otelcol 0.135.0 uses TLS even for an {@code http://} endpoint.
-     */
-    public static String withIntervalAndInsecureTls(String interval) {
-        return withInsecureTls(withInterval(interval));
-    }
-
-    /** Adds {@code tls.insecure: true} to the gRPC {@code otlp} exporter of {@code template}. */
-    static String withInsecureTls(String template) {
-        String otlp = "  otlp:\n    endpoint: [(${yaml.quote(otlpEndpoint)})]\n";
-        return replaceOrFail(template, otlp, otlp + "    tls:\n      insecure: true\n");
-    }
-
     public static void apply(String template) {
         ONMonitConfig.get().setOtelConfigTemplate(template);
     }

@@ -15,6 +15,18 @@
     <code>env</code> (build environment, e.g. <code>env.BUILD_ID</code>).
     </p>
     <p>
+    The OTLP exporter settings come from the <code>OTEL_EXPORTER_OTLP_*</code> variables:
+    <code>otlpProtocol</code> is the protocol (<code>grpc</code>, <code>http/protobuf</code> or <code>http/json</code>);
+    <code>otlpExporter</code> is the matching collector exporter (<code>otlp</code> or <code>otlphttp</code>);
+    <code>otlpEndpointKey</code> is the exporter key for <code>otlpEndpoint</code> (<code>endpoint</code>, or
+    <code>metrics_endpoint</code> for <code>otlphttp</code> when <code>OTEL_EXPORTER_OTLP_METRICS_ENDPOINT</code> is set);
+    <code>otlpInsecure</code> (boolean) is true when the gRPC exporter must connect without TLS, i.e. for an
+    <code>http://</code> endpoint, or an endpoint without scheme when <code>OTEL_EXPORTER_OTLP_INSECURE</code> is true;
+    <code>otlpEncoding</code> is <code>json</code> for <code>http/json</code> and empty otherwise.
+    <code>otlpEndpoint</code> is the value of <code>OTEL_EXPORTER_OTLP_METRICS_ENDPOINT</code> when that is set.
+    A custom template that hard-codes the <code>otlp:</code> exporter ignores <code>OTEL_EXPORTER_OTLP_PROTOCOL</code>.
+    </p>
+    <p>
     The headers from <code>OTEL_EXPORTER_OTLP_HEADERS</code> are available as <code>otlpHeadersYaml</code>, a ready-made
     <code>headers:</code> block to insert under the exporter with <code>[(${otlpHeadersYaml})]</code>, and as
     <code>otlpHeaders</code>, a map of header names to decoded values.

@@ -96,11 +96,11 @@ class RealBinariesExportTest {
     }
 
     /**
-     * 2s-scrape template with {@code tls.insecure} (see {@link #PLAINTEXT_TLS_BUG}), endpoint pointing at the
-     * receiver, and an agent whose PATH is empty so the uploaded real binaries are used.
+     * 2s-scrape built-in template, endpoint pointing at the receiver, and an agent whose PATH is empty so the uploaded
+     * real binaries are used.
      */
     private void setUp(JenkinsRule j, String endpoint) throws Exception {
-        FastScrapeTemplate.apply(FastScrapeTemplate.withIntervalAndInsecureTls("2s"));
+        FastScrapeTemplate.apply(FastScrapeTemplate.withInterval("2s"));
         setUpTemplateUnchanged(j, endpoint);
     }
 
@@ -308,9 +308,7 @@ class RealBinariesExportTest {
     @Test
     void customTemplateLabelOnWire(JenkinsRule j) throws Exception {
         FastScrapeTemplate.apply(FastScrapeTemplate.withResourceAttribute(
-                FastScrapeTemplate.withIntervalAndInsecureTls("2s"),
-                "test.custom.label",
-                "custom-[[${env.BUILD_ID}]]"));
+                FastScrapeTemplate.withInterval("2s"), "test.custom.label", "custom-[[${env.BUILD_ID}]]"));
         setUpTemplateUnchanged(j, receiver.endpoint());
         WorkflowRun run = runAndAwaitExports(j, job(j, onNode(BODY)));
         assertThat(receiver.resourceAttributes(run.getId()))
