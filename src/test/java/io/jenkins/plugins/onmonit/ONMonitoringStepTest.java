@@ -191,21 +191,27 @@ class ONMonitoringStepTest {
     @Test
     void withEnvOverridesGlobalEndpoint(JenkinsRule j) throws Exception {
         agent(j);
-        j.buildAndAssertSuccess(job(j, "p", "node('t') { withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://override:4317']) "
-                + "{ onMonit { echo 'x' } } }"));
+        j.buildAndAssertSuccess(job(
+                j,
+                "p",
+                "node('t') { withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://override:4317']) "
+                        + "{ onMonit { echo 'x' } } }"));
         assertThat(config(otelcol()).otlpEndpoint()).isEqualTo("http://override:4317");
     }
 
     @Test
     void declarativeEnvironmentEndpointReachesRenderedConfig(JenkinsRule j) throws Exception {
         TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
-        WorkflowJob job = job(j, "p", "pipeline {\n  agent { label 't' }\n"
-                + "  environment {\n"
-                + "    OTEL_EXPORTER_OTLP_ENDPOINT = 'http://localhost:4317'\n"
-                + "    OTEL_EXPORTER_OTLP_HEADERS = 'Authorization=Bearer test-token'\n"
-                + "  }\n"
-                + "  options { onMonit() }\n"
-                + "  stages { stage('s') { steps { echo 'x' } } }\n}");
+        WorkflowJob job = job(
+                j,
+                "p",
+                "pipeline {\n  agent { label 't' }\n"
+                        + "  environment {\n"
+                        + "    OTEL_EXPORTER_OTLP_ENDPOINT = 'http://localhost:4317'\n"
+                        + "    OTEL_EXPORTER_OTLP_HEADERS = 'Authorization=Bearer test-token'\n"
+                        + "  }\n"
+                        + "  options { onMonit() }\n"
+                        + "  stages { stage('s') { steps { echo 'x' } } }\n}");
         j.buildAndAssertSuccess(job);
         RenderedConfig cfg = config(otelcol());
         assertThat(cfg.otlpEndpoint()).isEqualTo("http://localhost:4317");
