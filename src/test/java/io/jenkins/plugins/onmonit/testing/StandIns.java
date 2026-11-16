@@ -76,8 +76,9 @@ public final class StandIns {
             }
         }
         if (!supported && required(System.getenv())) {
-            throw new IllegalStateException("Stand-in launchers cannot be built here although " + REQUIRE_ENV
-                    + "=true, so the stand-in tests would all be skipped: " + unsupportedCause.getMessage(),
+            throw new IllegalStateException(
+                    "Stand-in launchers cannot be built here although " + REQUIRE_ENV
+                            + "=true, so the stand-in tests would all be skipped: " + unsupportedCause.getMessage(),
                     unsupportedCause);
         }
         return supported;
@@ -120,7 +121,8 @@ public final class StandIns {
 
     /** The launcher bytes for {@code role} on the current OS, e.g. for serving from a download server. */
     public static synchronized byte[] bytesFor(StandIn.Role role) {
-        return CACHE.computeIfAbsent(role, r -> WINDOWS ? compileWindowsLauncher(r) : shellLauncher(r)).clone();
+        return CACHE.computeIfAbsent(role, r -> WINDOWS ? compileWindowsLauncher(r) : shellLauncher(r))
+                .clone();
     }
 
     /** Reads all markers written into {@code markerDir} so far. */
@@ -151,7 +153,8 @@ public final class StandIns {
         List<ProcessHandle> doomed = new ArrayList<>();
         for (Properties p : markerProperties(markerDir)) {
             matching(p.getProperty("pid"), p.getProperty("startInstant")).ifPresent(doomed::add);
-            matching(p.getProperty("parentPid"), p.getProperty("parentStartInstant")).ifPresent(doomed::add);
+            matching(p.getProperty("parentPid"), p.getProperty("parentStartInstant"))
+                    .ifPresent(doomed::add);
         }
         destroyAndWait(doomed);
     }
@@ -198,7 +201,10 @@ public final class StandIns {
         }
         Instant expected = Instant.parse(startInstant);
         return ProcessHandle.of(id)
-                .filter(h -> h.info().startInstant().map(actual -> sameStart(expected, actual)).orElse(false));
+                .filter(h -> h.info()
+                        .startInstant()
+                        .map(actual -> sameStart(expected, actual))
+                        .orElse(false));
     }
 
     /**
@@ -216,7 +222,9 @@ public final class StandIns {
         }
         List<Properties> result = new ArrayList<>();
         try (Stream<Path> files = Files.list(markerDir)) {
-            for (Path f : files.filter(p -> p.getFileName().toString().endsWith(".properties")).sorted().toList()) {
+            for (Path f : files.filter(p -> p.getFileName().toString().endsWith(".properties"))
+                    .sorted()
+                    .toList()) {
                 Properties p = new Properties();
                 try (InputStream in = Files.newInputStream(f)) {
                     p.load(in);
@@ -237,7 +245,8 @@ public final class StandIns {
     }
 
     private static String javaExecutable() {
-        return Path.of(System.getProperty("java.home"), "bin", WINDOWS ? "java.exe" : "java").toString();
+        return Path.of(System.getProperty("java.home"), "bin", WINDOWS ? "java.exe" : "java")
+                .toString();
     }
 
     private static byte[] shellLauncher(StandIn.Role role) {
@@ -265,8 +274,7 @@ public final class StandIns {
                 }
                 template = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             }
-            String source = template
-                    .replace("@JAVA@", verbatim(javaExecutable()))
+            String source = template.replace("@JAVA@", verbatim(javaExecutable()))
                     .replace("@CP@", verbatim(pathingJar(windowsBuildDir).toString()))
                     .replace("@ROLE@", role.name());
             Path src = windowsBuildDir.resolve(role.name() + ".cs");
@@ -286,8 +294,8 @@ public final class StandIns {
                 throw new IllegalStateException("Add-Type timed out compiling the " + role + " launcher");
             }
             if (ps.exitValue() != 0 || !Files.isRegularFile(out)) {
-                throw new IllegalStateException("Add-Type failed for the " + role + " launcher (exit "
-                        + ps.exitValue() + "): " + output);
+                throw new IllegalStateException(
+                        "Add-Type failed for the " + role + " launcher (exit " + ps.exitValue() + "): " + output);
             }
             return Files.readAllBytes(out);
         } catch (IOException e) {
@@ -308,7 +316,8 @@ public final class StandIns {
             StringBuilder cp = new StringBuilder();
             for (String entry : System.getProperty("java.class.path").split(File.pathSeparator)) {
                 if (!entry.isEmpty()) {
-                    cp.append(cp.length() == 0 ? "" : " ").append(Path.of(entry).toAbsolutePath().toUri());
+                    cp.append(cp.length() == 0 ? "" : " ")
+                            .append(Path.of(entry).toAbsolutePath().toUri());
                 }
             }
             Manifest manifest = new Manifest();

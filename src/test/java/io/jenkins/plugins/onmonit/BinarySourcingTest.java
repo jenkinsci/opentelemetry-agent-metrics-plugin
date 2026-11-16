@@ -36,8 +36,7 @@ import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 @WithJenkins
 class BinarySourcingTest {
 
-    private static final String PIPELINE =
-            "node('t') { onMonit { echo 'inside' } }";
+    private static final String PIPELINE = "node('t') { onMonit { echo 'inside' } }";
 
     @TempDir
     Path tmp;
@@ -82,8 +81,9 @@ class BinarySourcingTest {
         j.assertLogContains("node_exporter + otel-contrib started", run);
         j.assertLogContains("node_exporter + otel-contrib stopped", run);
         List<Marker> markers = StandIns.markers(markerDir);
-        assertThat(markers).extracting(Marker::role).containsExactlyInAnyOrder(
-                StandIn.Role.OTELCOL, StandIns.exporterRole());
+        assertThat(markers)
+                .extracting(Marker::role)
+                .containsExactlyInAnyOrder(StandIn.Role.OTELCOL, StandIns.exporterRole());
     }
 
     @Test

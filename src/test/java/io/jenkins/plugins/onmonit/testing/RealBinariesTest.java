@@ -20,12 +20,14 @@ class RealBinariesTest {
 
         String os = RemoteComputerInfoRetriever.getOs();
         boolean amd64 = RemoteComputerInfoRetriever.isAmd64();
-        List<String> names = List.of(
-                ResourceUtil.getOtelFilename(os, amd64), ResourceUtil.getNodeExporterFilename(os, amd64));
+        List<String> names =
+                List.of(ResourceUtil.getOtelFilename(os, amd64), ResourceUtil.getNodeExporterFilename(os, amd64));
         for (String name : names) {
             Path file = home.resolve("opentelemetry-agent-metrics").resolve(name);
             Processes.Completed done = Processes.run(Duration.ofSeconds(60), List.of(file.toString(), "--version"));
-            assertThat(done.exitCode()).as(name + " exit code: " + done.output()).isZero();
+            assertThat(done.exitCode())
+                    .as(name + " exit code: " + done.output())
+                    .isZero();
             assertThat(done.output()).as(name).contains("version " + Versions.of(name));
         }
     }

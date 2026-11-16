@@ -50,6 +50,7 @@ class RealBinariesExportTest {
      * otelcol) took 19-25s on a WSL2 checkout under /mnt/c, and the plugin allows each process 1 minute to start.
      */
     private static final Duration TIMEOUT = Duration.ofSeconds(90);
+
     private static final String INSECURE_TLS = "--set=exporters.otlp.tls.insecure=true";
     private static final String PLAINTEXT_TLS_BUG = "The built-in template's gRPC otlp exporter has no tls setting, so "
             + "otelcol 0.135.0 dials an http:// endpoint with TLS and every export fails with 'transport: "
@@ -133,7 +134,9 @@ class RealBinariesExportTest {
             throws Exception {
         WorkflowRun run = job.scheduleBuild2(0).waitForStart();
         Awaitility.await().atMost(timeout).until(arrived.apply(run));
-        assertThat(run.isBuilding()).as("build still inside onMonit when the exports arrived").isTrue();
+        assertThat(run.isBuilding())
+                .as("build still inside onMonit when the exports arrived")
+                .isTrue();
         HeldBuilds.releaseOn(agent, job);
         j.assertBuildStatusSuccess(j.waitForCompletion(run));
         return run;
@@ -141,13 +144,18 @@ class RealBinariesExportTest {
 
     /** {@link #runAndAwait} until the first export of the build arrived. */
     private WorkflowRun runAndAwaitExports(JenkinsRule j, WorkflowJob job) throws Exception {
-        return runAndAwait(j, job, TIMEOUT, run -> () -> !receiver.requestsForRun(run.getId()).isEmpty());
+        return runAndAwait(
+                j,
+                job,
+                TIMEOUT,
+                run -> () -> !receiver.requestsForRun(run.getId()).isEmpty());
     }
 
     /** {@link #runAndAwait} until the exports of the build contain all of {@code metrics}. */
     private WorkflowRun runAndAwaitMetrics(JenkinsRule j, WorkflowJob job, Duration timeout, Set<String> metrics)
             throws Exception {
-        return runAndAwait(j, job, timeout, run -> () -> receiver.metricNames(run.getId()).containsAll(metrics));
+        return runAndAwait(
+                j, job, timeout, run -> () -> receiver.metricNames(run.getId()).containsAll(metrics));
     }
 
     private static List<Integer> ports(WorkflowRun run) throws Exception {
@@ -277,12 +285,14 @@ class RealBinariesExportTest {
         WorkflowJob job = job(j, "node('t') {\nparallel a: " + branch + ", b: " + branch + "\n}");
         // Both blocks stay held until both workers have exported, so the two collectors run at the same time.
         // onMonit start-up runs one branch after the other, hence twice the timeout.
-        WorkflowRun run = runAndAwait(j, job, TIMEOUT.multipliedBy(2), r -> () -> workerIds(r.getId()).size() == 2);
+        WorkflowRun run = runAndAwait(
+                j, job, TIMEOUT.multipliedBy(2), r -> () -> workerIds(r.getId()).size() == 2);
         assertThat(workerIds(run.getId())).hasSize(2);
         List<Integer> ports = ports(run);
         assertThat(ports).hasSize(2).doesNotHaveDuplicates();
-        Set<String> suffixes =
-                workerIds(run.getId()).stream().map(w -> w.substring(w.lastIndexOf(':') + 1)).collect(Collectors.toSet());
+        Set<String> suffixes = workerIds(run.getId()).stream()
+                .map(w -> w.substring(w.lastIndexOf(':') + 1))
+                .collect(Collectors.toSet());
         assertThat(suffixes).containsExactlyInAnyOrder(String.valueOf(ports.get(0)), String.valueOf(ports.get(1)));
     }
 
@@ -297,7 +307,9 @@ class RealBinariesExportTest {
     @Test
     void customTemplateLabelOnWire(JenkinsRule j) throws Exception {
         FastScrapeTemplate.apply(FastScrapeTemplate.withResourceAttribute(
-                FastScrapeTemplate.withIntervalAndInsecureTls("2s"), "test.custom.label", "custom-[[${env.BUILD_ID}]]"));
+                FastScrapeTemplate.withIntervalAndInsecureTls("2s"),
+                "test.custom.label",
+                "custom-[[${env.BUILD_ID}]]"));
         setUpTemplateUnchanged(j, receiver.endpoint());
         WorkflowRun run = runAndAwaitExports(j, job(j, onNode(BODY)));
         assertThat(receiver.resourceAttributes(run.getId()))

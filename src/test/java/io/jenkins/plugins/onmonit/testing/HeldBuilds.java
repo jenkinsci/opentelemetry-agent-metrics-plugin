@@ -27,7 +27,8 @@ public final class HeldBuilds {
      * The body stays valid when {@code \n} is replaced by {@code ; }.
      */
     public static final String HOLD = "echo 'inside'\n"
-            + "timeout(time: 10, unit: 'MINUTES') { waitUntil(initialRecurrencePeriod: 200) { fileExists('release') } }";
+            + "timeout(time: 10, unit: 'MINUTES') { "
+            + "waitUntil(initialRecurrencePeriod: 200) { fileExists('release') } }";
 
     /** How long {@link #hold(JenkinsRule, WorkflowJob)} waits for the build to start and to print {@code inside}. */
     public static final Duration START_TIMEOUT = Duration.ofMinutes(2);
@@ -52,10 +53,12 @@ public final class HeldBuilds {
             throw new AssertionError("build of " + job.getFullName() + " did not start within " + timeout, e);
         }
         try {
-            Awaitility.await().atMost(timeout).until(() -> JenkinsRule.getLog(run).contains("inside"));
+            Awaitility.await()
+                    .atMost(timeout)
+                    .until(() -> JenkinsRule.getLog(run).contains("inside"));
         } catch (ConditionTimeoutException e) {
-            throw new AssertionError(run + " did not print 'inside' within " + timeout + "; build log:\n"
-                    + JenkinsRule.getLog(run), e);
+            throw new AssertionError(
+                    run + " did not print 'inside' within " + timeout + "; build log:\n" + JenkinsRule.getLog(run), e);
         }
         return run;
     }
@@ -92,8 +95,10 @@ public final class HeldBuilds {
                     Awaitility.await().atMost(timeout).until(() -> !run.isBuilding());
                 } catch (ConditionTimeoutException e) {
                     run.doKill();
-                    throw new AssertionError(run + " still running " + timeout + " after release; build log:\n"
-                            + JenkinsRule.getLog(run), e);
+                    throw new AssertionError(
+                            run + " still running " + timeout + " after release; build log:\n"
+                                    + JenkinsRule.getLog(run),
+                            e);
                 }
             }
         }

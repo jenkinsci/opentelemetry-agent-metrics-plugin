@@ -84,7 +84,8 @@ public final class StandIn {
 
         ProcessHandle self = ProcessHandle.current();
         long pid = self.pid();
-        ProcessHandle parent = Boolean.getBoolean(WRAPPED_PROPERTY) ? self.parent().orElse(null) : null;
+        ProcessHandle parent =
+                Boolean.getBoolean(WRAPPED_PROPERTY) ? self.parent().orElse(null) : null;
         long parentPid = parent == null ? -1L : parent.pid();
         String markerEnv = System.getenv(MARKER_DIR_ENV);
         Path markerDir = markerEnv == null || markerEnv.isEmpty() ? null : Path.of(markerEnv);
@@ -132,8 +133,11 @@ public final class StandIn {
             try (OutputStream os = Files.newOutputStream(tmp)) {
                 marker.store(os, "onmonit stand-in");
             }
-            Files.move(tmp, markerDir.resolve(baseName + ".properties"),
-                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(
+                    tmp,
+                    markerDir.resolve(baseName + ".properties"),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
         }
 
         Path gate = args.stream()
@@ -187,9 +191,9 @@ public final class StandIn {
             while (matched < end.length && (b = in.read()) >= 0) {
                 matched = b == end[matched] ? matched + 1 : (b == '\r' ? 1 : 0);
             }
-            s.getOutputStream().write(
-                    "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-                            .getBytes(StandardCharsets.US_ASCII));
+            String response = "HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n"
+                    + "Content-Length: 0\r\nConnection: close\r\n\r\n";
+            s.getOutputStream().write(response.getBytes(StandardCharsets.US_ASCII));
             s.getOutputStream().flush();
         } catch (IOException ignored) {
             // client went away

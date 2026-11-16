@@ -86,10 +86,18 @@ class OtlpMetricsReceiverTest {
 
     @Test
     void attributeValuesRenderedByType() {
-        assertThat(OtlpMetricsReceiver.asString(AnyValue.newBuilder().setStringValue("x").build())).isEqualTo("x");
-        assertThat(OtlpMetricsReceiver.asString(AnyValue.newBuilder().setIntValue(42).build())).isEqualTo("42");
-        assertThat(OtlpMetricsReceiver.asString(AnyValue.newBuilder().setBoolValue(true).build())).isEqualTo("true");
-        assertThat(OtlpMetricsReceiver.asString(AnyValue.newBuilder().setDoubleValue(1.5).build())).isEqualTo("1.5");
+        assertThat(OtlpMetricsReceiver.asString(
+                        AnyValue.newBuilder().setStringValue("x").build()))
+                .isEqualTo("x");
+        assertThat(OtlpMetricsReceiver.asString(
+                        AnyValue.newBuilder().setIntValue(42).build()))
+                .isEqualTo("42");
+        assertThat(OtlpMetricsReceiver.asString(
+                        AnyValue.newBuilder().setBoolValue(true).build()))
+                .isEqualTo("true");
+        assertThat(OtlpMetricsReceiver.asString(
+                        AnyValue.newBuilder().setDoubleValue(1.5).build()))
+                .isEqualTo("1.5");
         assertThat(OtlpMetricsReceiver.asString(AnyValue.getDefaultInstance())).isEmpty();
     }
 }

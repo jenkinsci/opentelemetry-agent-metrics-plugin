@@ -21,7 +21,9 @@ public final class FastScrapeTemplate {
      */
     public static String withResourceAttribute(String template, String key, String value) {
         String anchor = "  resource/ci:\n    attributes:\n";
-        return replaceOrFail(template, anchor,
+        return replaceOrFail(
+                template,
+                anchor,
                 anchor + "    - action: insert\n      key: " + key + "\n      value: \"" + value + "\"\n");
     }
 
