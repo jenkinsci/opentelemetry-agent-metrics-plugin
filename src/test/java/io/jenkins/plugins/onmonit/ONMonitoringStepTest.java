@@ -11,6 +11,7 @@ import com.cloudbees.hudson.plugins.folder.Folder;
 import hudson.model.Result;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
+import io.jenkins.plugins.onmonit.testing.DefaultPortLock;
 import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
 import io.jenkins.plugins.onmonit.testing.HeldBuilds;
 import io.jenkins.plugins.onmonit.testing.Marker;
@@ -35,10 +36,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
+@ExtendWith(DefaultPortLock.class)
 @WithJenkins
 class ONMonitoringStepTest {
 
