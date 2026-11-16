@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -226,11 +225,9 @@ class StandInsTest {
     }
 
     private static void assertVersion(Path launcher, String expected) throws Exception {
-        Process p = new ProcessBuilder(launcher.toString(), "--version").redirectErrorStream(true).start();
-        String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        assertThat(p.waitFor(1, TimeUnit.MINUTES)).isTrue();
-        assertThat(p.exitValue()).as("exit code of %s --version, output: %s", launcher, out).isZero();
-        assertThat(out).contains(expected);
+        Processes.Completed done = Processes.run(Duration.ofMinutes(1), List.of(launcher.toString(), "--version"));
+        assertThat(done.exitCode()).as("exit code of %s --version, output: %s", launcher, done.output()).isZero();
+        assertThat(done.output()).contains(expected);
     }
 
     private Running start(Path launcher, Path markerDir, String... args) throws IOException {

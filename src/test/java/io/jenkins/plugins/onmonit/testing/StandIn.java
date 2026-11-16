@@ -14,8 +14,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Stand-in for {@code otelcol-contrib}, {@code node_exporter} and {@code windows_exporter}.
@@ -50,11 +48,7 @@ public final class StandIn {
 
         Role(String binaryName, String resourceFilename, int defaultPort) {
             this.binaryName = binaryName;
-            Matcher m = Pattern.compile("(\\d+\\.\\d+\\.\\d+)").matcher(resourceFilename);
-            if (!m.find()) {
-                throw new IllegalStateException("No version in " + resourceFilename);
-            }
-            this.version = m.group(1);
+            this.version = Versions.of(resourceFilename);
             this.defaultPort = defaultPort;
         }
 

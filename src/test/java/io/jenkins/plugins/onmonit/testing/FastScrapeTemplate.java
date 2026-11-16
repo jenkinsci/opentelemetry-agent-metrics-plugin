@@ -40,8 +40,13 @@ public final class FastScrapeTemplate {
      * built-in template has no TLS setting, so otelcol 0.135.0 uses TLS even for an {@code http://} endpoint.
      */
     public static String withIntervalAndInsecureTls(String interval) {
-        String endpoint = "    endpoint: [(${yaml.quote(otlpEndpoint)})]\n";
-        return replaceOrFail(withInterval(interval), endpoint, endpoint + "    tls:\n      insecure: true\n");
+        return withInsecureTls(withInterval(interval));
+    }
+
+    /** Adds {@code tls.insecure: true} to the gRPC {@code otlp} exporter of {@code template}. */
+    static String withInsecureTls(String template) {
+        String otlp = "  otlp:\n    endpoint: [(${yaml.quote(otlpEndpoint)})]\n";
+        return replaceOrFail(template, otlp, otlp + "    tls:\n      insecure: true\n");
     }
 
     public static void apply(String template) {
