@@ -8,7 +8,6 @@ import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
 import io.jenkins.plugins.onmonit.testing.RenderedConfig;
 import java.util.Map;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
@@ -158,12 +157,32 @@ class ONTemplatingTest {
                 .isEqualTo(Map.of("Authorization", "Bearer test-token"));
     }
 
-    @Disabled("ONTemplating HTML-escapes the job name in TEXT mode (\" becomes &quot;, ' becomes &#39;), so the name is not preserved; see issue #122")
     @Test
     void jobNameWithQuotesKeepsYamlValid(JenkinsRule j) throws Exception {
         String name = "say \"hi\" it's";
         WorkflowRun run = runJob(j, j.jenkins, name);
         RenderedConfig cfg = render(run, env(run, ENDPOINT, null, null));
         assertThat(cfg.resourceAttribute("cicd.pipeline.name")).isEqualTo(name);
+    }
+
+    @Test
+    void headerValueDollarIsEscapedForCollectorExpansion(JenkinsRule j) throws Exception {
+        // otelcol expands ${env:...} in its config and reads $$ as a literal $, so every $ must be doubled.
+        assertThat(renderTopLevel(j, ENDPOINT, "Authorization=a$b${env:HOME}", null).otlpHeaders())
+                .isEqualTo(Map.of("Authorization", "a$$b$${env:HOME}"));
+    }
+
+    @Test
+    void customTemplateCanQuoteValuesForYaml(JenkinsRule j) throws Exception {
+        ONMonitConfig.get().setOtelConfigTemplate("""
+                processors:
+                  resource/ci:
+                    attributes:
+                    - action: insert
+                      key: service.name
+                      value: [(${yaml.quote(serviceName)})]
+                """);
+        String name = "say \"hi\" it's & more \\ #x";
+        assertThat(renderTopLevel(j, ENDPOINT, null, name).resourceAttribute("service.name")).isEqualTo(name);
     }
 }

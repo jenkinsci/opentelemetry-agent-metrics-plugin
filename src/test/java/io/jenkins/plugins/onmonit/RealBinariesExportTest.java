@@ -224,6 +224,18 @@ class RealBinariesExportTest {
     }
 
     @Test
+    void headerValueWithYamlAndCollectorSpecialCharsOnWire(JenkinsRule j) throws Exception {
+        setUp(j);
+        // No "$$" here: Jenkins expands global env vars and turns "$$" into "$" before the plugin sees the value.
+        String value = "Bearer it's \"x\" & y \\ $z ${env:HOME}";
+        globalEnv(j, "OTEL_EXPORTER_OTLP_HEADERS", "Authorization=" + value);
+        WorkflowRun run = runAndAwaitExports(j, job(j, onNode(BODY)));
+        assertThat(receiver.headers(run.getId()))
+                .isNotEmpty()
+                .allSatisfy(h -> assertThat(h).containsEntry("authorization", value));
+    }
+
+    @Test
     void customHeaderKeyOnWire(JenkinsRule j) throws Exception {
         setUp(j);
         globalEnv(j, "OTEL_EXPORTER_OTLP_HEADERS", "X-Api-Key=abc");

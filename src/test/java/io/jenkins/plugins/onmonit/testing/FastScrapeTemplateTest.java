@@ -28,7 +28,7 @@ class FastScrapeTemplateTest {
         String t = FastScrapeTemplate.withIntervalAndInsecureTls("2s");
         assertThat(t)
                 .contains("scrape_interval: 2s")
-                .contains("    endpoint: \"[[${otlpEndpoint}]]\"\n    tls:\n      insecure: true\n");
+                .contains("    endpoint: [(${yaml.quote(otlpEndpoint)})]\n    tls:\n      insecure: true\n");
     }
 
     @Test

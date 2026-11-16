@@ -2,9 +2,23 @@
     If empty, the default OTEL config template is loaded from the <a href="https://github.com/jenkinsci/opentelemetry-agent-metrics-plugin/blob/main/src/main/resources/io/jenkins/plugins/onmonit/otel.yaml.tmpl">plugin resources</a>.
     By setting a value this overrides the OTEL config template.
     <p>
+    The template is a <a href="https://www.thymeleaf.org/doc/tutorials/3.1/usingthymeleaf.html#textual-syntax">Thymeleaf
+    TEXT template</a>. Insert string values with <code>[(${yaml.quote(name)})]</code>, which writes a double-quoted
+    YAML string, for example <code>value: [(${yaml.quote(jobName)})]</code>. It escapes quotes, backslashes and
+    control characters, and doubles <code>$</code> so the collector does not expand it.
+    Avoid <code>[[${name}]]</code> for string values: it HTML-escapes them, so <code>'</code>, <code>"</code> and
+    <code>&amp;</code> end up as <code>&amp;#39;</code>, <code>&amp;quot;</code> and <code>&amp;amp;</code>.
+    </p>
+    <p>
+    Available variables: <code>otlpEndpoint</code>, <code>serviceName</code>, <code>jobName</code>,
+    <code>jobGroupName</code>, <code>JENKINS_URL</code>, <code>pageUrl</code>, <code>nePort</code> (number) and
+    <code>env</code> (build environment, e.g. <code>env.BUILD_ID</code>).
+    </p>
+    <p>
     The headers from <code>OTEL_EXPORTER_OTLP_HEADERS</code> are available as <code>otlpHeadersYaml</code>, a ready-made
     <code>headers:</code> block to insert under the exporter with <code>[(${otlpHeadersYaml})]</code>, and as
     <code>otlpHeaders</code>, a map of header names to decoded values.
     The <code>otlpAuthHeaderBefore</code>, <code>otlpAuthHeader</code> and <code>otlpAuthHeaderAfter</code> variables are deprecated.
     A template that uses <code>otlpAuthHeader</code> without <code>otlpAuthHeaderBefore</code> receives the value of the first header in it.
+    </p>
 </div>

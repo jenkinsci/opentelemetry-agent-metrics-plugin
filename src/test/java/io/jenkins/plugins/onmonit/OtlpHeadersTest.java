@@ -77,12 +77,12 @@ class OtlpHeadersTest {
     @Test
     void yamlBlockOneLinePerHeader() {
         assertThat(OtlpHeaders.toYamlBlock(OtlpHeaders.parse("a=b,X-Api-Key=abc")))
-                .isEqualTo("headers:\n      'a': 'b'\n      'X-Api-Key': 'abc'");
+                .isEqualTo("headers:\n      \"a\": \"b\"\n      \"X-Api-Key\": \"abc\"");
     }
 
     @Test
-    void yamlQuotesAreDoubled() {
-        assertThat(OtlpHeaders.toYamlBlock(Map.of("k", "it's \"x\" & y: z")))
-                .isEqualTo("headers:\n      'k': 'it''s \"x\" & y: z'");
+    void yamlSpecialCharactersAreEscaped() {
+        assertThat(OtlpHeaders.toYamlBlock(Map.of("k", "it's \"x\" & y: z \\ $v")))
+                .isEqualTo("headers:\n      \"k\": \"it's \\\"x\\\" & y: z \\\\ $$v\"");
     }
 }
