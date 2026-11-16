@@ -42,9 +42,7 @@ public final class TestAgents {
         env.put("PATH", path);
         env.put("ONMONIT_STANDIN_DIR", markerDir.toAbsolutePath().toString());
         DumbSlave agent = new DumbSlave(
-                "agent" + NEXT.incrementAndGet(),
-                j.createTmpDir().getPath(),
-                j.createComputerLauncher(env));
+                "agent" + NEXT.incrementAndGet(), j.createTmpDir().getPath(), j.createComputerLauncher(env));
         agent.setNumExecutors(numExecutors);
         agent.setLabelString(label);
         j.jenkins.addNode(agent);

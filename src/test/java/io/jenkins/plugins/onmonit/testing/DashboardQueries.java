@@ -39,8 +39,7 @@ public final class DashboardQueries {
             "node_disk_read_bytes_total");
 
     /** Grafana built-ins fixed for tests, matching a 2s scrape interval. */
-    static final Map<String, String> BUILT_INS =
-            Map.of("__rate_interval", "10s", "__interval", "2s", "__range", "1m");
+    static final Map<String, String> BUILT_INS = Map.of("__rate_interval", "10s", "__interval", "2s", "__range", "1m");
 
     private static final Pattern LABEL_VALUES =
             Pattern.compile("^\\s*label_values\\((.*),\\s*([A-Za-z_]\\w*)\\s*\\)\\s*$");

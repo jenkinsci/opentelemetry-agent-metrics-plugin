@@ -14,12 +14,16 @@ import org.junit.jupiter.api.Test;
 class ProcessesTest {
 
     private static String java() {
-        return Path.of(System.getProperty("java.home"), "bin", RemoteComputerInfoRetriever.isWindows() ? "java.exe" : "java")
+        return Path.of(
+                        System.getProperty("java.home"),
+                        "bin",
+                        RemoteComputerInfoRetriever.isWindows() ? "java.exe" : "java")
                 .toString();
     }
 
     private static String codeSource(Class<?> c) throws Exception {
-        return Path.of(c.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+        return Path.of(c.getProtectionDomain().getCodeSource().getLocation().toURI())
+                .toString();
     }
 
     @Test

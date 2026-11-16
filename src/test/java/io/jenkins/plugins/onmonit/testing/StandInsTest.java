@@ -91,8 +91,8 @@ class StandInsTest {
         Path bin = bin(t);
         Path markers = Files.createDirectories(t.resolve("markers"));
         int port = freePort();
-        Running r = start(bin.resolve(EXPORTER), markers,
-                "--web.disable-exporter-metrics", "--web.listen-address=:" + port);
+        Running r = start(
+                bin.resolve(EXPORTER), markers, "--web.disable-exporter-metrics", "--web.listen-address=:" + port);
 
         r.awaitOutput("Listening on :" + port);
 
@@ -113,7 +113,8 @@ class StandInsTest {
         Running r = start(bin.resolve(OTELCOL), markers, "--config=file:" + config);
         r.awaitOutput("Everything is ready.");
         Marker m = StandIns.markers(markers).get(0);
-        assertThat(ProcessHandle.of(m.pid())).hasValueSatisfying(h -> assertThat(h.isAlive()).isTrue());
+        assertThat(ProcessHandle.of(m.pid()))
+                .hasValueSatisfying(h -> assertThat(h.isAlive()).isTrue());
 
         r.process.toHandle().descendants().forEach(ProcessHandle::destroyForcibly);
         r.process.destroyForcibly();
@@ -121,7 +122,9 @@ class StandInsTest {
         await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
             assertThat(isAlive(m.pid())).as("stand-in pid %d", m.pid()).isFalse();
             if (m.parentPid() != -1) {
-                assertThat(isAlive(m.parentPid())).as("launcher pid %d", m.parentPid()).isFalse();
+                assertThat(isAlive(m.parentPid()))
+                        .as("launcher pid %d", m.parentPid())
+                        .isFalse();
             }
         });
     }
@@ -139,7 +142,9 @@ class StandInsTest {
         r.process.destroyForcibly();
 
         await().atMost(Duration.ofSeconds(10))
-                .untilAsserted(() -> assertThat(isAlive(m.pid())).as("stand-in pid %d", m.pid()).isFalse());
+                .untilAsserted(() -> assertThat(isAlive(m.pid()))
+                        .as("stand-in pid %d", m.pid())
+                        .isFalse());
     }
 
     @Test
@@ -153,9 +158,13 @@ class StandInsTest {
 
         StandIns.killAll(markers);
 
-        assertThat(isAlive(m.pid())).as("stand-in pid %d right after killAll", m.pid()).isFalse();
+        assertThat(isAlive(m.pid()))
+                .as("stand-in pid %d right after killAll", m.pid())
+                .isFalse();
         if (m.parentPid() != -1) {
-            assertThat(isAlive(m.parentPid())).as("launcher pid %d right after killAll", m.parentPid()).isFalse();
+            assertThat(isAlive(m.parentPid()))
+                    .as("launcher pid %d right after killAll", m.parentPid())
+                    .isFalse();
         }
     }
 
@@ -168,7 +177,8 @@ class StandInsTest {
         Running unrelated = start(bin.resolve(OTELCOL), unrelatedMarkers, "--config=file:" + config);
         unrelated.awaitOutput("Everything is ready.");
         long pid = StandIns.markers(unrelatedMarkers).get(0).pid();
-        Instant realStart = ProcessHandle.of(pid).flatMap(h -> h.info().startInstant()).orElseThrow();
+        Instant realStart =
+                ProcessHandle.of(pid).flatMap(h -> h.info().startInstant()).orElseThrow();
 
         Path stale = Files.createDirectories(t.resolve("stale"));
         writeMarker(stale.resolve("OTELCOL-1.properties"), pid, realStart.minusSeconds(3600));
@@ -226,7 +236,9 @@ class StandInsTest {
 
     private static void assertVersion(Path launcher, String expected) throws Exception {
         Processes.Completed done = Processes.run(Duration.ofMinutes(1), List.of(launcher.toString(), "--version"));
-        assertThat(done.exitCode()).as("exit code of %s --version, output: %s", launcher, done.output()).isZero();
+        assertThat(done.exitCode())
+                .as("exit code of %s --version, output: %s", launcher, done.output())
+                .isZero();
         assertThat(done.output()).contains(expected);
     }
 
@@ -248,19 +260,21 @@ class StandInsTest {
 
         Running(Process process) {
             this.process = process;
-            Thread pump = new Thread(() -> {
-                byte[] buf = new byte[4096];
-                try (InputStream in = process.getInputStream()) {
-                    int n;
-                    while ((n = in.read(buf)) >= 0) {
-                        synchronized (out) {
-                            out.write(buf, 0, n);
+            Thread pump = new Thread(
+                    () -> {
+                        byte[] buf = new byte[4096];
+                        try (InputStream in = process.getInputStream()) {
+                            int n;
+                            while ((n = in.read(buf)) >= 0) {
+                                synchronized (out) {
+                                    out.write(buf, 0, n);
+                                }
+                            }
+                        } catch (IOException ignored) {
+                            // process went away
                         }
-                    }
-                } catch (IOException ignored) {
-                    // process went away
-                }
-            }, "stand-in-output");
+                    },
+                    "stand-in-output");
             pump.setDaemon(true);
             pump.start();
         }

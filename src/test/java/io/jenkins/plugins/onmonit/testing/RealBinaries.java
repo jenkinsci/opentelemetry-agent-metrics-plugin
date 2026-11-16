@@ -55,8 +55,10 @@ public final class RealBinaries {
         String osName = windows ? "windows" : os;
         String arch = windows || amd64 ? "amd64" : "arm64";
         String archive = "otelcol-contrib_" + v + "_" + osName + "_" + arch + ".tar.gz";
-        String base = "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v" + v + "/";
-        String sums = "opentelemetry-collector-releases_otelcol-contrib_" + (windows ? "windows_" : "") + "checksums.txt";
+        String base =
+                "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v" + v + "/";
+        String sums =
+                "opentelemetry-collector-releases_otelcol-contrib_" + (windows ? "windows_" : "") + "checksums.txt";
         Path tgz = download(base, archive, sums, "otelcol-contrib-" + v + "-" + sums);
         extract(tgz, windows ? "otelcol-contrib.exe" : "otelcol-contrib", root.resolve(filename));
     }

@@ -1,10 +1,10 @@
 package io.jenkins.plugins.onmonit;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static io.jenkins.plugins.onmonit.testing.JenkinsFixtures.globalEnv;
 import static io.jenkins.plugins.onmonit.testing.JenkinsFixtures.ports;
 import static io.jenkins.plugins.onmonit.testing.Lifecycle.assertAlive;
 import static io.jenkins.plugins.onmonit.testing.Lifecycle.awaitDead;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.cloudbees.hudson.plugins.folder.Folder;
@@ -88,7 +88,9 @@ class ONMonitoringStepTest {
     }
 
     private List<Marker> awaitMarkers(int count) {
-        Awaitility.await().atMost(Duration.ofSeconds(30)).until(() -> StandIns.markers(markerDir).size() >= count);
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(30))
+                .until(() -> StandIns.markers(markerDir).size() >= count);
         return StandIns.markers(markerDir);
     }
 
@@ -160,8 +162,11 @@ class ONMonitoringStepTest {
     @Test
     void withEnvEndpointAndHeadersReachRenderedConfig(JenkinsRule j) throws Exception {
         TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
-        WorkflowJob job = job(j, "p", "node('t') { withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317', "
-                + "'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer test-token']) { onMonit { echo 'x' } } }");
+        WorkflowJob job = job(
+                j,
+                "p",
+                "node('t') { withEnv(['OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317', "
+                        + "'OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer test-token']) { onMonit { echo 'x' } } }");
         j.buildAndAssertSuccess(job);
         RenderedConfig cfg = config(otelcol());
         assertThat(cfg.otlpEndpoint()).isEqualTo("http://localhost:4317");
@@ -171,9 +176,12 @@ class ONMonitoringStepTest {
     @Test
     void agentNodePropertyEndpointAndHeadersReachRenderedConfig(JenkinsRule j) throws Exception {
         DumbSlave agent = TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir);
-        agent.getNodeProperties().add(new EnvironmentVariablesNodeProperty(
-                new EnvironmentVariablesNodeProperty.Entry("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"),
-                new EnvironmentVariablesNodeProperty.Entry("OTEL_EXPORTER_OTLP_HEADERS", "Authorization=Bearer test-token")));
+        agent.getNodeProperties()
+                .add(new EnvironmentVariablesNodeProperty(
+                        new EnvironmentVariablesNodeProperty.Entry(
+                                "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"),
+                        new EnvironmentVariablesNodeProperty.Entry(
+                                "OTEL_EXPORTER_OTLP_HEADERS", "Authorization=Bearer test-token")));
         j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
         RenderedConfig cfg = config(otelcol());
         assertThat(cfg.otlpEndpoint()).isEqualTo("http://localhost:4317");
@@ -215,14 +223,15 @@ class ONMonitoringStepTest {
     void parallelOnMonitUsesDistinctPorts(JenkinsRule j) throws Exception {
         agent(j);
         String branch = "{ " + "onMonit { sleep 2 } }";
-        WorkflowJob job = job(j, "p", "node('t') {\n"
-                + "parallel a: " + branch + ", b: " + branch + "\n}");
+        WorkflowJob job = job(j, "p", "node('t') {\n" + "parallel a: " + branch + ", b: " + branch + "\n}");
         WorkflowRun run = j.buildAndAssertSuccess(job);
         List<Integer> ports = ports(JenkinsRule.getLog(run));
         assertThat(ports).hasSize(2).doesNotHaveDuplicates();
         List<Marker> markers = StandIns.markers(markerDir);
-        assertThat(markers).extracting(Marker::role)
-                .containsExactlyInAnyOrder(StandIn.Role.OTELCOL, StandIn.Role.OTELCOL, StandIns.exporterRole(), StandIns.exporterRole());
+        assertThat(markers)
+                .extracting(Marker::role)
+                .containsExactlyInAnyOrder(
+                        StandIn.Role.OTELCOL, StandIn.Role.OTELCOL, StandIns.exporterRole(), StandIns.exporterRole());
         awaitDead(markers, DEAD);
     }
 
@@ -287,9 +296,12 @@ class ONMonitoringStepTest {
     @Test
     void declarativeOptionsWorks(JenkinsRule j) throws Exception {
         agent(j);
-        WorkflowJob job = job(j, "p", "pipeline {\n  agent { label 't' }\n"
-                + "  options { onMonit() }\n"
-                + "  stages { stage('s') { steps { echo 'x' } } }\n}");
+        WorkflowJob job = job(
+                j,
+                "p",
+                "pipeline {\n  agent { label 't' }\n"
+                        + "  options { onMonit() }\n"
+                        + "  stages { stage('s') { steps { echo 'x' } } }\n}");
         WorkflowRun run = j.buildAndAssertSuccess(job);
         j.assertLogContains("node_exporter + otel-contrib started", run);
         List<Marker> markers = StandIns.markers(markerDir);
@@ -378,7 +390,8 @@ class ONMonitoringStepTest {
         agent(j);
         j.buildAndAssertSuccess(job(j, "with space", onNode("echo 'x'")));
         Marker oc = otelcol();
-        assertThat(oc.args()).anySatisfy(a -> assertThat(a).startsWith("--config=file:").contains("with space"));
+        assertThat(oc.args())
+                .anySatisfy(a -> assertThat(a).startsWith("--config=file:").contains("with space"));
         assertThat(oc.configCopy()).exists();
         assertThat(Files.size(oc.configCopy())).isPositive();
     }

@@ -18,14 +18,16 @@ class RealBinariesCacheTest {
     Path tmp;
 
     private Path sums() throws IOException {
-        return Files.writeString(tmp.resolve("sha256sums.txt"),
+        return Files.writeString(
+                tmp.resolve("sha256sums.txt"),
                 "abc123  node_exporter-1.9.1.linux-amd64.tar.gz\n"
                         + "def456  node_exporter-1.9.1.linux-arm64.tar.gz\n");
     }
 
     @Test
     void expectedSha256FindsAsset() throws Exception {
-        assertThat(RealBinaries.expectedSha256(sums(), "node_exporter-1.9.1.linux-arm64.tar.gz")).isEqualTo("def456");
+        assertThat(RealBinaries.expectedSha256(sums(), "node_exporter-1.9.1.linux-arm64.tar.gz"))
+                .isEqualTo("def456");
     }
 
     @Test

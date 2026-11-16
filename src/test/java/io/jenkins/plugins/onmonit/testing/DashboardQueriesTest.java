@@ -22,13 +22,16 @@ class DashboardQueriesTest {
 
     @Test
     void loadsAllPanelExprs() throws Exception {
-        assertThat(load().panelExprs()).hasSize(REPO_DASHBOARD_EXPRS).allSatisfy(e -> assertThat(e).isNotBlank());
+        assertThat(load().panelExprs())
+                .hasSize(REPO_DASHBOARD_EXPRS)
+                .allSatisfy(e -> assertThat(e).isNotBlank());
     }
 
     /** Fails when a dashboard edit drops queries the Prometheus test requires data for. */
     @Test
     void coreExprCountIsPinned() throws Exception {
-        assertThat(load().panelExprs().stream().filter(DashboardQueries::isCore)).hasSize(REPO_DASHBOARD_CORE_EXPRS);
+        assertThat(load().panelExprs().stream().filter(DashboardQueries::isCore))
+                .hasSize(REPO_DASHBOARD_CORE_EXPRS);
     }
 
     @Test
@@ -51,9 +54,12 @@ class DashboardQueriesTest {
         DashboardQueries q = load();
         List<String> substituted =
                 q.panelExprs().stream().map(e -> q.substitute(e, VARS)).toList();
-        assertThat(substituted).hasSize(REPO_DASHBOARD_EXPRS).allSatisfy(e -> assertThat(e).doesNotContain("$"));
+        assertThat(substituted)
+                .hasSize(REPO_DASHBOARD_EXPRS)
+                .allSatisfy(e -> assertThat(e).doesNotContain("$"));
         assertThat(q.labelValuesVariables())
-                .allSatisfy(v -> assertThat(q.substitute(v.metricSelector(), VARS)).doesNotContain("$"));
+                .allSatisfy(
+                        v -> assertThat(q.substitute(v.metricSelector(), VARS)).doesNotContain("$"));
         // $jobid / $jobgroup must not be mangled by the shorter $job.
         assertThat(q.substitute("a{x=\"$jobid\",y=\"${jobgroup}\",z=\"$job\"}[$__rate_interval]", VARS))
                 .isEqualTo("a{x=\"12\",y=\"f\",z=\"f/p\"}[10s]");
@@ -65,12 +71,14 @@ class DashboardQueriesTest {
     void substitutionMatchesSubstitute() throws Exception {
         DashboardQueries q = load();
         UnaryOperator<String> substitution = q.substitution(VARS);
-        assertThat(q.panelExprs()).allSatisfy(e -> assertThat(substitution.apply(e)).isEqualTo(q.substitute(e, VARS)));
+        assertThat(q.panelExprs())
+                .allSatisfy(e -> assertThat(substitution.apply(e)).isEqualTo(q.substitute(e, VARS)));
     }
 
     /** {@code String.valueOf(double)} would give {@code 1.763300000123E9}. */
     @Test
     void promTimeIsPlainDecimal() {
-        assertThat(DashboardQueries.promTime(Instant.ofEpochMilli(1763300000123L))).isEqualTo("1763300000.123");
+        assertThat(DashboardQueries.promTime(Instant.ofEpochMilli(1763300000123L)))
+                .isEqualTo("1763300000.123");
     }
 }

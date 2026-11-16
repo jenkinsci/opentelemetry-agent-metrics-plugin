@@ -12,7 +12,9 @@ class StandInsRequiredTest {
     void requiredOnlyWhenRequireEnvIsTrue() {
         assertThat(StandIns.required(Map.of("JENKINS_URL", "https://ci"))).isFalse();
         assertThat(StandIns.required(Map.of())).isFalse();
-        assertThat(StandIns.required(Map.of("ONMONIT_REQUIRE_STAND_INS", "false"))).isFalse();
-        assertThat(StandIns.required(Map.of("ONMONIT_REQUIRE_STAND_INS", "true"))).isTrue();
+        assertThat(StandIns.required(Map.of("ONMONIT_REQUIRE_STAND_INS", "false")))
+                .isFalse();
+        assertThat(StandIns.required(Map.of("ONMONIT_REQUIRE_STAND_INS", "true")))
+                .isTrue();
     }
 }

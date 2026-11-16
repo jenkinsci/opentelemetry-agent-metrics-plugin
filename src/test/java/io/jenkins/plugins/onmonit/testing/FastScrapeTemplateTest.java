@@ -49,9 +49,10 @@ class FastScrapeTemplateTest {
     @Test
     void resourceAttributeVariant() {
         String t = FastScrapeTemplate.withResourceAttribute(FastScrapeTemplate.builtIn(), "test.custom.label", "v");
-        assertThat(t).contains("  resource/ci:\n    attributes:\n"
-                + "    - action: insert\n      key: test.custom.label\n      value: \"v\"\n"
-                + "    - action: insert\n");
+        assertThat(t)
+                .contains("  resource/ci:\n    attributes:\n"
+                        + "    - action: insert\n      key: test.custom.label\n      value: \"v\"\n"
+                        + "    - action: insert\n");
     }
 
     @Test

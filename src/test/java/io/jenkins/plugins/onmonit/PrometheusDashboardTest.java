@@ -153,7 +153,9 @@ class PrometheusDashboardTest {
             assertThat(run.isBuilding()).as("build still held inside onMonit").isTrue();
             Instant now = Instant.now();
             JsonNode body = get("/api/v1/query", Map.of("query", ready, "time", DashboardQueries.promTime(now)));
-            assertThat(body.path("data").path("result").isEmpty()).as(ready + ": " + body).isFalse();
+            assertThat(body.path("data").path("result").isEmpty())
+                    .as(ready + ": " + body)
+                    .isFalse();
             evalTime[0] = now;
         });
         List<String> workers = labelValues("cicd_worker_id", runSelector);
@@ -188,12 +190,14 @@ class PrometheusDashboardTest {
                 .timeout(Duration.ofSeconds(30))
                 .GET()
                 .build();
-        return JSON.readTree(http.send(req, HttpResponse.BodyHandlers.ofString()).body());
+        return JSON.readTree(
+                http.send(req, HttpResponse.BodyHandlers.ofString()).body());
     }
 
     private List<String> labelValues(String label, String selector) throws IOException, InterruptedException {
         JsonNode body = get("/api/v1/label/" + label + "/values", Map.of("match[]", selector));
-        assertThat(body.path("status").asText()).as("label values " + label + " " + selector + ": " + body)
+        assertThat(body.path("status").asText())
+                .as("label values " + label + " " + selector + ": " + body)
                 .isEqualTo("success");
         List<String> values = new ArrayList<>();
         body.path("data").forEach(v -> values.add(v.asText()));
@@ -232,9 +236,11 @@ class PrometheusDashboardTest {
         for (String expr : exprs) {
             String q = substitution.apply(expr);
             String line = q.replaceAll("\\s*\\n\\s*", " ").strip();
-            JsonNode body = get("/api/v1/query", Map.of("query", q, "time", DashboardQueries.promTime(build.evalTime())));
+            JsonNode body =
+                    get("/api/v1/query", Map.of("query", q, "time", DashboardQueries.promTime(build.evalTime())));
             if (!"success".equals(body.path("status").asText())) {
-                errors.add(body.path("errorType").asText() + ": " + body.path("error").asText() + "\n    " + q);
+                errors.add(body.path("errorType").asText() + ": "
+                        + body.path("error").asText() + "\n    " + q);
                 coverage.add("ERROR\t" + line);
                 continue;
             }
@@ -265,10 +271,13 @@ class PrometheusDashboardTest {
         // The core metric set is Linux's (e.g. macOS has node_memory_total_bytes, not MemTotal/MemAvailable), so
         // empty core queries fail the test on Linux only; elsewhere they are only reported.
         if ("linux".equals(RemoteComputerInfoRetriever.getOs())) {
-            assertThat(emptyCore).as("core queries without data while monitoring").isEmpty();
+            assertThat(emptyCore)
+                    .as("core queries without data while monitoring")
+                    .isEmpty();
         } else {
-            emptyCore.forEach(q -> System.out.println("EMPTY core query (not enforced on "
-                    + RemoteComputerInfoRetriever.getOs() + "): " + q.replaceAll("\\s*\\n\\s*", " ").strip()));
+            emptyCore.forEach(
+                    q -> System.out.println("EMPTY core query (not enforced on " + RemoteComputerInfoRetriever.getOs()
+                            + "): " + q.replaceAll("\\s*\\n\\s*", " ").strip()));
         }
     }
 }

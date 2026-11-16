@@ -38,7 +38,8 @@ public final class RenderedConfig {
 
     /** First static scrape target, e.g. {@code localhost:9100}. */
     public String scrapeTarget() {
-        Map<String, Object> config = map(map(section("receivers").get("prometheus/ci")).get("config"));
+        Map<String, Object> config =
+                map(map(section("receivers").get("prometheus/ci")).get("config"));
         List<?> scrapeConfigs = (List<?>) config.get("scrape_configs");
         Map<String, Object> scrape = map(scrapeConfigs.get(0));
         List<?> staticConfigs = (List<?>) scrape.get("static_configs");
@@ -48,7 +49,8 @@ public final class RenderedConfig {
 
     /** Value of the {@code resource/ci} attribute with the given key, or null. */
     public String resourceAttribute(String key) {
-        List<?> attributes = (List<?>) map(section("processors").get("resource/ci")).get("attributes");
+        List<?> attributes =
+                (List<?>) map(section("processors").get("resource/ci")).get("attributes");
         if (attributes == null) {
             return null;
         }
