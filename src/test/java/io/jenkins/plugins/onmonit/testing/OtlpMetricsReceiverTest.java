@@ -80,6 +80,16 @@ class OtlpMetricsReceiverTest {
             assertThat(receiver.headers("42").get(0)).containsEntry("authorization", "Bearer t");
             assertThat(receiver.resourceAttributes("42").get(0)).containsEntry("cicd.pipeline.run.id", "42");
             assertThat(receiver.requestsForRun("42")).hasSize(1);
+            assertThat(receiver.runIds()).containsExactly("42");
         }
+    }
+
+    @Test
+    void attributeValuesRenderedByType() {
+        assertThat(OtlpMetricsReceiver.asString(AnyValue.newBuilder().setStringValue("x").build())).isEqualTo("x");
+        assertThat(OtlpMetricsReceiver.asString(AnyValue.newBuilder().setIntValue(42).build())).isEqualTo("42");
+        assertThat(OtlpMetricsReceiver.asString(AnyValue.newBuilder().setBoolValue(true).build())).isEqualTo("true");
+        assertThat(OtlpMetricsReceiver.asString(AnyValue.newBuilder().setDoubleValue(1.5).build())).isEqualTo("1.5");
+        assertThat(OtlpMetricsReceiver.asString(AnyValue.getDefaultInstance())).isEmpty();
     }
 }
