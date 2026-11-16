@@ -284,18 +284,17 @@ public final class StandIns {
             out.toFile().deleteOnExit();
             String command = "Add-Type -OutputType ConsoleApplication -OutputAssembly " + psQuote(out.toString())
                     + " -TypeDefinition (Get-Content -Raw " + psQuote(src.toString()) + ")";
-            Process ps = new ProcessBuilder("powershell.exe", "-NoProfile", "-Command", command)
-                    .redirectErrorStream(true)
-                    .redirectInput(ProcessBuilder.Redirect.from(nullDevice()))
-                    .start();
-            String output = new String(ps.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            if (!ps.waitFor(2, TimeUnit.MINUTES)) {
-                ps.destroyForcibly();
-                throw new IllegalStateException("Add-Type timed out compiling the " + role + " launcher");
-            }
-            if (ps.exitValue() != 0 || !Files.isRegularFile(out)) {
+            Processes.Completed ps;
+            try {
+                // Bounded as a whole: reading the output before waiting would let a hung Add-Type block forever.
+                ps = Processes.run(Duration.ofMinutes(2), List.of("powershell.exe", "-NoProfile", "-Command", command));
+            } catch (AssertionError timeout) {
                 throw new IllegalStateException(
-                        "Add-Type failed for the " + role + " launcher (exit " + ps.exitValue() + "): " + output);
+                        "Add-Type timed out compiling the " + role + " launcher: " + timeout.getMessage(), timeout);
+            }
+            if (ps.exitCode() != 0 || !Files.isRegularFile(out)) {
+                throw new IllegalStateException(
+                        "Add-Type failed for the " + role + " launcher (exit " + ps.exitCode() + "): " + ps.output());
             }
             return Files.readAllBytes(out);
         } catch (IOException e) {
@@ -331,10 +330,6 @@ public final class StandIns {
             jar.toFile().deleteOnExit();
         }
         return jar;
-    }
-
-    private static File nullDevice() {
-        return new File(WINDOWS ? "NUL" : "/dev/null");
     }
 
     /** Content of a C# verbatim string literal. */

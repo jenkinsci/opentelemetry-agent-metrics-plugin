@@ -5,6 +5,8 @@ import hudson.model.Node;
 import java.io.File;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.awaitility.Awaitility;
@@ -81,26 +83,35 @@ public final class HeldBuilds {
     }
 
     /**
-     * Test cleanup: releases every running build on {@code agent} and waits up to {@code timeout} for each to end. A
-     * build still running after that is killed, and the method fails with its log.
+     * Test cleanup: releases every running build on {@code agent}, then waits up to {@code timeout} for each to end.
+     * Every build still running after that is killed, and the method fails once, naming all of them with their logs.
      */
     public static void releaseAll(JenkinsRule j, Node agent, Duration timeout) throws Exception {
+        List<WorkflowRun> running = new ArrayList<>();
         for (WorkflowJob job : j.jenkins.getAllItems(WorkflowJob.class)) {
             for (WorkflowRun run : job.getBuilds()) {
-                if (!run.isBuilding()) {
-                    continue;
-                }
-                releaseOn(agent, job);
-                try {
-                    Awaitility.await().atMost(timeout).until(() -> !run.isBuilding());
-                } catch (ConditionTimeoutException e) {
-                    run.doKill();
-                    throw new AssertionError(
-                            run + " still running " + timeout + " after release; build log:\n"
-                                    + JenkinsRule.getLog(run),
-                            e);
+                if (run.isBuilding()) {
+                    releaseOn(agent, job);
+                    running.add(run);
                 }
             }
+        }
+        StringBuilder stuck = new StringBuilder();
+        for (WorkflowRun run : running) {
+            try {
+                Awaitility.await().atMost(timeout).until(() -> !run.isBuilding());
+            } catch (ConditionTimeoutException e) {
+                run.doKill();
+                stuck.append("\n")
+                        .append(run)
+                        .append(" still running ")
+                        .append(timeout)
+                        .append(" after release; build log:\n")
+                        .append(JenkinsRule.getLog(run));
+            }
+        }
+        if (stuck.length() > 0) {
+            throw new AssertionError("Builds killed in cleanup:" + stuck);
         }
     }
 }

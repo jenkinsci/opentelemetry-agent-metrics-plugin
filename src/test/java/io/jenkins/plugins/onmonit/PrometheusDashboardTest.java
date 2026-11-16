@@ -109,13 +109,11 @@ class PrometheusDashboardTest {
     void tearDown() throws Exception {
         try {
             if (agent != null) {
-                HeldBuilds.releaseAll(jenkins, agent, Duration.ofMinutes(1));
-                String root = Path.of(agent.getRemoteFS()).toAbsolutePath().toString();
-                Awaitility.await()
-                        .atMost(Duration.ofSeconds(15))
-                        .untilAsserted(() -> assertThat(Lifecycle.processesUnder(root))
-                                .as("otelcol/exporter processes left running under " + root)
-                                .isEmpty());
+                try {
+                    HeldBuilds.releaseAll(jenkins, agent, Duration.ofMinutes(1));
+                } finally {
+                    Lifecycle.assertNoProcessesUnder(agent);
+                }
             }
         } finally {
             if (prometheus != null) {
