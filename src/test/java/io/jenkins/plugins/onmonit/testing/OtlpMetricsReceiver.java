@@ -13,6 +13,8 @@ import io.grpc.stub.StreamObserver;
 import io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest;
 import io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceResponse;
 import io.opentelemetry.proto.collector.metrics.v1.MetricsServiceGrpc;
+import com.google.protobuf.TextFormat;
+import io.opentelemetry.proto.common.v1.AnyValue;
 import io.opentelemetry.proto.common.v1.KeyValue;
 import io.opentelemetry.proto.metrics.v1.Metric;
 import io.opentelemetry.proto.metrics.v1.ResourceMetrics;
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -52,7 +55,7 @@ public class OtlpMetricsReceiver implements AutoCloseable {
                     }
                     String v = md.get(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER));
                     if (v != null) {
-                        h.put(key.toLowerCase(java.util.Locale.ROOT), v);
+                        h.put(key.toLowerCase(Locale.ROOT), v);
                     }
                 }
                 return Contexts.interceptCall(Context.current().withValue(HEADERS, h), call, md, next);
@@ -76,16 +79,42 @@ public class OtlpMetricsReceiver implements AutoCloseable {
     }
 
     public String endpoint() {
-        return "http://localhost:" + server.getPort();
+        return Loopback.httpUrl(server.getPort());
     }
 
     private static String runIdOf(ResourceMetrics rm) {
         for (KeyValue kv : rm.getResource().getAttributesList()) {
             if (RUN_ID.equals(kv.getKey())) {
-                return kv.getValue().getStringValue();
+                return asString(kv.getValue());
             }
         }
         return null;
+    }
+
+    /** Renders an attribute value as text: scalars as their value, composites in protobuf text format. */
+    static String asString(AnyValue v) {
+        return switch (v.getValueCase()) {
+            case STRING_VALUE -> v.getStringValue();
+            case BOOL_VALUE -> String.valueOf(v.getBoolValue());
+            case INT_VALUE -> String.valueOf(v.getIntValue());
+            case DOUBLE_VALUE -> String.valueOf(v.getDoubleValue());
+            case VALUE_NOT_SET -> "";
+            default -> TextFormat.shortDebugString(v);
+        };
+    }
+
+    /** Every distinct {@code cicd.pipeline.run.id} received so far, in arrival order. */
+    public Set<String> runIds() {
+        Set<String> ids = new LinkedHashSet<>();
+        for (Received r : received) {
+            for (ResourceMetrics rm : r.request().getResourceMetricsList()) {
+                String id = runIdOf(rm);
+                if (id != null) {
+                    ids.add(id);
+                }
+            }
+        }
+        return ids;
     }
 
     public List<Received> requestsForRun(String runId) {
@@ -127,7 +156,7 @@ public class OtlpMetricsReceiver implements AutoCloseable {
                 }
                 Map<String, String> attrs = new LinkedHashMap<>();
                 for (KeyValue kv : rm.getResource().getAttributesList()) {
-                    attrs.put(kv.getKey(), kv.getValue().getStringValue());
+                    attrs.put(kv.getKey(), asString(kv.getValue()));
                 }
                 out.add(attrs);
             }
@@ -146,7 +175,9 @@ public class OtlpMetricsReceiver implements AutoCloseable {
     @Override
     public void close() throws InterruptedException {
         if (server != null) {
-            server.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+            if (!server.shutdownNow().awaitTermination(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("OTLP receiver did not terminate within 5s");
+            }
         }
     }
 }

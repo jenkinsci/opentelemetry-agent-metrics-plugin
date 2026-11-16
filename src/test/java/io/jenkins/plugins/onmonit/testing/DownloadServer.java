@@ -43,7 +43,7 @@ public final class DownloadServer implements AutoCloseable {
     }
 
     public String baseUrl() {
-        return "http://localhost:" + server.getAddress().getPort();
+        return Loopback.httpUrl(server.getAddress().getPort());
     }
 
     /** Paths requested so far, in arrival order. */
