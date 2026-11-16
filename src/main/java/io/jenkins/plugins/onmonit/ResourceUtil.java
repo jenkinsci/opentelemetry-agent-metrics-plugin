@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
 
 public class ResourceUtil {
 
@@ -33,6 +34,16 @@ public class ResourceUtil {
             throw new IOException("Plugin executables source \"" + container.getRemote() + "\" is not a directory");
         }
         return container;
+    }
+
+    /** The controller-side otelcol-contrib executable for the given platform. */
+    public static Path getOtelCollectorPath(String os, boolean isAmd64) throws IOException, InterruptedException {
+        return Path.of(getResourceRoot().child(getOtelFilename(os, isAmd64)).getRemote());
+    }
+
+    /** The controller-side node_exporter (or windows_exporter) executable for the given platform. */
+    public static Path getNodeExporterPath(String os, boolean isAmd64) throws IOException, InterruptedException {
+        return Path.of(getResourceRoot().child(getNodeExporterFilename(os, isAmd64)).getRemote());
     }
 
     public static void writeOtelCollector(OutputStream w, String os, boolean isAmd64) throws IOException, InterruptedException {

@@ -5,10 +5,12 @@ import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import io.jenkins.plugins.onmonit.ResourceUtil;
+import io.jenkins.plugins.onmonit.util.BinaryCache;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
 
 public class ExecUploadedOtelContribProcess extends ExecRemoteOtelContribProcess {
 
@@ -18,10 +20,14 @@ public class ExecUploadedOtelContribProcess extends ExecRemoteOtelContribProcess
 
 	@Override
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
-		FilePath executableFile = this.createTempExecutableFile();
-		try (OutputStream w = executableFile.write()) {
-			ResourceUtil.writeOtelCollector(w, info.getOs(), info.isAmd64());
-			executableFile.chmod(0755);
+		try {
+			Path source = ResourceUtil.getOtelCollectorPath(info.getOs(), info.isAmd64());
+			FilePath executableFile = BinaryCache.obtain(temp, listener, "otelcol-contrib", BinaryCache.uploadKey(source),
+					ResourceUtil.getOtelFilename(info.getOs(), info.isAmd64()), this::createTempExecutableFile, target -> {
+						try (OutputStream w = target.write()) {
+							ResourceUtil.writeOtelCollector(w, info.getOs(), info.isAmd64());
+						}
+					});
 			return new ArgumentListBuilder(executableFile.getRemote());
 		} catch (InterruptedException e) {
 			listener.fatalError("InterruptedException while writing otelcol-contrib executable %s", e);
