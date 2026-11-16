@@ -76,7 +76,7 @@ class MonitoringActionTest {
         try {
             assertThat(action(run).getLinks().get(0).getUrl()).contains("to=now");
         } finally {
-            HeldBuilds.release(j, job);
+            HeldBuilds.releaseOnController(j, job);
             j.assertBuildStatusSuccess(j.waitForCompletion(run));
         }
     }

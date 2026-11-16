@@ -80,14 +80,7 @@ class RealBinariesExportTest {
         try {
             if (agent != null) {
                 // A failed test may leave its build held inside onMonit; release it so the plugin stops the processes.
-                for (WorkflowJob job : jenkins.jenkins.getAllItems(WorkflowJob.class)) {
-                    for (WorkflowRun run : job.getBuilds()) {
-                        if (run.isBuilding()) {
-                            HeldBuilds.release(job, agent);
-                            jenkins.waitForCompletion(run);
-                        }
-                    }
-                }
+                HeldBuilds.releaseAll(jenkins, agent, Duration.ofMinutes(1));
                 String root = Path.of(agent.getRemoteFS()).toAbsolutePath().toString();
                 Awaitility.await()
                         .atMost(Duration.ofSeconds(15))
@@ -141,7 +134,7 @@ class RealBinariesExportTest {
         WorkflowRun run = job.scheduleBuild2(0).waitForStart();
         Awaitility.await().atMost(timeout).until(arrived.apply(run));
         assertThat(run.isBuilding()).as("build still inside onMonit when the exports arrived").isTrue();
-        HeldBuilds.release(job, agent);
+        HeldBuilds.releaseOn(agent, job);
         j.assertBuildStatusSuccess(j.waitForCompletion(run));
         return run;
     }
