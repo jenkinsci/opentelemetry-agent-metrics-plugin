@@ -119,14 +119,7 @@ class PrometheusDashboardTest {
     void tearDown() throws Exception {
         try {
             if (agent != null) {
-                for (WorkflowJob job : jenkins.jenkins.getAllItems(WorkflowJob.class)) {
-                    for (WorkflowRun run : job.getBuilds()) {
-                        if (run.isBuilding()) {
-                            HeldBuilds.release(job, agent);
-                            jenkins.waitForCompletion(run);
-                        }
-                    }
-                }
+                HeldBuilds.releaseAll(jenkins, agent, Duration.ofMinutes(1));
                 String root = Path.of(agent.getRemoteFS()).toAbsolutePath().toString();
                 Awaitility.await()
                         .atMost(Duration.ofSeconds(15))
@@ -189,7 +182,7 @@ class PrometheusDashboardTest {
 
     /** Releases the held build and checks it succeeds. */
     private void finish(Build build) throws Exception {
-        HeldBuilds.release(build.job(), agent);
+        HeldBuilds.releaseOn(agent, build.job());
         jenkins.assertBuildStatusSuccess(jenkins.waitForCompletion(build.run()));
     }
 

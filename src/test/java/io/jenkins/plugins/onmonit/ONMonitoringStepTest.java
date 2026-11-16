@@ -295,7 +295,7 @@ class ONMonitoringStepTest {
             markers = awaitMarkers(2);
             Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> assertAlive(markers(2)));
         } finally {
-            HeldBuilds.release(job, agent);
+            HeldBuilds.releaseOn(agent, job);
         }
         j.assertBuildStatusSuccess(j.waitForCompletion(run));
         awaitDead(StandIns.markers(markerDir), DEAD);
@@ -394,8 +394,8 @@ class ONMonitoringStepTest {
             ports.addAll(ports(JenkinsRule.getLog(run2)));
             assertThat(ports).hasSize(2).doesNotHaveDuplicates();
         } finally {
-            HeldBuilds.release(job1, agent);
-            HeldBuilds.release(job2, agent);
+            HeldBuilds.releaseOn(agent, job1);
+            HeldBuilds.releaseOn(agent, job2);
         }
         j.assertBuildStatusSuccess(j.waitForCompletion(run1));
         j.assertBuildStatusSuccess(j.waitForCompletion(run2));
