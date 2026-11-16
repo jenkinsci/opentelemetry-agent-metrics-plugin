@@ -14,34 +14,6 @@ class FastScrapeTemplateTest {
     }
 
     @Test
-    void otlpHttpVariant() {
-        String t = FastScrapeTemplate.withIntervalAndOtlpHttp("2s");
-        assertThat(t)
-                .contains("scrape_interval: 2s")
-                .contains("otlphttp:")
-                .contains("exporters: [otlphttp, debug]")
-                .doesNotContain("  otlp:\n");
-    }
-
-    @Test
-    void insecureTlsVariant() {
-        String t = FastScrapeTemplate.withIntervalAndInsecureTls("2s");
-        assertThat(t)
-                .contains("scrape_interval: 2s")
-                .contains("    endpoint: [(${yaml.quote(otlpEndpoint)})]\n    tls:\n      insecure: true\n");
-    }
-
-    /** Another exporter with the same endpoint line must not get the gRPC exporter's TLS setting. */
-    @Test
-    void insecureTlsSitsUnderOtlpExporterOnly() {
-        String endpoint = "    endpoint: [(${yaml.quote(otlpEndpoint)})]\n";
-        String t = FastScrapeTemplate.withInsecureTls("exporters:\n  otlphttp:\n" + endpoint + "  otlp:\n" + endpoint);
-        assertThat(t)
-                .isEqualTo("exporters:\n  otlphttp:\n" + endpoint + "  otlp:\n" + endpoint
-                        + "    tls:\n      insecure: true\n");
-    }
-
-    @Test
     void builtInHasUnixLineEndings() {
         assertThat(FastScrapeTemplate.builtIn()).doesNotContain("\r");
     }

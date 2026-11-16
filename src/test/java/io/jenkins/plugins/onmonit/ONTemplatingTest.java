@@ -48,6 +48,16 @@ class ONTemplatingTest {
         return RenderedConfig.parse(t.renderTemplate(t.getJobContext(run, env, 9100)));
     }
 
+    /** Renders a top-level job's config with the given environment variables, as alternating key/value pairs. */
+    private static RenderedConfig renderWithEnv(JenkinsRule j, String... kv) throws Exception {
+        WorkflowRun run = runJob(j, j.jenkins, "p");
+        EnvVars env = env(run, null, null, null);
+        for (int i = 0; i < kv.length; i += 2) {
+            env.put(kv[i], kv[i + 1]);
+        }
+        return render(run, env);
+    }
+
     private static RenderedConfig renderTopLevel(JenkinsRule j, String endpoint, String headers, String serviceName)
             throws Exception {
         WorkflowRun run = runJob(j, j.jenkins, "p");
@@ -67,6 +77,7 @@ class ONTemplatingTest {
                 .isEqualTo(j.getURL().toString());
         assertThat(cfg.scrapeTarget()).isEqualTo("localhost:9100");
         assertThat(cfg.exporterNames()).contains("otlp", "debug");
+        assertThat(cfg.pipelineExporters()).containsExactly("otlp", "debug");
     }
 
     @Test
@@ -196,5 +207,106 @@ class ONTemplatingTest {
         String name = "say \"hi\" it's & more \\ #x";
         assertThat(renderTopLevel(j, ENDPOINT, null, name).resourceAttribute("service.name"))
                 .isEqualTo(name);
+    }
+
+    @Test
+    void grpcHttpEndpointIsInsecure(JenkinsRule j) throws Exception {
+        RenderedConfig cfg = renderWithEnv(j, "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317");
+        assertThat(cfg.otlpExporterName()).isEqualTo("otlp");
+        assertThat(cfg.otlpExporter()).containsEntry("tls", Map.of("insecure", true));
+        assertThat(cfg.pipelineExporters()).containsExactly("otlp", "debug");
+    }
+
+    @Test
+    void grpcHttpsEndpointHasNoTls(JenkinsRule j) throws Exception {
+        RenderedConfig cfg = renderWithEnv(j, "OTEL_EXPORTER_OTLP_ENDPOINT", "https://c:4317");
+        assertThat(cfg.otlpExporter()).doesNotContainKey("tls");
+    }
+
+    @Test
+    void httpProtobufUsesOtlphttp(JenkinsRule j) throws Exception {
+        RenderedConfig cfg = renderWithEnv(
+                j, "OTEL_EXPORTER_OTLP_ENDPOINT", "http://c:4318", "OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+        assertThat(cfg.otlpExporterName()).isEqualTo("otlphttp");
+        assertThat(cfg.exporterNames()).doesNotContain("otlp");
+        assertThat(cfg.otlpEndpoint()).isEqualTo("http://c:4318");
+        assertThat(cfg.otlpExporter()).doesNotContainKeys("tls", "encoding");
+        assertThat(cfg.pipelineExporters()).containsExactly("otlphttp", "debug");
+    }
+
+    @Test
+    void httpJsonSetsEncoding(JenkinsRule j) throws Exception {
+        RenderedConfig cfg = renderWithEnv(
+                j, "OTEL_EXPORTER_OTLP_ENDPOINT", "http://c:4318", "OTEL_EXPORTER_OTLP_PROTOCOL", "http/json");
+        assertThat(cfg.otlpExporterName()).isEqualTo("otlphttp");
+        assertThat(cfg.otlpExporter()).containsEntry("encoding", "json");
+    }
+
+    @Test
+    void httpMetricsEndpointRendersAsIs(JenkinsRule j) throws Exception {
+        RenderedConfig cfg = renderWithEnv(
+                j,
+                "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
+                "http://m:4318/v1/metrics",
+                "OTEL_EXPORTER_OTLP_PROTOCOL",
+                "http/protobuf");
+        assertThat(cfg.otlpExporter())
+                .containsEntry("metrics_endpoint", "http://m:4318/v1/metrics")
+                .doesNotContainKey("endpoint");
+        assertThat(cfg.otlpEndpoint()).isEqualTo("http://m:4318/v1/metrics");
+    }
+
+    @Test
+    void schemelessInsecureEndpointRendersTls(JenkinsRule j) throws Exception {
+        RenderedConfig cfg = renderWithEnv(
+                j, "OTEL_EXPORTER_OTLP_ENDPOINT", "collector:4317", "OTEL_EXPORTER_OTLP_INSECURE", "true");
+        assertThat(cfg.otlpEndpoint()).isEqualTo("collector:4317");
+        assertThat(cfg.otlpExporter()).containsEntry("tls", Map.of("insecure", true));
+    }
+
+    @Test
+    void schemelessEndpointWithoutInsecureHasNoTls(JenkinsRule j) throws Exception {
+        RenderedConfig cfg = renderWithEnv(j, "OTEL_EXPORTER_OTLP_ENDPOINT", "collector:4317");
+        assertThat(cfg.otlpExporter()).doesNotContainKey("tls");
+    }
+
+    @Test
+    void unsetEndpointRendersDefault(JenkinsRule j) throws Exception {
+        assertThat(renderWithEnv(j).otlpEndpoint()).isEqualTo("http://localhost:4317");
+    }
+
+    @Test
+    void metricsHeadersRendered(JenkinsRule j) throws Exception {
+        RenderedConfig cfg = renderWithEnv(
+                j,
+                "OTEL_EXPORTER_OTLP_ENDPOINT",
+                ENDPOINT,
+                "OTEL_EXPORTER_OTLP_HEADERS",
+                "a=1",
+                "OTEL_EXPORTER_OTLP_METRICS_HEADERS",
+                "c=3");
+        assertThat(cfg.otlpHeaders()).isEqualTo(Map.of("c", "3"));
+    }
+
+    @Test
+    void customTemplateSeesProtocolVariables(JenkinsRule j) throws Exception {
+        ONMonitConfig.get().setOtelConfigTemplate("""
+                p: [(${yaml.quote(otlpProtocol)})]
+                e: [(${yaml.quote(otlpExporter)})]
+                k: [(${yaml.quote(otlpEndpointKey)})]
+                i: [(${otlpInsecure})]
+                n: [(${yaml.quote(otlpEncoding)})]
+                """);
+        WorkflowRun run = runJob(j, j.jenkins, "p");
+        EnvVars env = env(run, "http://c:4318", null, null);
+        env.put("OTEL_EXPORTER_OTLP_PROTOCOL", "http/json");
+        ONTemplating t = new ONTemplating();
+        String rendered = t.renderTemplate(t.getJobContext(run, env, 9100));
+        assertThat(rendered)
+                .contains("p: \"http/json\"")
+                .contains("e: \"otlphttp\"")
+                .contains("k: \"endpoint\"")
+                .contains("i: false")
+                .contains("n: \"json\"");
     }
 }

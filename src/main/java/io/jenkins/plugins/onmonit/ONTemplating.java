@@ -1,7 +1,5 @@
 package io.jenkins.plugins.onmonit;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -62,21 +60,6 @@ public class ONTemplating {
         }
     }
 
-    private String toOtelCompatibleUrl(String urlStr) {
-        try {
-            URL url = new URL(urlStr);
-            if (url.getPort() == -1) {
-                url = new URL(url.getProtocol(), url.getHost(), url.getDefaultPort(), url.getFile());
-            }
-            if ("/".equals(url.getFile())) {
-                url = new URL(url.getProtocol(), url.getHost(), url.getPort(), "");
-            }
-            return url.toString();
-        } catch(MalformedURLException e) {
-            return urlStr;
-        }
-    }
-
     static boolean usesStandaloneAuthHeader(String template) {
         return template.contains("otlpAuthHeader}") && !template.contains("otlpAuthHeaderBefore");
     }
@@ -94,10 +77,12 @@ public class ONTemplating {
     }
 
     public org.thymeleaf.context.Context getJobContext(final Run<?, ?> run, EnvVars environment, int port) {
+        return getJobContext(run, environment, port, OtlpExporterSettings.resolve(environment));
+    }
+
+    org.thymeleaf.context.Context getJobContext(final Run<?, ?> run, EnvVars environment, int port, OtlpExporterSettings otlp) {
         org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
         String pageUrl = Jenkins.get().getRootUrl() + run.getUrl();
-        String otlpEndpoint = environment.get("OTEL_EXPORTER_OTLP_ENDPOINT");
-        String otlpHeader = environment.get("OTEL_EXPORTER_OTLP_HEADERS");
         String serviceName = environment.get("OTEL_SERVICE_NAME");
         if (serviceName == null) {
             serviceName = ONMonitConfig.get().getOtelServiceName();
@@ -112,8 +97,13 @@ public class ONTemplating {
         context.setVariable("serviceName", serviceName);
         context.setVariable("jobName", jobName);
         context.setVariable("jobGroupName", trimWithDefault(jobName, jobBaseName, "-"));
-        context.setVariable("otlpEndpoint", toOtelCompatibleUrl(otlpEndpoint));
-        Map<String, String> otlpHeaders = OtlpHeaders.parse(otlpHeader);
+        context.setVariable("otlpEndpoint", otlp.endpoint());
+        context.setVariable("otlpProtocol", otlp.protocol().envValue());
+        context.setVariable("otlpExporter", otlp.protocol().exporterName());
+        context.setVariable("otlpEndpointKey", otlp.endpointKey());
+        context.setVariable("otlpInsecure", otlp.insecure());
+        context.setVariable("otlpEncoding", otlp.encoding());
+        Map<String, String> otlpHeaders = otlp.headers();
         String otlpHeadersYaml = OtlpHeaders.toYamlBlock(otlpHeaders);
         context.setVariable("otlpHeaders", otlpHeaders);
         context.setVariable("otlpHeadersYaml", otlpHeadersYaml);

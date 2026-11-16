@@ -64,16 +64,45 @@ public final class RenderedConfig {
         return null;
     }
 
+    /** Name of the OTLP exporter, {@code otlp} or {@code otlphttp}; fails if there is none. */
+    public String otlpExporterName() {
+        for (String name : List.of("otlp", "otlphttp")) {
+            if (section("exporters").containsKey(name)) {
+                return name;
+            }
+        }
+        throw new IllegalStateException(
+                "No otlp or otlphttp exporter in " + section("exporters").keySet());
+    }
+
+    /** Settings of the OTLP exporter ({@code otlp} or {@code otlphttp}). */
+    public Map<String, Object> otlpExporter() {
+        return map(section("exporters").get(otlpExporterName()));
+    }
+
+    /** The OTLP exporter's {@code endpoint}, or its {@code metrics_endpoint} if it has no {@code endpoint}. */
     public String otlpEndpoint() {
-        return String.valueOf(map(section("exporters").get("otlp")).get("endpoint"));
+        Map<String, Object> exporter = otlpExporter();
+        return String.valueOf(
+                exporter.containsKey("endpoint") ? exporter.get("endpoint") : exporter.get("metrics_endpoint"));
     }
 
     /** OTLP exporter headers; empty if absent. */
     public Map<String, String> otlpHeaders() {
-        Object headers = map(section("exporters").get("otlp")).get("headers");
+        Object headers = otlpExporter().get("headers");
         Map<String, String> result = new LinkedHashMap<>();
         map(headers).forEach((k, v) -> result.put(k, String.valueOf(v)));
         return result;
+    }
+
+    /** Exporters of the {@code metrics} pipeline, in order. */
+    public List<String> pipelineExporters() {
+        Map<String, Object> metrics =
+                map(map(section("service").get("pipelines")).get("metrics"));
+        List<?> exporters = (List<?>) metrics.get("exporters");
+        return exporters == null
+                ? List.of()
+                : exporters.stream().map(String::valueOf).toList();
     }
 
     public Set<String> exporterNames() {

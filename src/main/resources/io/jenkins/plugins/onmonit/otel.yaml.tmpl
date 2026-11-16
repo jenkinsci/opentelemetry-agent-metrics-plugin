@@ -9,8 +9,15 @@ receivers:
 exporters:
   debug:
     verbosity: detailed
-  otlp:
-    endpoint: [(${yaml.quote(otlpEndpoint)})]
+  [(${otlpExporter})]:
+    [(${otlpEndpointKey})]: [(${yaml.quote(otlpEndpoint)})]
+[# th:if="${otlpInsecure}"]
+    tls:
+      insecure: true
+[/]
+[# th:if="${otlpEncoding != null}"]
+    encoding: [(${otlpEncoding})]
+[/]
     [(${otlpHeadersYaml})]
 
 processors:
@@ -54,4 +61,4 @@ service:
     metrics:
       receivers: [prometheus/ci]
       processors: [resourcedetection, transform/ci, resource/ci] # [batch, resourcedetection]
-      exporters: [otlp, debug]
+      exporters: [ [(${otlpExporter})], debug ]

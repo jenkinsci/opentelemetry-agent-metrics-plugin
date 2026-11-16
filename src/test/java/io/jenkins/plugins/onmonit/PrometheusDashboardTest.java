@@ -137,8 +137,10 @@ class PrometheusDashboardTest {
      */
     private Build runBuild(JenkinsRule j) throws Exception {
         jenkins = j;
-        FastScrapeTemplate.apply(FastScrapeTemplate.withIntervalAndOtlpHttp("2s"));
+        FastScrapeTemplate.apply(FastScrapeTemplate.withInterval("2s"));
+        // Prometheus accepts OTLP over HTTP only, at <base>/api/v1/otlp/v1/metrics.
         globalEnv(j, "OTEL_EXPORTER_OTLP_ENDPOINT", baseUrl() + "/api/v1/otlp");
+        globalEnv(j, "OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
         Path empty = TestAgents.emptyDir(tmp);
         agent = TestAgents.agent(j, "t", empty, empty);
 
