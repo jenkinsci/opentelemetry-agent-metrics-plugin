@@ -23,7 +23,7 @@ public final class DashboardQueries {
     public record LabelValuesQuery(String variable, String metricSelector, String label) {}
 
     /** Number of panel {@code expr}s in {@link #repoDashboard()}. */
-    public static final int REPO_DASHBOARD_EXPRS = 275;
+    public static final int REPO_DASHBOARD_EXPRS = 270;
 
     /** Number of those that are {@linkplain #isCore core}. */
     public static final int REPO_DASHBOARD_CORE_EXPRS = 27;
