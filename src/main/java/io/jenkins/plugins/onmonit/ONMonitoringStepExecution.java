@@ -297,12 +297,28 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 		if (build == null) {
 			throw new NullPointerException("build is null");
 		}
-		String config = templating.renderTemplate(templating.getJobContext(build, getEnvironment(), usedPort.getPort()));
+		EnvVars environment = getEnvironment();
+		OtlpExporterSettings otlp = OtlpExporterSettings.resolve(environment);
+		printOtlpWarnings(listener, otlp);
+		String config = templating.renderTemplate(templating.getJobContext(build, environment, usedPort.getPort(), otlp));
 		if (debug) {
 			listener.getLogger().println("[on-monit] otel-collector config:\n" + config);
 		}
 		oc.start(listener, config);
 		listener.getLogger().println(Messages.ONMonitoringStep_Started());
+	}
+
+	/** Prints the OTLP settings' warnings, and warns about otelcol options for an exporter the config no longer has. */
+	private void printOtlpWarnings(TaskListener listener, OtlpExporterSettings otlp) {
+		for (String warning : otlp.warnings()) {
+			listener.getLogger().println("[on-monit] " + warning);
+		}
+		String ocOptions = getEffectiveOcAdditionalOptions();
+		if (otlp.protocol() != OtlpProtocol.GRPC && ocOptions != null && ocOptions.contains("exporters.otlp.")) {
+			listener.getLogger().println("[on-monit] WARNING: otel-contrib options set exporters.otlp.* but "
+					+ "OTEL_EXPORTER_OTLP_PROTOCOL selects the otlphttp exporter; remove those options, "
+					+ "otherwise the collector may fail to start");
+		}
 	}
 
 	private String getEffectiveNeAdditionalOptions() {

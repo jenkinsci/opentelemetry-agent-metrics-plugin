@@ -76,6 +76,11 @@ class ONMonitoringStepTest {
         return TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir, executors);
     }
 
+    /** Like {@link #agent(JenkinsRule)} but without a global {@code OTEL_EXPORTER_OTLP_ENDPOINT}. */
+    private DumbSlave agentWithoutEndpoint(JenkinsRule j) throws Exception {
+        return TestAgents.agent(j, "t", StandIns.create(tmp.resolve("bin")), markerDir, 1);
+    }
+
     private static WorkflowJob job(JenkinsRule j, String name, String script) throws Exception {
         WorkflowJob job = j.createProject(WorkflowJob.class, name);
         job.setDefinition(new CpsFlowDefinition(script, true));
@@ -112,6 +117,43 @@ class ONMonitoringStepTest {
                 .filter(m -> m.role() == StandIn.Role.OTELCOL)
                 .findFirst()
                 .orElseThrow();
+    }
+
+    @Test
+    void unsetEndpointWarnsInBuildLogAndUsesDefault(JenkinsRule j) throws Exception {
+        agentWithoutEndpoint(j);
+        WorkflowRun run = j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
+        j.assertLogContains("[on-monit] OTEL_EXPORTER_OTLP_ENDPOINT not set; using http://localhost:4317", run);
+        assertThat(config(otelcol()).otlpEndpoint()).isEqualTo("http://localhost:4317");
+    }
+
+    @Test
+    void unknownProtocolWarnsInBuildLog(JenkinsRule j) throws Exception {
+        agent(j);
+        globalEnv(j, "OTEL_EXPORTER_OTLP_PROTOCOL", "thrift");
+        WorkflowRun run = j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
+        j.assertLogContains("[on-monit] Unsupported OTEL_EXPORTER_OTLP_PROTOCOL value 'thrift'; using grpc", run);
+    }
+
+    /** The README's old gRPC TLS workaround defines an orphan otlp exporter once the protocol selects otlphttp. */
+    @Test
+    void legacyOtlpOptionWithHttpProtocolWarns(JenkinsRule j) throws Exception {
+        agent(j);
+        globalEnv(j, "OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+        WorkflowRun run = j.buildAndAssertSuccess(
+                job(j, "p", onNode("(ocAdditionalOptions: '--set=exporters.otlp.tls.insecure=true')", "echo 'x'")));
+        j.assertLogContains(
+                "[on-monit] WARNING: otel-contrib options set exporters.otlp.* but OTEL_EXPORTER_OTLP_PROTOCOL "
+                        + "selects the otlphttp exporter",
+                run);
+    }
+
+    @Test
+    void endpointSetMeansNoWarning(JenkinsRule j) throws Exception {
+        agent(j);
+        WorkflowRun run = j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
+        j.assertLogNotContains("not set; using", run);
+        j.assertLogNotContains("WARNING: otel-contrib options", run);
     }
 
     @Test
