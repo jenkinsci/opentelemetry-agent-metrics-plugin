@@ -308,13 +308,20 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 		listener.getLogger().println(Messages.ONMonitoringStep_Started());
 	}
 
-	/** Prints the OTLP settings' warnings, and warns about otelcol options for an exporter the config no longer has. */
+	/**
+	 * Prints the OTLP settings' warnings, and warns about otelcol options for an exporter the config no longer has.
+	 * That only applies when the template picks the exporter from {@code otlpExporter} (the built-in one does); a
+	 * custom template that hard-codes {@code otlp:} keeps the gRPC exporter and still needs such options.
+	 */
 	private void printOtlpWarnings(TaskListener listener, OtlpExporterSettings otlp) {
 		for (String warning : otlp.warnings()) {
 			listener.getLogger().println("[on-monit] " + warning);
 		}
 		String ocOptions = getEffectiveOcAdditionalOptions();
-		if (otlp.protocol() != OtlpProtocol.GRPC && ocOptions != null && ocOptions.contains("exporters.otlp.")) {
+		String template = ONMonitConfig.get().getOtelConfigTemplate();
+		boolean templateFollowsProtocol = template.isEmpty() || template.contains("otlpExporter");
+		if (otlp.protocol() != OtlpProtocol.GRPC && templateFollowsProtocol
+				&& ocOptions != null && ocOptions.contains("exporters.otlp.")) {
 			listener.getLogger().println("[on-monit] WARNING: otel-contrib options set exporters.otlp.* but "
 					+ "OTEL_EXPORTER_OTLP_PROTOCOL selects the otlphttp exporter; remove those options, "
 					+ "otherwise the collector may fail to start");

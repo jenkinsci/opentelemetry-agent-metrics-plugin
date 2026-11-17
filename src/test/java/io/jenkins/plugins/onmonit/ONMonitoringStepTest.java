@@ -148,6 +148,18 @@ class ONMonitoringStepTest {
                 run);
     }
 
+    /** A custom template that hard-codes the gRPC otlp exporter still needs the option, so it must not be told to drop it. */
+    @Test
+    void legacyOtlpOptionWithHardCodedOtlpTemplateDoesNotWarn(JenkinsRule j) throws Exception {
+        FastScrapeTemplate.apply(FastScrapeTemplate.builtIn().replace("[(${otlpExporter})]", "otlp"));
+        agent(j);
+        globalEnv(j, "OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+        WorkflowRun run = j.buildAndAssertSuccess(
+                job(j, "p", onNode("(ocAdditionalOptions: '--set=exporters.otlp.tls.insecure=true')", "echo 'x'")));
+        assertThat(config(otelcol()).exporterNames()).contains("otlp");
+        j.assertLogNotContains("WARNING: otel-contrib options", run);
+    }
+
     @Test
     void endpointSetMeansNoWarning(JenkinsRule j) throws Exception {
         agent(j);
