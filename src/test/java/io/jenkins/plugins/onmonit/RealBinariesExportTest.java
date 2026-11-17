@@ -29,7 +29,6 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,13 +53,8 @@ class RealBinariesExportTest {
      */
     private static final Duration TIMEOUT = Duration.ofSeconds(90);
 
+    /** The README's former workaround for plaintext gRPC, from before the built-in template handled http:// (#124). */
     private static final String INSECURE_TLS = "--set=exporters.otlp.tls.insecure=true";
-    private static final String PLAINTEXT_TLS_BUG = "The built-in template's gRPC otlp exporter has no tls setting, so "
-            + "otelcol 0.135.0 dials an http:// endpoint with TLS and every export fails with 'transport: "
-            + "authentication handshake failed: tls: first record does not look like a TLS handshake'. The README "
-            + "documents the workaround (" + INSECURE_TLS + " via ocAdditionalOptions or the global 'Otel-contrib "
-            + "default additional options'), but out-of-the-box plaintext endpoints fail; maintainer to decide "
-            + "whether the default template should handle http:// endpoints; see issue #124";
 
     @TempDir
     Path tmp;
@@ -322,7 +316,7 @@ class RealBinariesExportTest {
         runAndAwaitExports(j, job(j, onNode(BODY)));
     }
 
-    @Disabled(PLAINTEXT_TLS_BUG)
+    /** An http:// gRPC endpoint gets plaintext delivery without any extra option (#124). */
     @Test
     void plaintextHttpEndpointDelivers(JenkinsRule j) throws Exception {
         FastScrapeTemplate.apply(FastScrapeTemplate.withInterval("2s"));
@@ -330,9 +324,19 @@ class RealBinariesExportTest {
         runAndAwaitExports(j, job(j, onNode(BODY)));
     }
 
+    /** A gRPC endpoint without scheme is plaintext when OTEL_EXPORTER_OTLP_INSECURE is true. */
+    @Test
+    void schemelessInsecureEndpointDelivers(JenkinsRule j) throws Exception {
+        FastScrapeTemplate.apply(FastScrapeTemplate.withInterval("2s"));
+        setUpTemplateUnchanged(j, receiver.endpoint().replaceFirst("^http://", ""));
+        globalEnv(j, "OTEL_EXPORTER_OTLP_INSECURE", "true");
+        runAndAwaitExports(j, job(j, onNode(BODY)));
+    }
+
     /**
-     * The built-in template, loaded through its own code path, with its 15s scrape interval. Plaintext gRPC needs the
-     * README's documented {@code tls.insecure} option, set here as the global default additional options.
+     * The built-in template, loaded through its own code path, with its 15s scrape interval. The README's former
+     * {@code tls.insecure} workaround stays set as the global default additional options: users who still have it must
+     * keep delivering over gRPC.
      */
     @Test
     void builtInTemplateSmoke(JenkinsRule j) throws Exception {
