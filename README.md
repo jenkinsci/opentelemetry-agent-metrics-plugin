@@ -75,8 +75,22 @@ Follow https://www.jenkins.io/doc/book/installing/offline/ on how to install thi
 
 ### Configuration of OpenTelemetry destination
 
-The onMonit step requires the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable to be available when it's executed.
-This variable specifies the target to which agent metrics are sent in the otlp grpc protocol.
+The onMonit step sends the agent metrics to the endpoint in the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.
+If it is unset or empty, onMonit uses the [OTLP spec](https://opentelemetry.io/docs/specs/otel/protocol/exporter/)
+default `http://localhost:4317` (`http://localhost:4318` for the HTTP protocols) and prints a warning in the build log.
+
+onMonit reads these OTLP exporter variables:
+
+| Variable | Meaning |
+|---|---|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Base URL of the OTLP receiver. |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `grpc` (default), `http/protobuf` or `http/json`. gRPC uses the collector's `otlp` exporter, the HTTP protocols its `otlphttp` exporter. |
+| `OTEL_EXPORTER_OTLP_HEADERS` | Headers to send, see below. |
+| `OTEL_EXPORTER_OTLP_INSECURE` | `true` for a plaintext gRPC connection to an endpoint without `http://` or `https://` scheme, e.g. `collector:4317`. |
+
+Each of them has a metrics-specific variant (`OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`,
+`OTEL_EXPORTER_OTLP_METRICS_HEADERS`, `OTEL_EXPORTER_OTLP_METRICS_INSECURE`) that takes precedence when set.
+`OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` is used as-is: with an HTTP protocol, `/v1/metrics` is not appended to it.
 
 While this env var may be specified manually, the easiest way is to use the [opentelemetry-plugin](https://github.com/jenkinsci/opentelemetry-plugin/):
 configure the _OTLP Endpoint_ setting and enable the _Export OpenTelemetry configuration as environment variables_ setting.
@@ -172,14 +186,14 @@ When used inside a trusted network the insecure http protocol may be used to tra
 
 **Warning:** do not use this when sending the telemetry over the internet as it may expose sensitive data.
 
-By default, the opentelemetry-collector prevents use of insecure connections.
-This does not impact the success of builds using onMonit. It's just that no telemetry will be sent.
-When using the `debug: true`, a log message like the following could be included in the build logs:
-`info	exporterhelper/queued_retry.go:426	Exporting failed. Will retry the request after interval.	{"kind": "exporter", "data_type": "metrics", "name": "otlp", "error": "rpc error: code = Unavailable desc = connection error: desc = \"transport: authentication handshake failed: tls: first record does not look like a TLS handshake\"", "interval": "5.84280802s"}`
+An endpoint with the `http://` scheme, such as `http://collector:4317`, is sent in plaintext, with both the gRPC and
+the HTTP protocols. For a gRPC endpoint without scheme, such as `collector:4317`, set `OTEL_EXPORTER_OTLP_INSECURE=true`
+(the opentelemetry-plugin exports this variable too). An `https://` endpoint always uses TLS.
 
-To override the default opentelemetry-collector behavior and allow insecure connections either use
-the following argument in the onMonit step `ocAdditionalOptions: "--set=exporters.otlp.tls.insecure=true"`
-or set the global setting **Otel-contrib default additional options** to `--set=exporters.otlp.tls.insecure=true`.
+Earlier versions needed `--set=exporters.otlp.tls.insecure=true` in `ocAdditionalOptions` or in the global setting
+**Otel-contrib default additional options** for plaintext gRPC. This option is no longer needed. It only applies to
+the gRPC exporter: remove it before switching `OTEL_EXPORTER_OTLP_PROTOCOL` to an HTTP protocol, otherwise the collector
+may fail to start (onMonit prints a warning in the build log).
 
 ## Using the plugin in Jenkins Pipeline
 
