@@ -67,6 +67,10 @@ final class OtlpExporterSettings {
             warnings.add(PREFIX + ENDPOINT + " not set; using " + endpoint);
         } else {
             endpoint = toOtelCompatibleUrl(env.get(endpointVar).trim());
+            if (protocol != OtlpProtocol.GRPC && !hasHttpScheme(endpoint)) {
+                warnings.add(endpointVar + " has no http:// or https:// scheme, which the " + protocol.envValue()
+                        + " protocol requires; exports will fail");
+            }
         }
 
         boolean insecure = false;
@@ -141,14 +145,15 @@ final class OtlpExporterSettings {
         if (protocol != OtlpProtocol.GRPC) {
             return false;
         }
-        String lower = endpoint.toLowerCase(Locale.ROOT);
-        if (lower.startsWith("http://")) {
+        if (endpoint.toLowerCase(Locale.ROOT).startsWith("http://")) {
             return true;
         }
-        if (lower.startsWith("https://")) {
-            return false;
-        }
-        return insecureVariable;
+        return !hasHttpScheme(endpoint) && insecureVariable;
+    }
+
+    private static boolean hasHttpScheme(String endpoint) {
+        String lower = endpoint.toLowerCase(Locale.ROOT);
+        return lower.startsWith("http://") || lower.startsWith("https://");
     }
 
     /** {@code json} for {@code http/json}, else null. */

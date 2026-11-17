@@ -210,6 +210,24 @@ class OtlpExporterSettingsTest {
         assertThat(s.warnings()).isEmpty();
     }
 
+    /** OTLP/HTTP needs a URL: otlphttp reads "collector:4318" as scheme "collector" and every export fails. */
+    @Test
+    void schemelessEndpointWithHttpProtocolWarns() {
+        var s = resolve(ENDPOINT, "collector:4318", PROTOCOL, "http/protobuf");
+        assertThat(s.endpoint()).isEqualTo("collector:4318");
+        assertThat(s.warnings())
+                .containsExactly("OTEL_EXPORTER_OTLP_ENDPOINT has no http:// or https:// scheme, which the "
+                        + "http/protobuf protocol requires; exports will fail");
+    }
+
+    @Test
+    void schemelessMetricsEndpointWithHttpProtocolWarningNamesMetricsVariable() {
+        var s = resolve(METRICS_ENDPOINT, "collector:4318/v1/metrics", PROTOCOL, "http/json");
+        assertThat(s.warnings())
+                .containsExactly("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT has no http:// or https:// scheme, which the "
+                        + "http/json protocol requires; exports will fail");
+    }
+
     @Test
     void schemelessEndpointIsLeftAlone() {
         var s = resolve(ENDPOINT, "collector:4317");
