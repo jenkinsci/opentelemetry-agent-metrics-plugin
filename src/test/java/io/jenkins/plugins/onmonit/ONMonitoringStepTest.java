@@ -8,9 +8,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.cloudbees.hudson.plugins.folder.Folder;
+import hudson.ExtensionList;
+import hudson.FilePath;
+import hudson.Launcher;
 import hudson.model.Result;
+import hudson.model.TaskListener;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
+import io.jenkins.plugins.onmonit.exec.ExecRemoteNodeExporterProcessFactory;
 import io.jenkins.plugins.onmonit.testing.DefaultPortLock;
 import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
 import io.jenkins.plugins.onmonit.testing.HeldBuilds;
@@ -19,6 +24,7 @@ import io.jenkins.plugins.onmonit.testing.RenderedConfig;
 import io.jenkins.plugins.onmonit.testing.StandIn;
 import io.jenkins.plugins.onmonit.testing.StandIns;
 import io.jenkins.plugins.onmonit.testing.TestAgents;
+import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.nio.file.Files;
@@ -454,6 +460,78 @@ class ONMonitoringStepTest {
             return new ServerSocket(port);
         } catch (IOException e) {
             return Assumptions.abort("port " + port + " is not available: " + e);
+        }
+    }
+
+    /** #142: another process takes node_exporter's port after the plugin has checked that it is free. */
+    @Test
+    void portTakenAfterCheckIsRetried(JenkinsRule j) throws Exception {
+        agent(j);
+        TakePortOnStart factory = new TakePortOnStart();
+        ExtensionList.lookup(RemoteNodeExporterProcessFactory.class).add(0, factory);
+        try {
+            WorkflowRun run = j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
+            int taken = factory.taken.getLocalPort();
+            j.assertLogContains("[on-monit] port " + taken + " taken, retrying on ", run);
+            Marker exporter = StandIns.markers(markerDir).stream()
+                    .filter(m -> m.role() == StandIn.Role.NODE_EXPORTER)
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(exporter.port()).isNotEqualTo(taken);
+            assertThat(exporter.args())
+                    .filteredOn(a -> a.startsWith("--web.listen-address="))
+                    .containsExactly("--web.listen-address=:" + exporter.port());
+            assertThat(config(otelcol()).scrapeTarget()).isEqualTo("localhost:" + exporter.port());
+        } finally {
+            if (factory.taken != null) {
+                factory.taken.close();
+            }
+        }
+    }
+
+    /** Starts node_exporter like the exec factory, but first binds the port it is given, the first time only. */
+    private static final class TakePortOnStart extends RemoteNodeExporterProcessFactory {
+
+        private final ExecRemoteNodeExporterProcessFactory delegate = new ExecRemoteNodeExporterProcessFactory();
+
+        volatile ServerSocket taken;
+
+        @Override
+        public String getDisplayName() {
+            return "Exec node_exporter, port taken on first start";
+        }
+
+        @Override
+        public boolean isSupported(Launcher launcher, TaskListener listener, ComputerInfo info) {
+            return delegate.isSupported(launcher, listener, info);
+        }
+
+        @Override
+        public RemoteNodeExporterProcess create(
+                LauncherProvider launcherProvider,
+                TaskListener listener,
+                ComputerInfo info,
+                FilePath temp,
+                String envCookie,
+                String additionalOptions,
+                boolean debug)
+                throws Throwable {
+            RemoteNodeExporterProcess process =
+                    delegate.create(launcherProvider, listener, info, temp, envCookie, additionalOptions, debug);
+            return new RemoteNodeExporterProcess() {
+                @Override
+                public void start(TaskListener listener, int port) throws IOException, InterruptedException {
+                    if (taken == null) {
+                        taken = new ServerSocket(port);
+                    }
+                    process.start(listener, port);
+                }
+
+                @Override
+                public void stop(TaskListener listener) throws IOException, InterruptedException {
+                    process.stop(listener);
+                }
+            };
         }
     }
 

@@ -4,6 +4,7 @@ import hudson.AbortException;
 import hudson.Proc;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
+import io.jenkins.plugins.onmonit.PortInUseException;
 import io.jenkins.plugins.onmonit.RemoteNodeExporterProcess;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 import java.util.Map;
 
 public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess {
@@ -63,9 +65,10 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 	public void start(TaskListener listener, int port) throws IOException, InterruptedException {
 		this.started = true;
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		cmd.add("--web.listen-address=:" + port);
+		// A copy, so that a retry on another port does not pass --web.listen-address twice.
+		ArgumentListBuilder args = cmd.clone().add("--web.listen-address=:" + port);
 		Proc proc = launcherProvider.getLauncher().launch()
-				.cmds(cmd)
+				.cmds(args)
 				.envs(envOverrides)
 				.stdout(debug ? new TeeOutputStream(listener.getLogger(), baos) : baos)
 				.stderr(debug ? new TeeOutputStream(listener.getLogger(), baos) : baos)
@@ -85,10 +88,23 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 			}
 			throw new AbortException("Failed to start node_exporter, timeout after 1 minute");
 		}
+		proc.join(); // waits until all of the output has been copied into baos
+		if (isPortInUse(baos.toString(StandardCharsets.UTF_8))) {
+			throw new PortInUseException(port);
+		}
 		if (!debug) {
 			listener.getLogger().println("Failed to start node_exporter: " + baos);
 		}
 		throw new AbortException("Failed to start node_exporter");
+	}
+
+	/**
+	 * Checks the output of an exporter that exited during start-up for a bind failure. The first message is printed on
+	 * Linux and macOS, the second on Windows.
+	 */
+	private static boolean isPortInUse(String output) {
+		String lower = output.toLowerCase(Locale.ROOT);
+		return lower.contains("address already in use") || lower.contains("only one usage of each socket address");
 	}
 
 	protected ArgumentListBuilder getCmd() throws IOException, InterruptedException {
