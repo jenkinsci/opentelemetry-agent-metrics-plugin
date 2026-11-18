@@ -5,7 +5,6 @@ import hudson.EnvVars;
 import hudson.model.TaskListener;
 import io.jenkins.plugins.onmonit.exec.ExecRemoteNodeExporterProcess;
 import io.jenkins.plugins.onmonit.exec.ExecRemoteOtelContribProcess;
-import io.jenkins.plugins.onmonit.util.AvailablePort;
 import io.jenkins.plugins.onmonit.util.AvailablePortRetriever;
 import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import io.jenkins.plugins.onmonit.util.RemoteComputerInfoRetriever;
@@ -61,6 +60,9 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 	private String ocCookie;
 
 	private static final Logger LOGGER = Logger.getLogger(ONMonitoringStepExecution.class.getName());
+
+	/** How often to retry starting node_exporter on another port after its port was taken. */
+	private static final int PORT_RETRIES = 3;
 
 	private static ONTemplating templating = new ONTemplating();
 
@@ -281,13 +283,11 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			}
 			throw new RuntimeException("[on-monit] Could not find a suitable otel-contrib provider.");
 		}
-		AvailablePort usedPort;
+		int usedPort;
 		// Acquire outside the try: an interrupted acquire must not release a permit it never got.
 		portSync.acquire();
 		try {
-			usedPort = AvailablePortRetriever.getAvailablePort(launcher, port, port + 100);
-			listener.getLogger().println("[on-monit] node_exporter will listen on " + usedPort.getPort());
-			ne.start(listener, usedPort.getPort());
+			usedPort = startNodeExporter(ne, launcher, listener);
 		} finally {
 			portSync.release();
 		}
@@ -300,12 +300,38 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 		EnvVars environment = getEnvironment();
 		OtlpExporterSettings otlp = OtlpExporterSettings.resolve(environment);
 		printOtlpWarnings(listener, otlp);
-		String config = templating.renderTemplate(templating.getJobContext(build, environment, usedPort.getPort(), otlp));
+		String config = templating.renderTemplate(templating.getJobContext(build, environment, usedPort, otlp));
 		if (debug) {
 			listener.getLogger().println("[on-monit] otel-collector config:\n" + config);
 		}
 		oc.start(listener, config);
 		listener.getLogger().println(Messages.ONMonitoringStep_Started());
+	}
+
+	/**
+	 * Starts node_exporter on the first free port from {@link #port}. The port is free when it is checked, but nothing
+	 * reserves it, so another process may take it before node_exporter starts. In that case this searches again from
+	 * the next port, up to {@value #PORT_RETRIES} times.
+	 *
+	 * @return the port node_exporter listens on.
+	 */
+	private int startNodeExporter(RemoteNodeExporterProcess ne, Launcher launcher, TaskListener listener)
+			throws IOException, InterruptedException {
+		int usedPort = AvailablePortRetriever.getAvailablePort(launcher, port, port + 100).getPort();
+		listener.getLogger().println("[on-monit] node_exporter will listen on " + usedPort);
+		for (int retry = 1; ; retry++) {
+			try {
+				ne.start(listener, usedPort);
+				return usedPort;
+			} catch (PortInUseException e) {
+				if (retry > PORT_RETRIES) {
+					throw e;
+				}
+				int nextPort = AvailablePortRetriever.getAvailablePort(launcher, usedPort + 1, port + 100).getPort();
+				listener.getLogger().println("[on-monit] port " + usedPort + " taken, retrying on " + nextPort);
+				usedPort = nextPort;
+			}
+		}
 	}
 
 	/**
