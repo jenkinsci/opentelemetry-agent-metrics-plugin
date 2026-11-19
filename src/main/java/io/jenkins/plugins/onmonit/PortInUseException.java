@@ -12,15 +12,8 @@ public class PortInUseException extends AbortException {
 	@Serial
 	private static final long serialVersionUID = 1L;
 
-	private final int port;
-
 	public PortInUseException(int port) {
 		super("Failed to start node_exporter, port " + port + " is already in use");
-		this.port = port;
-	}
-
-	public int getPort() {
-		return port;
 	}
 
 }
