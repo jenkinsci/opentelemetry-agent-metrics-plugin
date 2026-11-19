@@ -317,19 +317,20 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 	 */
 	private int startNodeExporter(RemoteNodeExporterProcess ne, Launcher launcher, TaskListener listener)
 			throws IOException, InterruptedException {
-		int usedPort = AvailablePortRetriever.getAvailablePort(launcher, port, port + 100).getPort();
-		listener.getLogger().println("[on-monit] node_exporter will listen on " + usedPort);
-		for (int retry = 1; ; retry++) {
+		int from = port;
+		for (int retry = 0; ; retry++) {
+			int usedPort = AvailablePortRetriever.getAvailablePort(launcher, from, port + 100).getPort();
+			listener.getLogger().println("[on-monit] node_exporter will listen on " + usedPort);
 			try {
 				ne.start(listener, usedPort);
 				return usedPort;
 			} catch (PortInUseException e) {
-				if (retry > PORT_RETRIES) {
+				// Give up when the retries are used up, or when no port is left in the range to search.
+				if (retry >= PORT_RETRIES || usedPort + 1 >= port + 100) {
 					throw e;
 				}
-				int nextPort = AvailablePortRetriever.getAvailablePort(launcher, usedPort + 1, port + 100).getPort();
-				listener.getLogger().println("[on-monit] port " + usedPort + " taken, retrying on " + nextPort);
-				usedPort = nextPort;
+				listener.getLogger().println("[on-monit] port " + usedPort + " taken, retrying");
+				from = usedPort + 1;
 			}
 		}
 	}

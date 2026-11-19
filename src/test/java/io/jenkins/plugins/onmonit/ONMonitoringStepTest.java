@@ -15,6 +15,7 @@ import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.slaves.DumbSlave;
 import hudson.slaves.EnvironmentVariablesNodeProperty;
+import io.jenkins.plugins.onmonit.exec.DelegatedNodeExporterProcessFactory;
 import io.jenkins.plugins.onmonit.exec.ExecRemoteNodeExporterProcessFactory;
 import io.jenkins.plugins.onmonit.testing.DefaultPortLock;
 import io.jenkins.plugins.onmonit.testing.FastScrapeTemplate;
@@ -468,13 +469,19 @@ class ONMonitoringStepTest {
     void portTakenAfterCheckIsRetried(JenkinsRule j) throws Exception {
         agent(j);
         TakePortOnStart factory = new TakePortOnStart();
-        ExtensionList.lookup(RemoteNodeExporterProcessFactory.class).add(0, factory);
+        // ExtensionList.add(int, T) ignores the index, so remove the real factory instead of relying on the order.
+        // JenkinsRule creates a fresh Jenkins for each test, so nothing needs restoring.
+        ExtensionList<RemoteNodeExporterProcessFactory> factories =
+                ExtensionList.lookup(RemoteNodeExporterProcessFactory.class);
+        factories.remove(factories.get(DelegatedNodeExporterProcessFactory.class));
+        factories.add(factory);
+        assertThat(factories).as("test factory must be the only node_exporter factory").containsExactly(factory);
         try {
             WorkflowRun run = j.buildAndAssertSuccess(job(j, "p", onNode("echo 'x'")));
             int taken = factory.taken.getLocalPort();
-            j.assertLogContains("[on-monit] port " + taken + " taken, retrying on ", run);
+            j.assertLogContains("[on-monit] port " + taken + " taken, retrying", run);
             Marker exporter = StandIns.markers(markerDir).stream()
-                    .filter(m -> m.role() == StandIn.Role.NODE_EXPORTER)
+                    .filter(m -> m.role() == StandIns.exporterRole())
                     .findFirst()
                     .orElseThrow();
             assertThat(exporter.port()).isNotEqualTo(taken);

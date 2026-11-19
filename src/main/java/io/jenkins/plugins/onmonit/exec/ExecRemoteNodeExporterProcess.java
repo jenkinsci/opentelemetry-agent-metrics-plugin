@@ -90,6 +90,9 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 		}
 		proc.join(); // waits until all of the output has been copied into baos
 		if (isPortInUse(baos.toString(StandardCharsets.UTF_8))) {
+			if (!debug) {
+				listener.getLogger().println("Failed to start node_exporter on port " + port + ": " + baos);
+			}
 			throw new PortInUseException(port);
 		}
 		if (!debug) {
@@ -102,7 +105,7 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 	 * Checks the output of an exporter that exited during start-up for a bind failure. The first message is printed on
 	 * Linux and macOS, the second on Windows.
 	 */
-	private static boolean isPortInUse(String output) {
+	static boolean isPortInUse(String output) {
 		String lower = output.toLowerCase(Locale.ROOT);
 		return lower.contains("address already in use") || lower.contains("only one usage of each socket address");
 	}
