@@ -1,5 +1,6 @@
 package io.jenkins.plugins.onmonit;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
 import hudson.model.TaskListener;
@@ -13,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.workflow.steps.BodyExecutionCallback;
 import org.jenkinsci.plugins.workflow.steps.GeneralNonBlockingStepExecution;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
+import org.jenkinsci.plugins.workflow.steps.SynchronousResumeNotSupportedException;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Run;
@@ -127,16 +129,26 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 	}
 
 	private void cleanUpAfterFailedStart() {
-		// An abort interrupts this thread; clear the flag so that the remote kill calls are not cut short.
+		cleanUpQuietly(Messages.ONMonitoringStep_CouldNotStartProcesses(), "Could not clean up after a failed onMonit start");
+	}
+
+	/**
+	 * Prints {@code buildLogLine} (unless {@code null}) and runs {@link #cleanUp()}, logging {@code failureMessage}
+	 * instead of throwing if either fails. An abort interrupts the calling thread; the flag is cleared meanwhile, so
+	 * that the remote kill calls are not cut short, and restored afterwards.
+	 */
+	private void cleanUpQuietly(@CheckForNull String buildLogLine, String failureMessage) {
 		boolean interrupted = Thread.interrupted();
 		try {
-			getListener().getLogger().println(Messages.ONMonitoringStep_CouldNotStartProcesses());
+			if (buildLogLine != null) {
+				getListener().getLogger().println(buildLogLine);
+			}
 			cleanUp();
 		} catch (Exception x) {
 			if (x instanceof InterruptedException) {
 				interrupted = true;
 			}
-			LOGGER.log(Level.WARNING, "Could not clean up after a failed onMonit start", x);
+			LOGGER.log(Level.WARNING, failureMessage, x);
 		} finally {
 			if (interrupted) {
 				Thread.currentThread().interrupt();
@@ -159,11 +171,13 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 
 	@Override
 	public void onResume() {
-		// The base class fails the step if Jenkins went down while the processes were still being started.
-		boolean wasStarting = blocksRestart();
-		super.onResume();
-		if (wasStarting) {
-			run(this::cleanUp);
+		if (blocksRestart()) {
+			// Jenkins went down while the processes were still being started, which cannot be resumed. Kill them
+			// before failing the step: once it has failed, the enclosing node block may end, and with it the launcher.
+			run(() -> {
+				cleanUpQuietly(null, "Could not clean up onMonit processes started before a restart");
+				getContext().onFailure(new SynchronousResumeNotSupportedException(getContext()));
+			});
 			return;
 		}
 		// The body is still running: restart the processes, which did not survive the restart of the controller.
