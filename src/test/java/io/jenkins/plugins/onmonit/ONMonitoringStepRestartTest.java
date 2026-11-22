@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import hudson.ExtensionList;
 import hudson.FilePath;
+import hudson.Launcher;
 import hudson.model.Computer;
 import hudson.model.Node;
 import hudson.model.Result;
@@ -21,6 +22,7 @@ import io.jenkins.plugins.onmonit.testing.Marker;
 import io.jenkins.plugins.onmonit.testing.StandIn;
 import io.jenkins.plugins.onmonit.testing.StandIns;
 import io.jenkins.plugins.onmonit.testing.TestAgents;
+import io.jenkins.plugins.onmonit.util.AvailablePortRetriever;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -219,6 +222,47 @@ class ONMonitoringStepRestartTest {
         });
     }
 
+    /**
+     * The body ends after the controller restart while restarting the processes has not launched any yet (it waits for
+     * the agent's port lock, which the test holds), and the {@code node} block carries on: the processes launched after
+     * the body ended are killed too, rather than left running on the agent.
+     *
+     * <p>An abort instead of the body ending would not show this: once the build ends, the step has no launcher left,
+     * so restarting the processes fails before it launches any.
+     */
+    @Test
+    void bodyEndingBeforeProcessesRestartLeavesNothing() throws Throwable {
+        sessions.then(j -> {
+            String script = "node('t') {\n"
+                    + "onMonit" + options() + " {\n" + HeldBuilds.HOLD + "\n}\n"
+                    + "echo 'after-onMonit'\n"
+                    + "waitUntil(initialRecurrencePeriod: 200) { fileExists('release-node') }\n"
+                    + "}";
+            HeldBuilds.hold(j, job(j, script));
+            beforeRestart = awaitMarkers(2);
+            HeldReconnect.hold();
+        });
+        sessions.then(j -> {
+            WorkflowRun run = build(j);
+            HeldReconnect.awaitHeld();
+            Semaphore portLock = AvailablePortRetriever.getSyncOjbectForLauncher(
+                    new Launcher.RemoteLauncher(TaskListener.NULL, HeldReconnect.channel(), true));
+            portLock.acquire();
+            try {
+                HeldReconnect.release();
+                Awaitility.await().atMost(Duration.ofSeconds(60)).until(portLock::hasQueuedThreads);
+                HeldBuilds.releaseOn(agent(j), run.getParent());
+                j.waitForMessage("after-onMonit", run);
+            } finally {
+                portLock.release();
+            }
+            awaitNothingAlive();
+            assertThat(StandIns.markers(markerDir)).hasSizeGreaterThan(2);
+            agent(j).getWorkspaceFor(run.getParent()).child("release-node").write("x", "UTF-8");
+            j.assertBuildStatusSuccess(j.waitForCompletion(run));
+        });
+    }
+
     /** Creates the inbound agent with label {@code t}, and the stand-ins it gets uploaded. */
     private void agentAndStandIns(JenkinsRule j) throws Exception {
         // Otherwise the agent JVM restarts itself when it reconnects, as it does by default where it can.
@@ -366,6 +410,7 @@ class ONMonitoringStepRestartTest {
 
         private static volatile CountDownLatch held;
         private static volatile CountDownLatch release;
+        private static volatile Channel channel;
 
         static void reset() {
             CountDownLatch r = release;
@@ -374,6 +419,7 @@ class ONMonitoringStepRestartTest {
             }
             held = null;
             release = null;
+            channel = null;
         }
 
         /** Arms the hold for the next time the agent connects. */
@@ -389,6 +435,11 @@ class ONMonitoringStepRestartTest {
                     .isTrue();
         }
 
+        /** The channel of the held connection, which becomes the agent's channel once released. */
+        static Channel channel() {
+            return channel;
+        }
+
         static void release() {
             release.countDown();
         }
@@ -401,6 +452,7 @@ class ONMonitoringStepRestartTest {
             if (h == null || r == null || !AGENT.equals(c.getName())) {
                 return;
             }
+            channel = ch;
             h.countDown();
             if (!r.await(2, TimeUnit.MINUTES)) {
                 listener.getLogger().println("test did not release the held reconnection");
