@@ -68,6 +68,12 @@ class ONMonitoringStepRestartTest {
 
     private static final String AGENT = "remote";
 
+    /**
+     * A body to abort: {@code sleep} rather than {@link HeldBuilds#HOLD}, whose {@code waitUntil} sometimes loses the
+     * abort (see {@code ONMonitoringStepTest.abortInsideBlockStopsProcesses}).
+     */
+    private static final String SLEEPING_BODY = "echo 'inside'\nsleep 600";
+
     /** The warning logged when the processes cannot be restarted after a controller restart. */
     private static final String RESTART_FAILED = "[on-monit] WARNING: Could not restart node_exporter + otel-contrib "
             + "after the controller restart; continuing without metrics";
@@ -187,6 +193,32 @@ class ONMonitoringStepRestartTest {
         });
     }
 
+    /**
+     * The build is aborted while the collector started after the controller restart is not ready yet: nothing is left
+     * running once it would have become ready.
+     */
+    @Test
+    void abortWhileCollectorRestartsLeavesNothing() throws Throwable {
+        Path gate = tmp.resolve("gate");
+        sessions.then(j -> {
+            Files.writeString(gate, "open");
+            WorkflowRun run = HeldBuilds.hold(j, job(j, onAgent(options(gate, null), SLEEPING_BODY)));
+            j.waitForMessage("Sleeping for", run);
+            beforeRestart = awaitMarkers(2);
+            // the collector started after the restart waits for the gate
+            Files.delete(gate);
+        });
+        sessions.then(j -> {
+            WorkflowRun run = build(j);
+            assertThat(awaitNewMarkers(2))
+                    .extracting(Marker::role)
+                    .containsExactlyInAnyOrder(StandIn.Role.OTELCOL, StandIns.exporterRole());
+            abort(j, run);
+            Files.writeString(gate, "open");
+            awaitNothingAlive();
+        });
+    }
+
     /** Creates the inbound agent with label {@code t}, and the stand-ins it gets uploaded. */
     private void agentAndStandIns(JenkinsRule j) throws Exception {
         // Otherwise the agent JVM restarts itself when it reconnects, as it does by default where it can.
@@ -297,6 +329,17 @@ class ONMonitoringStepRestartTest {
         HeldReconnect.awaitHeld();
         assertAlive(beforeRestart);
         HeldReconnect.release();
+    }
+
+    /** Aborts {@code run} and waits until it has ended as aborted. */
+    private static void abort(JenkinsRule j, WorkflowRun run) throws Exception {
+        run.doStop();
+        try {
+            Awaitility.await().atMost(Duration.ofSeconds(90)).until(() -> !run.isBuilding());
+        } catch (ConditionTimeoutException e) {
+            throw new AssertionError("Build still running 90s after doStop; build log:\n" + JenkinsRule.getLog(run), e);
+        }
+        j.assertBuildStatus(Result.ABORTED, run);
     }
 
     /** Waits until no recorded stand-in has been alive for 10 seconds, so that a late start would be caught. */
