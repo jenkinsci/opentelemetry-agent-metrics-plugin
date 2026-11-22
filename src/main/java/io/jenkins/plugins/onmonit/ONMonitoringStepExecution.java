@@ -86,6 +86,12 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 	 */
 	private transient volatile boolean stopping;
 
+	/**
+	 * Set when the body has ended. After a controller restart the processes are restarted while the body runs; a
+	 * restart that finishes launching after this is set cleans up itself, as nothing else would stop those processes.
+	 */
+	private transient volatile boolean bodyEnded;
+
 	ONMonitoringStepExecution(StepContext context, int port, boolean debug, boolean launchCollector, String dashboardUrl, String neAdditionalOptions, String ocAdditionalOptions) {
 		super(context);
 		this.port = port;
@@ -187,13 +193,24 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 				cleanUp();
 				initRemoteProcesses();
 			} catch (InterruptedException e) {
+				// stop() interrupted the restart. Like doStart(), kill what was launched so far before passing it on.
+				cleanUpQuietly(null, "Could not clean up after an interrupted onMonit restart");
 				throw e;
 			} catch (Exception x) {
 				// Losing metrics must not interrupt a body that may have been running for hours: warn and carry on.
 				x.printStackTrace(getListener().getLogger());
 				cleanUpQuietly(Messages.ONMonitoringStep_CouldNotRestartProcesses(),
 						"Could not clean up after a failed onMonit restart");
+				return;
 			}
+			// Checked under the lock onBodyEnd() sets the flag with: either it comes later and stops the processes
+			// itself, or they are stopped here.
+			synchronized (this) {
+				if (!bodyEnded && !stopping) {
+					return;
+				}
+			}
+			cleanUpQuietly(null, "Could not clean up after onMonit ended during a restart");
 		});
 	}
 
@@ -210,9 +227,15 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 
 		@Override
 		protected void finished(StepContext context) throws Exception {
-			execution.cleanUp();
+			execution.onBodyEnd();
 		}
 
+	}
+
+	/** Stops the processes once the body has ended, and has a restart still in progress stop its own. */
+	private synchronized void onBodyEnd() throws Exception {
+		bodyEnded = true;
+		cleanUp();
 	}
 
 	static FilePath tempDir(FilePath ws) throws IOException, InterruptedException {
