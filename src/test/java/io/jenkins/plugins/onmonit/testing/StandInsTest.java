@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -103,6 +104,48 @@ class StandInsTest {
         assertThat(m.role()).isEqualTo(WINDOWS ? StandIn.Role.WINDOWS_EXPORTER : StandIn.Role.NODE_EXPORTER);
         assertThat(m.port()).isEqualTo(port);
         assertThat(m.args()).containsExactly("--web.disable-exporter-metrics", "--web.listen-address=:" + port);
+    }
+
+    @Test
+    void markerDirArgumentWorksWithoutEnvironment(@TempDir Path t) throws Exception {
+        Path bin = bin(t);
+        Path markers = Files.createDirectories(t.resolve("markers"));
+        markerDirs.add(markers);
+        int port = freePort();
+        Running r = start(
+                bin.resolve(EXPORTER),
+                null,
+                StandIn.MARKER_DIR_ARG + markers,
+                "--web.listen-address=:" + port);
+
+        r.awaitOutput("Listening on :" + port);
+
+        List<Marker> found = StandIns.markers(markers);
+        assertThat(found).hasSize(1);
+        assertThat(found.get(0).port()).isEqualTo(port);
+    }
+
+    @Test
+    void failFileMakesStandInExitWithoutMarker(@TempDir Path t) throws Exception {
+        Path bin = bin(t);
+        Path markers = Files.createDirectories(t.resolve("markers"));
+        Path fail = Files.writeString(t.resolve("fail"), "x");
+        Running r = start(bin.resolve(OTELCOL), markers, StandIn.FAIL_FILE_ARG + fail);
+
+        assertThat(r.process.waitFor(1, TimeUnit.MINUTES)).isTrue();
+        assertThat(r.process.exitValue()).isEqualTo(1);
+        assertThat(StandIns.markers(markers)).isEmpty();
+    }
+
+    @Test
+    void absentFailFileDoesNotStopStandIn(@TempDir Path t) throws Exception {
+        Path bin = bin(t);
+        Path markers = Files.createDirectories(t.resolve("markers"));
+        Running r = start(bin.resolve(OTELCOL), markers, StandIn.FAIL_FILE_ARG + t.resolve("fail"));
+
+        r.awaitOutput("Everything is ready.");
+
+        assertThat(StandIns.markers(markers)).hasSize(1);
     }
 
     @Test
@@ -242,13 +285,18 @@ class StandInsTest {
         assertThat(done.output()).contains(expected);
     }
 
+    /** Starts {@code launcher}; {@code markerDir} goes into the environment unless it is {@code null}. */
     private Running start(Path launcher, Path markerDir, String... args) throws IOException {
         List<String> cmd = new ArrayList<>();
         cmd.add(launcher.toString());
         cmd.addAll(List.of(args));
         ProcessBuilder pb = new ProcessBuilder(cmd).redirectErrorStream(true);
-        pb.environment().put("ONMONIT_STANDIN_DIR", markerDir.toString());
-        markerDirs.add(markerDir);
+        if (markerDir != null) {
+            pb.environment().put(StandIn.MARKER_DIR_ENV, markerDir.toString());
+            markerDirs.add(markerDir);
+        } else {
+            pb.environment().remove(StandIn.MARKER_DIR_ENV);
+        }
         Process p = pb.start();
         started.add(p);
         return new Running(p);

@@ -34,6 +34,21 @@ public final class StandIn {
      */
     public static final String GATE_FILE_ARG = "--onmonit.standin.gate-file=";
 
+    /**
+     * Command-line argument prefix naming the marker directory, for agents whose environment the test cannot set
+     * (such as an inbound agent, which inherits the test JVM's environment). It is passed through the step's
+     * {@code neAdditionalOptions} and {@code ocAdditionalOptions} for the same reason as {@link #GATE_FILE_ARG}, and
+     * takes precedence over {@link #MARKER_DIR_ENV}.
+     */
+    public static final String MARKER_DIR_ARG = "--onmonit.standin.marker-dir=";
+
+    /**
+     * Command-line argument prefix naming a fail file: a stand-in given {@code <prefix><file>} exits with status 1,
+     * without writing a marker, if the file exists when it starts. A test creates the file to make later starts fail,
+     * for example the restart of the processes after a controller restart.
+     */
+    public static final String FAIL_FILE_ARG = "--onmonit.standin.fail-file=";
+
     /** System property set by the Windows launcher, which is a separate parent process of this JVM. */
     static final String WRAPPED_PROPERTY = "onmonit.standin.wrapped";
 
@@ -82,13 +97,24 @@ public final class StandIn {
             return;
         }
 
+        Path fail = lastPath(args, FAIL_FILE_ARG);
+        if (fail != null && Files.exists(fail)) {
+            System.err.println(role.binaryName() + " stand-in failing: " + fail + " exists");
+            System.err.flush();
+            System.exit(1);
+            return;
+        }
+
         ProcessHandle self = ProcessHandle.current();
         long pid = self.pid();
         ProcessHandle parent =
                 Boolean.getBoolean(WRAPPED_PROPERTY) ? self.parent().orElse(null) : null;
         long parentPid = parent == null ? -1L : parent.pid();
-        String markerEnv = System.getenv(MARKER_DIR_ENV);
-        Path markerDir = markerEnv == null || markerEnv.isEmpty() ? null : Path.of(markerEnv);
+        Path markerDir = lastPath(args, MARKER_DIR_ARG);
+        if (markerDir == null) {
+            String markerEnv = System.getenv(MARKER_DIR_ENV);
+            markerDir = markerEnv == null || markerEnv.isEmpty() ? null : Path.of(markerEnv);
+        }
         String baseName = role.name() + "-" + pid;
 
         Properties marker = new Properties();
@@ -140,11 +166,7 @@ public final class StandIn {
                     StandardCopyOption.ATOMIC_MOVE);
         }
 
-        Path gate = args.stream()
-                .filter(a -> a.startsWith(GATE_FILE_ARG))
-                .map(a -> Path.of(a.substring(GATE_FILE_ARG.length())))
-                .reduce((a, b) -> b)
-                .orElse(null);
+        Path gate = lastPath(args, GATE_FILE_ARG);
         if (gate != null && !role.isExporter()) {
             while (!Files.exists(gate)) {
                 Thread.sleep(100);
@@ -156,6 +178,15 @@ public final class StandIn {
         while (true) {
             Thread.sleep(Long.MAX_VALUE);
         }
+    }
+
+    /** The path given by the last argument starting with {@code prefix}, or {@code null} if there is none. */
+    private static Path lastPath(List<String> args, String prefix) {
+        return args.stream()
+                .filter(a -> a.startsWith(prefix))
+                .map(a -> Path.of(a.substring(prefix.length())))
+                .reduce((a, b) -> b)
+                .orElse(null);
     }
 
     private static int listenPort(List<String> args, int defaultPort) {
