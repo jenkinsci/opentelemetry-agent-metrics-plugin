@@ -68,6 +68,10 @@ class ONMonitoringStepRestartTest {
 
     private static final String AGENT = "remote";
 
+    /** The warning logged when the processes cannot be restarted after a controller restart. */
+    private static final String RESTART_FAILED = "[on-monit] WARNING: Could not restart node_exporter + otel-contrib "
+            + "after the controller restart; continuing without metrics";
+
     @RegisterExtension
     private final JenkinsSessionExtension sessions = new JenkinsSessionExtension();
 
@@ -154,6 +158,32 @@ class ONMonitoringStepRestartTest {
             awaitNothingAlive();
             assertThat(StandIns.markers(markerDir)).hasSize(2);
             j.assertLogNotContains("body-ran", run);
+        });
+    }
+
+    /**
+     * Restarting the processes after the controller restart fails (node_exporter starts, otelcol does not): the build
+     * log says so, nothing is left running, and the body carries on without metrics instead of being interrupted.
+     */
+    @Test
+    void failedRestartDoesNotFailBuild() throws Throwable {
+        Path fail = tmp.resolve("fail");
+        sessions.then(j -> {
+            WorkflowJob job = job(j, onAgent(options(null, fail), HeldBuilds.HOLD + "\necho 'after-restart'"));
+            HeldBuilds.hold(j, job);
+            beforeRestart = awaitMarkers(2);
+            Files.writeString(fail, "otelcol fails from now on");
+        });
+        sessions.then(j -> {
+            WorkflowRun run = build(j);
+            awaitOccurrences(run, RESTART_FAILED, 1);
+            List<Marker> afterRestart = awaitNewMarkers(1);
+            assertThat(afterRestart).extracting(Marker::role).containsExactly(StandIns.exporterRole());
+            awaitDead(StandIns.markers(markerDir), DEAD);
+            HeldBuilds.releaseOn(agent(j), run.getParent());
+            j.assertBuildStatusSuccess(j.waitForCompletion(run));
+            j.assertLogContains("after-restart", run);
+            j.assertLogContains("Failed to start otelcol-contrib", run);
         });
     }
 

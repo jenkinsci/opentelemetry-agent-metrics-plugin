@@ -180,7 +180,8 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			});
 			return;
 		}
-		// The body is still running: restart the processes, which did not survive the restart of the controller.
+		// The body is still running: restart the processes. Those from before the restart may still be running (on an
+		// inbound agent, whose JVM survives the restart), so kill them first.
 		run(() -> {
 			try {
 				cleanUp();
@@ -188,9 +189,10 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			} catch (InterruptedException e) {
 				throw e;
 			} catch (Exception x) {
+				// Losing metrics must not interrupt a body that may have been running for hours: warn and carry on.
 				x.printStackTrace(getListener().getLogger());
-				getListener().getLogger().println(Messages.ONMonitoringStep_CouldNotStartProcesses());
-				throw x;
+				cleanUpQuietly(Messages.ONMonitoringStep_CouldNotRestartProcesses(),
+						"Could not clean up after a failed onMonit restart");
 			}
 		});
 	}
