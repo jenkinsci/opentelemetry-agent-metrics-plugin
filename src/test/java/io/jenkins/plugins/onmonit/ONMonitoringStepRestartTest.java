@@ -1,6 +1,7 @@
 package io.jenkins.plugins.onmonit;
 
 import static io.jenkins.plugins.onmonit.testing.JenkinsFixtures.globalEnv;
+import static io.jenkins.plugins.onmonit.testing.Lifecycle.alive;
 import static io.jenkins.plugins.onmonit.testing.Lifecycle.assertAlive;
 import static io.jenkins.plugins.onmonit.testing.Lifecycle.awaitDead;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,6 +11,7 @@ import hudson.ExtensionList;
 import hudson.FilePath;
 import hudson.model.Computer;
 import hudson.model.Node;
+import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.slaves.ComputerListener;
@@ -128,6 +130,33 @@ class ONMonitoringStepRestartTest {
         });
     }
 
+    /**
+     * The controller restarts while the processes are still starting: the step fails and its processes are killed. The
+     * restart happens in the same JVM, so the start-up thread from before the restart may still be alive; letting it
+     * finish must not run the body or start a process.
+     */
+    @Test
+    void restartWhileStartingFailsStepAndCleansUp() throws Throwable {
+        Path gate = tmp.resolve("gate");
+        sessions.then(j -> {
+            WorkflowJob job = job(j, onAgent(options(gate, null), "echo 'body-ran'"));
+            job.scheduleBuild2(0).waitForStart();
+            beforeRestart = awaitMarkers(2);
+            assertAlive(beforeRestart);
+            HeldReconnect.hold();
+        });
+        sessions.then(j -> {
+            WorkflowRun run = build(j);
+            assertStillAliveAfterRestart();
+            j.assertBuildStatus(Result.FAILURE, j.waitForCompletion(run));
+            awaitDead(beforeRestart, DEAD);
+            Files.writeString(gate, "open");
+            awaitNothingAlive();
+            assertThat(StandIns.markers(markerDir)).hasSize(2);
+            j.assertLogNotContains("body-ran", run);
+        });
+    }
+
     /** Creates the inbound agent with label {@code t}, and the stand-ins it gets uploaded. */
     private void agentAndStandIns(JenkinsRule j) throws Exception {
         // Otherwise the agent JVM restarts itself when it reconnects, as it does by default where it can.
@@ -238,6 +267,20 @@ class ONMonitoringStepRestartTest {
         HeldReconnect.awaitHeld();
         assertAlive(beforeRestart);
         HeldReconnect.release();
+    }
+
+    /** Waits until no recorded stand-in has been alive for 10 seconds, so that a late start would be caught. */
+    private void awaitNothingAlive() {
+        try {
+            Awaitility.await()
+                    .during(Duration.ofSeconds(10))
+                    .atMost(Duration.ofSeconds(45))
+                    .until(() -> StandIns.markers(markerDir).stream().noneMatch(m -> alive(m.pid())));
+        } catch (ConditionTimeoutException e) {
+            throw new AssertionError("stand-ins still running: " + StandIns.markers(markerDir).stream()
+                    .filter(m -> alive(m.pid()))
+                    .toList(), e);
+        }
     }
 
     /**
