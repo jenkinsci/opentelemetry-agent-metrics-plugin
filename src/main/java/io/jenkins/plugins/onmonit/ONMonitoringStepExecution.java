@@ -224,10 +224,27 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 				cleanUpQuietly(null, "Could not clean up after an interrupted onMonit restart", launcher);
 				throw e;
 			} catch (Exception x) {
-				// Losing metrics must not interrupt a body that may have been running for hours: warn and carry on.
-				x.printStackTrace(getListener().getLogger());
-				cleanUpQuietly(Messages.ONMonitoringStep_CouldNotRestartProcesses(),
-						"Could not clean up after a failed onMonit restart", launcher);
+				boolean ended;
+				synchronized (this) {
+					ended = bodyEnded || stopping;
+				}
+				if (ended) {
+					// The step is ending anyway, and onBodyEnd() may have killed the processes this restart was waiting
+					// for, which is why it failed: no warning, just stop whatever was launched after that kill.
+					cleanUpQuietly(null, "Could not clean up after onMonit ended during a failed restart", launcher);
+					return;
+				}
+				// Losing metrics must not interrupt a body that may have been running for hours: stop what was started,
+				// then warn and carry on. Clean up first, as the listener lookup fails once the node block has ended.
+				cleanUpQuietly(null, "Could not clean up after a failed onMonit restart", launcher);
+				try {
+					TaskListener listener = getListener();
+					x.printStackTrace(listener.getLogger());
+					listener.getLogger().println(Messages.ONMonitoringStep_CouldNotRestartProcesses());
+				} catch (IOException lookupFailure) {
+					lookupFailure.addSuppressed(x);
+					LOGGER.log(Level.FINE, "onMonit ended while reporting a failed restart", lookupFailure);
+				}
 				return;
 			}
 			// Checked under the lock onBodyEnd() sets the flag with: either it comes later and stops the processes
