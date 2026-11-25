@@ -305,6 +305,33 @@ class ONMonitoringStepRestartTest {
         });
     }
 
+    /** The body ends while the collector restarted after the controller restart is not ready yet. */
+    @Test
+    void bodyEndingWhileCollectorRestartsLogsNoRestartFailure() throws Throwable {
+        Path gate = tmp.resolve("gate");
+        sessions.then(j -> {
+            Files.writeString(gate, "open");
+            String script = "node('t') {\n"
+                    + "onMonit" + options(gate, null) + " {\n" + HeldBuilds.HOLD + "\n}\n"
+                    + "echo 'after-onMonit'\n"
+                    + "waitUntil(initialRecurrencePeriod: 200) { fileExists('release-node') }\n"
+                    + "}";
+            HeldBuilds.hold(j, job(j, script));
+            beforeRestart = awaitMarkers(2);
+            Files.delete(gate);
+        });
+        sessions.then(j -> {
+            WorkflowRun run = build(j);
+            awaitNewMarkers(2);
+            HeldBuilds.releaseOn(agent(j), run.getParent());
+            j.waitForMessage("after-onMonit", run);
+            awaitNothingAlive();
+            agent(j).getWorkspaceFor(run.getParent()).child("release-node").write("x", "UTF-8");
+            j.assertBuildStatusSuccess(j.waitForCompletion(run));
+            j.assertLogNotContains(RESTART_FAILED, run);
+        });
+    }
+
     /** Creates the inbound agent with label {@code t}, and the stand-ins it gets uploaded. */
     private void agentAndStandIns(JenkinsRule j) throws Exception {
         // Otherwise the agent JVM restarts itself when it reconnects, as it does by default where it can.
