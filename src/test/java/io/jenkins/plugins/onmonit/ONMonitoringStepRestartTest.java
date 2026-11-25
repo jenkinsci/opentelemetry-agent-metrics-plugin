@@ -263,6 +263,48 @@ class ONMonitoringStepRestartTest {
         });
     }
 
+    /**
+     * Like {@link #bodyEndingBeforeProcessesRestartLeavesNothing}, but the {@code node} block ends while the collector
+     * launched after the body ended is not ready yet.
+     */
+    @Test
+    void nodeBlockEndingWhileProcessesRestartLeavesNothing() throws Throwable {
+        Path gate = tmp.resolve("gate");
+        sessions.then(j -> {
+            Files.writeString(gate, "open");
+            String script = "node('t') {\n"
+                    + "onMonit" + options(gate, null) + " {\n" + HeldBuilds.HOLD + "\n}\n"
+                    + "echo 'after-onMonit'\n"
+                    + "waitUntil(initialRecurrencePeriod: 200) { fileExists('release-node') }\n"
+                    + "}";
+            HeldBuilds.hold(j, job(j, script));
+            beforeRestart = awaitMarkers(2);
+            HeldReconnect.hold();
+        });
+        sessions.then(j -> {
+            WorkflowRun run = build(j);
+            HeldReconnect.awaitHeld();
+            Semaphore portLock = AvailablePortRetriever.getSyncOjbectForLauncher(
+                    new Launcher.RemoteLauncher(TaskListener.NULL, HeldReconnect.channel(), true));
+            portLock.acquire();
+            try {
+                HeldReconnect.release();
+                Awaitility.await().atMost(Duration.ofSeconds(60)).until(portLock::hasQueuedThreads);
+                HeldBuilds.releaseOn(agent(j), run.getParent());
+                j.waitForMessage("after-onMonit", run);
+                // the collector launched after the body ended waits for the gate
+                Files.delete(gate);
+            } finally {
+                portLock.release();
+            }
+            awaitNewMarkers(2);
+            agent(j).getWorkspaceFor(run.getParent()).child("release-node").write("x", "UTF-8");
+            j.assertBuildStatusSuccess(j.waitForCompletion(run));
+            Files.writeString(gate, "open");
+            awaitNothingAlive();
+        });
+    }
+
     /** Creates the inbound agent with label {@code t}, and the stand-ins it gets uploaded. */
     private void agentAndStandIns(JenkinsRule j) throws Exception {
         // Otherwise the agent JVM restarts itself when it reconnects, as it does by default where it can.

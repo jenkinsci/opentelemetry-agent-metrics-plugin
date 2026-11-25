@@ -144,6 +144,16 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 	 * that the remote kill calls are not cut short, and restored afterwards.
 	 */
 	private void cleanUpQuietly(@CheckForNull String buildLogLine, String failureMessage) {
+		cleanUpQuietly(buildLogLine, failureMessage, null);
+	}
+
+	/**
+	 * Like {@link #cleanUpQuietly(String, String)}, but if the cleanup fails, kills the processes through their
+	 * environment cookies with {@code fallback} (unless {@code null}). The step context resolves everything through the
+	 * CPS thread of the enclosing {@code node} body, so once that block has ended every lookup, including the one for
+	 * the launcher, fails with {@code IOException: cannot find current thread}; a launcher obtained earlier still works.
+	 */
+	private void cleanUpQuietly(@CheckForNull String buildLogLine, String failureMessage, @CheckForNull Launcher fallback) {
 		boolean interrupted = Thread.interrupted();
 		try {
 			if (buildLogLine != null) {
@@ -154,7 +164,20 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			if (x instanceof InterruptedException) {
 				interrupted = true;
 			}
-			LOGGER.log(Level.WARNING, failureMessage, x);
+			if (fallback == null) {
+				LOGGER.log(Level.WARNING, failureMessage, x);
+			} else {
+				LOGGER.log(Level.FINE, failureMessage + "; killing the processes with the restart's launcher", x);
+				try {
+					killByCookie(fallback);
+				} catch (Exception killFailure) {
+					if (killFailure instanceof InterruptedException) {
+						interrupted = true;
+					}
+					killFailure.addSuppressed(x);
+					LOGGER.log(Level.WARNING, failureMessage, killFailure);
+				}
+			}
 		} finally {
 			if (interrupted) {
 				Thread.currentThread().interrupt();
@@ -189,18 +212,22 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 		// The body is still running: restart the processes. Those from before the restart may still be running (on an
 		// inbound agent, whose JVM survives the restart), so kill them first.
 		run(() -> {
+			// Kept for the cleanups below: if the enclosing node block ends during the restart, the step context can no
+			// longer provide a launcher, and without one the processes launched here would be left running.
+			Launcher launcher = null;
 			try {
+				launcher = getLauncher();
 				cleanUp();
 				initRemoteProcesses();
 			} catch (InterruptedException e) {
 				// stop() interrupted the restart. Like doStart(), kill what was launched so far before passing it on.
-				cleanUpQuietly(null, "Could not clean up after an interrupted onMonit restart");
+				cleanUpQuietly(null, "Could not clean up after an interrupted onMonit restart", launcher);
 				throw e;
 			} catch (Exception x) {
 				// Losing metrics must not interrupt a body that may have been running for hours: warn and carry on.
 				x.printStackTrace(getListener().getLogger());
 				cleanUpQuietly(Messages.ONMonitoringStep_CouldNotRestartProcesses(),
-						"Could not clean up after a failed onMonit restart");
+						"Could not clean up after a failed onMonit restart", launcher);
 				return;
 			}
 			// Checked under the lock onBodyEnd() sets the flag with: either it comes later and stops the processes
@@ -210,7 +237,7 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 					return;
 				}
 			}
-			cleanUpQuietly(null, "Could not clean up after onMonit ended during a restart");
+			cleanUpQuietly(null, "Could not clean up after onMonit ended during a restart", launcher);
 		});
 	}
 
@@ -435,6 +462,24 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			getLauncher().kill(neCookieEnv);
 		}
 		listener.getLogger().println(Messages.ONMonitoringStep_Stopped());
+	}
+
+	/**
+	 * Kills both processes through their environment cookies with {@code launcher}, without the step context, and
+	 * forgets them. Their temporary files are left for the workspace's temporary directory.
+	 */
+	private synchronized void killByCookie(Launcher launcher) throws IOException, InterruptedException {
+		if (!launchCollector) {
+			return;
+		}
+		Map<String, String> neCookieEnv = new HashMap<>();
+		neCookieEnv.put(ExecRemoteNodeExporterProcess.PROC_COOKIE_NAME, neCookie);
+		launcher.kill(neCookieEnv);
+		nodeExporter = null;
+		Map<String, String> ocCookieEnv = new HashMap<>();
+		ocCookieEnv.put(ExecRemoteOtelContribProcess.PROC_COOKIE_NAME, ocCookie);
+		launcher.kill(ocCookieEnv);
+		otelContrib = null;
 	}
 
 	@Override
