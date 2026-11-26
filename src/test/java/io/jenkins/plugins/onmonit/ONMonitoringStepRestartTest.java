@@ -331,6 +331,7 @@ class ONMonitoringStepRestartTest {
             agent(j).getWorkspaceFor(run.getParent()).child("release-node").write("x", "UTF-8");
             j.assertBuildStatusSuccess(j.waitForCompletion(run));
             j.assertLogNotContains(RESTART_FAILED, run);
+            j.assertLogNotContains("Failed to start", run);
         });
     }
 

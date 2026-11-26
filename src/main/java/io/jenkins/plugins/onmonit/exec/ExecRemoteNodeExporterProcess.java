@@ -43,6 +43,9 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 
 	private boolean started;
 
+	/** Set by {@link #stop}: a start in progress whose process then exits was stopped, rather than failing. */
+	private volatile boolean stopped;
+
 	ExecRemoteNodeExporterProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug) throws Exception {
 		this.launcherProvider = launcherProvider;
 		this.listener = listener;
@@ -65,6 +68,7 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 	@Override
 	public void start(TaskListener listener, int port) throws IOException, InterruptedException {
 		this.started = true;
+		this.stopped = false;
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		// A copy, so that a retry on another port does not pass --web.listen-address twice.
 		ArgumentListBuilder args = cmd.clone().add("--web.listen-address=:" + port);
@@ -90,6 +94,10 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 			throw new AbortException("Failed to start node_exporter, timeout after 1 minute");
 		}
 		proc.join(); // waits until all of the output has been copied into baos
+		if (stopped) {
+			// Killed by stop(), for example when the onMonit body ended during a restart: nothing to report.
+			throw new AbortException("node_exporter was stopped while starting");
+		}
 		if (isPortInUse(baos.toString(StandardCharsets.UTF_8))) {
 			if (!debug) {
 				listener.getLogger().println("Failed to start node_exporter on port " + port + ": " + baos);
@@ -144,6 +152,7 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 	 */
 	@Override
 	public void stop(TaskListener listener, Launcher launcher) throws IOException, InterruptedException {
+		stopped = true;
 		// Kills again when called again: a launch still in progress when stop() was first called may have completed since.
 		if (started) {
 			launcher.kill(envOverrides);

@@ -43,6 +43,9 @@ public class ExecRemoteOtelContribProcess implements RemoteOtelContribProcess {
 
 	private boolean started;
 
+	/** Set by {@link #stop}: a start in progress whose process then exits was stopped, rather than failing. */
+	private volatile boolean stopped;
+
 	ExecRemoteOtelContribProcess(LauncherProvider launcherProvider, TaskListener listener, ComputerInfo info, FilePath temp, String envCookie, String additionalOptions, boolean debug) throws Exception {
 		this.launcherProvider = launcherProvider;
 		this.listener = listener;
@@ -67,6 +70,7 @@ public class ExecRemoteOtelContribProcess implements RemoteOtelContribProcess {
 	@Override
 	public void start(TaskListener listener, String config) throws IOException, InterruptedException {
 		this.started = true;
+		this.stopped = false;
 
 		FilePath configFile = temp.child(configTmpChild);
 		configFile.write(config, StandardCharsets.UTF_8.name());
@@ -85,6 +89,10 @@ public class ExecRemoteOtelContribProcess implements RemoteOtelContribProcess {
 				return;
 			}
 			Thread.sleep(100);
+		}
+		if (stopped && !proc.isAlive()) {
+			// Killed by stop(), for example when the onMonit body ended during a restart: nothing to report.
+			throw new AbortException("otelcol-contrib was stopped while starting");
 		}
 		if (proc.isAlive()) {
 			if (!debug) {
@@ -126,6 +134,7 @@ public class ExecRemoteOtelContribProcess implements RemoteOtelContribProcess {
 	 */
 	@Override
 	public void stop(TaskListener listener, Launcher launcher) throws IOException, InterruptedException {
+		stopped = true;
 		// Kills again when called again: a launch still in progress when stop() was first called may have completed since.
 		if (started) {
 			launcher.kill(envOverrides);
