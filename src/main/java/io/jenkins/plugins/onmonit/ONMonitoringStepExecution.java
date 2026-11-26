@@ -496,19 +496,38 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 		stopProcesses(TaskListener.NULL, launcher);
 	}
 
-	/** Stops each process with {@code launcher}, through its environment cookie if it has no field. */
+	/**
+	 * Stops each process with {@code launcher}, through its environment cookie if it has no field. Each is stopped
+	 * even if stopping the other fails; the first failure is thrown, with the second added as suppressed.
+	 */
 	private synchronized void stopProcesses(TaskListener listener, Launcher launcher) throws Exception {
-		if (nodeExporter != null) {
-			nodeExporter.stop(listener, launcher);
-			nodeExporter = null;
-		} else {
-			killByCookie(launcher, ExecRemoteNodeExporterProcess.PROC_COOKIE_NAME, neCookie);
+		Exception failure = null;
+		try {
+			if (nodeExporter != null) {
+				nodeExporter.stop(listener, launcher);
+				nodeExporter = null;
+			} else {
+				killByCookie(launcher, ExecRemoteNodeExporterProcess.PROC_COOKIE_NAME, neCookie);
+			}
+		} catch (Exception e) {
+			failure = e;
 		}
-		if (otelContrib != null) {
-			otelContrib.stop(listener, launcher);
-			otelContrib = null;
-		} else {
-			killByCookie(launcher, ExecRemoteOtelContribProcess.PROC_COOKIE_NAME, ocCookie);
+		try {
+			if (otelContrib != null) {
+				otelContrib.stop(listener, launcher);
+				otelContrib = null;
+			} else {
+				killByCookie(launcher, ExecRemoteOtelContribProcess.PROC_COOKIE_NAME, ocCookie);
+			}
+		} catch (Exception e) {
+			if (failure == null) {
+				failure = e;
+			} else {
+				failure.addSuppressed(e);
+			}
+		}
+		if (failure != null) {
+			throw failure;
 		}
 	}
 
