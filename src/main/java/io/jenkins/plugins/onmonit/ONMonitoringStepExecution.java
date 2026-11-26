@@ -230,7 +230,9 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 				}
 				if (ended) {
 					// The step is ending anyway, and onBodyEnd() may have killed the processes this restart was waiting
-					// for, which is why it failed: no warning, just stop whatever was launched after that kill.
+					// for, which is why it failed: no warning, just stop whatever was launched after that kill. The failure
+					// may still have had a cause of its own, so record it.
+					LOGGER.log(Level.FINE, "onMonit restart failed after the step had ended", x);
 					cleanUpQuietly(null, "Could not clean up after onMonit ended during a failed restart", launcher);
 					return;
 				}
