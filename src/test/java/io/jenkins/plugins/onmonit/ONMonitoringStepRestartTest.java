@@ -78,8 +78,7 @@ class ONMonitoringStepRestartTest {
     private static final String SLEEPING_BODY = "echo 'inside'\nsleep 600";
 
     /** The warning logged when the processes cannot be restarted after a controller restart. */
-    private static final String RESTART_FAILED = "[on-monit] WARNING: Could not restart node_exporter + otel-contrib "
-            + "after the controller restart; continuing without metrics";
+    private static final String RESTART_FAILED = Messages.ONMonitoringStep_CouldNotRestartProcesses();
 
     @RegisterExtension
     private final JenkinsSessionExtension sessions = new JenkinsSessionExtension();
@@ -256,8 +255,9 @@ class ONMonitoringStepRestartTest {
             } finally {
                 portLock.release();
             }
+            // the restart launches both processes once it has the port lock; wait for them so that they are checked
+            awaitNewMarkers(2);
             awaitNothingAlive();
-            assertThat(StandIns.markers(markerDir)).hasSizeGreaterThan(2);
             agent(j).getWorkspaceFor(run.getParent()).child("release-node").write("x", "UTF-8");
             j.assertBuildStatusSuccess(j.waitForCompletion(run));
         });
