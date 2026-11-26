@@ -2,6 +2,7 @@ package io.jenkins.plugins.onmonit.exec;
 
 import hudson.AbortException;
 import hudson.FilePath;
+import hudson.Launcher;
 import hudson.Proc;
 import hudson.model.TaskListener;
 import hudson.util.ArgumentListBuilder;
@@ -117,9 +118,17 @@ public class ExecRemoteOtelContribProcess implements RemoteOtelContribProcess {
 	 */
 	@Override
 	public void stop(TaskListener listener) throws IOException, InterruptedException {
+		stop(listener, launcherProvider.getLauncher());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void stop(TaskListener listener, Launcher launcher) throws IOException, InterruptedException {
+		// Kills again when called again: a launch still in progress when stop() was first called may have completed since.
 		if (started) {
-			launcherProvider.getLauncher().kill(envOverrides);
-			started = false;
+			launcher.kill(envOverrides);
 		}
 		temp.child(configTmpChild).delete();
 		if (executableTmpChild != null) {

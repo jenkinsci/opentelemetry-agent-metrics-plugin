@@ -148,8 +148,8 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 	}
 
 	/**
-	 * Like {@link #cleanUpQuietly(String, String)}, but if the cleanup fails, kills the processes through their
-	 * environment cookies with {@code fallback} (unless {@code null}). The step context resolves everything through the
+	 * Like {@link #cleanUpQuietly(String, String)}, but if the cleanup fails, stops the processes with
+	 * {@code fallback} (unless {@code null}), see {@link #stopWith(Launcher)}. The step context resolves everything through the
 	 * CPS thread of the enclosing {@code node} body, so once that block has ended every lookup, including the one for
 	 * the launcher, fails with {@code IOException: cannot find current thread}; a launcher obtained earlier still works.
 	 */
@@ -167,9 +167,9 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			if (fallback == null) {
 				LOGGER.log(Level.WARNING, failureMessage, x);
 			} else {
-				LOGGER.log(Level.FINE, failureMessage + "; killing the processes with the restart's launcher", x);
+				LOGGER.log(Level.FINE, failureMessage + "; stopping the processes with the restart's launcher", x);
 				try {
-					killByCookie(fallback);
+					stopWith(fallback);
 				} catch (Exception killFailure) {
 					if (killFailure instanceof InterruptedException) {
 						interrupted = true;
@@ -373,6 +373,7 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			usedPort = startNodeExporter(ne, launcher, listener);
 		} finally {
 			portSync.release();
+			register(ne);
 		}
 		if (templating == null) {
 			throw new NullPointerException("templating is null");
@@ -387,8 +388,26 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 		if (debug) {
 			listener.getLogger().println("[on-monit] otel-collector config:\n" + config);
 		}
-		oc.start(listener, config);
+		try {
+			oc.start(listener, config);
+		} finally {
+			register(oc);
+		}
 		listener.getLogger().println(Messages.ONMonitoringStep_Started());
+	}
+
+	/**
+	 * Records {@code ne} again once it has been started. A cleanup that ran meanwhile (for example {@link #onBodyEnd()}
+	 * during a restart) stopped it before it was running and cleared the field, so without this the cleanup that
+	 * follows could only kill the process by its cookie and would leave its temporary files behind.
+	 */
+	private synchronized void register(RemoteNodeExporterProcess ne) {
+		nodeExporter = ne;
+	}
+
+	/** Like {@link #register(RemoteNodeExporterProcess)}: the collector's temporary files include the rendered config. */
+	private synchronized void register(RemoteOtelContribProcess oc) {
+		otelContrib = oc;
 	}
 
 	/**
@@ -462,41 +481,42 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			return;
 		}
 		TaskListener listener = getContext().get(TaskListener.class);
-		if (nodeExporter != null) {
-			nodeExporter.stop(listener);
-			nodeExporter = null;
-		} else {
-			Map<String, String> neCookieEnv = new HashMap<>();
-			neCookieEnv.put(ExecRemoteNodeExporterProcess.PROC_COOKIE_NAME, neCookie);
-			getLauncher().kill(neCookieEnv);
-		}
-		if (otelContrib != null) {
-			otelContrib.stop(listener);
-			otelContrib = null;
-		} else {
-			Map<String, String> neCookieEnv = new HashMap<>();
-			neCookieEnv.put(ExecRemoteOtelContribProcess.PROC_COOKIE_NAME, ocCookie);
-			getLauncher().kill(neCookieEnv);
-		}
+		stopProcesses(listener, getLauncher());
 		listener.getLogger().println(Messages.ONMonitoringStep_Stopped());
 	}
 
 	/**
-	 * Kills both processes through their environment cookies with {@code launcher}, without the step context, and
-	 * forgets them. Their temporary files are left for the workspace's temporary directory.
+	 * Like {@link #cleanUp()}, but without the step context: stops both processes with {@code launcher}, including
+	 * deleting their temporary files, and forgets them.
 	 */
-	private synchronized void killByCookie(Launcher launcher) throws IOException, InterruptedException {
+	private synchronized void stopWith(Launcher launcher) throws Exception {
 		if (!launchCollector) {
 			return;
 		}
-		Map<String, String> neCookieEnv = new HashMap<>();
-		neCookieEnv.put(ExecRemoteNodeExporterProcess.PROC_COOKIE_NAME, neCookie);
-		launcher.kill(neCookieEnv);
-		nodeExporter = null;
-		Map<String, String> ocCookieEnv = new HashMap<>();
-		ocCookieEnv.put(ExecRemoteOtelContribProcess.PROC_COOKIE_NAME, ocCookie);
-		launcher.kill(ocCookieEnv);
-		otelContrib = null;
+		stopProcesses(TaskListener.NULL, launcher);
+	}
+
+	/** Stops each process with {@code launcher}, through its environment cookie if it has no field. */
+	private synchronized void stopProcesses(TaskListener listener, Launcher launcher) throws Exception {
+		if (nodeExporter != null) {
+			nodeExporter.stop(listener, launcher);
+			nodeExporter = null;
+		} else {
+			killByCookie(launcher, ExecRemoteNodeExporterProcess.PROC_COOKIE_NAME, neCookie);
+		}
+		if (otelContrib != null) {
+			otelContrib.stop(listener, launcher);
+			otelContrib = null;
+		} else {
+			killByCookie(launcher, ExecRemoteOtelContribProcess.PROC_COOKIE_NAME, ocCookie);
+		}
+	}
+
+	private static void killByCookie(Launcher launcher, String cookieName, String cookie)
+			throws IOException, InterruptedException {
+		Map<String, String> cookieEnv = new HashMap<>();
+		cookieEnv.put(cookieName, cookie);
+		launcher.kill(cookieEnv);
 	}
 
 	@Override
