@@ -297,11 +297,13 @@ class ONMonitoringStepRestartTest {
             } finally {
                 portLock.release();
             }
-            awaitNewMarkers(2);
+            List<Marker> afterRestart = awaitNewMarkers(2);
             agent(j).getWorkspaceFor(run.getParent()).child("release-node").write("x", "UTF-8");
             j.assertBuildStatusSuccess(j.waitForCompletion(run));
             Files.writeString(gate, "open");
             awaitNothingAlive();
+            // stopping without the step context still deletes the rendered config, which holds the OTLP headers
+            assertThat(collectorConfig(afterRestart)).doesNotExist();
         });
     }
 
@@ -330,6 +332,18 @@ class ONMonitoringStepRestartTest {
             j.assertBuildStatusSuccess(j.waitForCompletion(run));
             j.assertLogNotContains(RESTART_FAILED, run);
         });
+    }
+
+    /** The config file the collector among {@code markers} was started with. */
+    private static Path collectorConfig(List<Marker> markers) {
+        String prefix = "--config=file:";
+        return markers.stream()
+                .filter(m -> m.role() == StandIn.Role.OTELCOL)
+                .flatMap(m -> m.args().stream())
+                .filter(a -> a.startsWith(prefix))
+                .map(a -> Path.of(a.substring(prefix.length())))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no collector among " + markers));
     }
 
     /** Creates the inbound agent with label {@code t}, and the stand-ins it gets uploaded. */

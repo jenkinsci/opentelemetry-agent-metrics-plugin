@@ -10,6 +10,7 @@ import io.jenkins.plugins.onmonit.util.ComputerInfo;
 import org.apache.commons.io.output.TeeOutputStream;
 import io.jenkins.plugins.onmonit.LauncherProvider;
 import hudson.FilePath;
+import hudson.Launcher;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -135,9 +136,17 @@ public class ExecRemoteNodeExporterProcess implements RemoteNodeExporterProcess 
 	 */
 	@Override
 	public void stop(TaskListener listener) throws IOException, InterruptedException {
+		stop(listener, launcherProvider.getLauncher());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void stop(TaskListener listener, Launcher launcher) throws IOException, InterruptedException {
+		// Kills again when called again: a launch still in progress when stop() was first called may have completed since.
 		if (started) {
-			launcherProvider.getLauncher().kill(envOverrides);
-			started = false;
+			launcher.kill(envOverrides);
 		}
 		if (executableTmpChild != null) {
 			executableTmpChild.delete();
