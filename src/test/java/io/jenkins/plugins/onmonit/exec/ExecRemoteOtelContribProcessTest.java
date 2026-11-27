@@ -100,7 +100,27 @@ class ExecRemoteOtelContribProcessTest {
                 .hasMessage("otelcol-contrib was stopped while starting");
     }
 
+    /**
+     * The rendered config is named after the environment cookie, which is all that is left of the collector after a
+     * controller restart, so that {@code onMonit} can still delete it then. Stopping the collector deletes it too.
+     */
+    @Test
+    void configIsNamedAfterCookie() throws Exception {
+        String cookie = "test-cookie-" + System.nanoTime();
+        ExecRemoteOtelContribProcess oc = process(cookie, "");
+        Path config = tmp.resolve("ws@tmp").resolve(ExecRemoteOtelContribProcess.configFileName(cookie));
+        assertThat(config.getFileName()).hasToString("otel-" + cookie + ".yaml");
+        oc.start(listener, "receivers: {}\n");
+        assertThat(Files.readString(config)).isEqualTo("receivers: {}\n");
+        oc.stop(listener);
+        assertThat(config).doesNotExist();
+    }
+
     private ExecRemoteOtelContribProcess process(String option) throws Exception {
+        return process("test-cookie-" + System.nanoTime(), option);
+    }
+
+    private ExecRemoteOtelContribProcess process(String cookie, String option) throws Exception {
         Path executable = bin.resolve(WINDOWS ? "otelcol-contrib.exe" : "otelcol-contrib");
         Launcher launcher = new Launcher.LocalLauncher(listener);
         return new ExecRemoteOtelContribProcess(
@@ -108,7 +128,7 @@ class ExecRemoteOtelContribProcessTest {
                 listener,
                 localInfo(),
                 new FilePath(Files.createDirectories(tmp.resolve("ws@tmp")).toFile()),
-                "test-cookie-" + System.nanoTime(),
+                cookie,
                 StandIn.MARKER_DIR_ARG + markerDir + " " + option,
                 false) {
             @Override

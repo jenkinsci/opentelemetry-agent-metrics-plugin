@@ -92,6 +92,14 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 	 */
 	private transient volatile boolean bodyEnded;
 
+	/**
+	 * Set once the body has been started, and saved with the program, unlike {@link #blocksRestart()}'s state alone:
+	 * that is also true while {@link #onResume()} restarts the processes, so if the controller goes down hard during
+	 * that restart, the next resume must not take the body for one that never started. {@code false} in executions
+	 * saved before this field was added, which then resume as before.
+	 */
+	private volatile boolean bodyStarted;
+
 	ONMonitoringStepExecution(StepContext context, int port, boolean debug, boolean launchCollector, String dashboardUrl, String neAdditionalOptions, String ocAdditionalOptions) {
 		super(context);
 		this.port = port;
@@ -124,6 +132,7 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 				if (!stopping) {
 					getContext().newBodyInvoker().
 							withCallback(new Callback(this)).start();
+					bodyStarted = true;
 					return;
 				}
 			}
@@ -200,7 +209,7 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 
 	@Override
 	public void onResume() {
-		if (blocksRestart()) {
+		if (blocksRestart() && !bodyStarted) {
 			// Jenkins went down while the processes were still being started, which cannot be resumed. Kill them
 			// before failing the step: once it has failed, the enclosing node block may end, and with it the launcher.
 			run(() -> {
@@ -210,7 +219,8 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			return;
 		}
 		// The body is still running: restart the processes. Those from before the restart may still be running (on an
-		// inbound agent, whose JVM survives the restart), so kill them first.
+		// inbound agent, whose JVM survives the restart), so kill them first. This also covers a controller that went
+		// down while an earlier resume was restarting them: blocksRestart() is then true, but the body was running.
 		run(() -> {
 			// Kept for the cleanups below: if the enclosing node block ends during the restart, the step context can no
 			// longer provide a launcher, and without one the processes launched here would be left running.
@@ -483,26 +493,32 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			return;
 		}
 		TaskListener listener = getContext().get(TaskListener.class);
-		stopProcesses(listener, getLauncher());
+		FilePath workspace = getWorkspace();
+		stopProcesses(listener, getLauncher(), workspace != null ? WorkspaceList.tempDir(workspace) : null);
 		listener.getLogger().println(Messages.ONMonitoringStep_Stopped());
 	}
 
 	/**
 	 * Like {@link #cleanUp()}, but without the step context: stops both processes with {@code launcher}, including
-	 * deleting their temporary files, and forgets them.
+	 * deleting their temporary files, and forgets them. Without the workspace, a collector killed through its cookie
+	 * keeps its config.
 	 */
 	private synchronized void stopWith(Launcher launcher) throws Exception {
 		if (!launchCollector) {
 			return;
 		}
-		stopProcesses(TaskListener.NULL, launcher);
+		stopProcesses(TaskListener.NULL, launcher, null);
 	}
 
 	/**
 	 * Stops each process with {@code launcher}, through its environment cookie if it has no field. Each is stopped
 	 * even if stopping the other fails; the first failure is thrown, with the second added as suppressed.
+	 *
+	 * @param tmpDir the workspace's temporary directory, in which a collector killed through its cookie (after a
+	 *     controller restart, for example) left its config, or {@code null} to leave it.
 	 */
-	private synchronized void stopProcesses(TaskListener listener, Launcher launcher) throws Exception {
+	private synchronized void stopProcesses(TaskListener listener, Launcher launcher, @CheckForNull FilePath tmpDir)
+			throws Exception {
 		Exception failure = null;
 		try {
 			if (nodeExporter != null) {
@@ -520,6 +536,11 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 				otelContrib = null;
 			} else {
 				killByCookie(launcher, ExecRemoteOtelContribProcess.PROC_COOKIE_NAME, ocCookie);
+				// The process field is gone, and with it the config's name: delete it by the name the cookie gives.
+				// The config holds the OTLP headers, usually an Authorization token.
+				if (tmpDir != null) {
+					tmpDir.child(ExecRemoteOtelContribProcess.configFileName(ocCookie)).delete();
+				}
 			}
 		} catch (Exception e) {
 			if (failure == null) {

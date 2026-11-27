@@ -55,13 +55,22 @@ public class ExecRemoteOtelContribProcess implements RemoteOtelContribProcess {
 		overrides.put(PROC_COOKIE_NAME, envCookie);
 		this.envOverrides = overrides;
 		this.debug = debug;
-		FilePath configFile = temp.createTempFile("otel", ".yaml");
+		FilePath configFile = temp.child(configFileName(envCookie));
 		this.configTmpChild = configFile.getName();
 		this.cmd = getCmd();
 		if (StringUtils.isNotBlank(additionalOptions)) {
 			cmd.addTokenized(additionalOptions);
 		}
 		cmd.add("--config=file:" + configFile.getRemote());
+	}
+
+	/**
+	 * The name of the rendered config of the collector with environment cookie {@code envCookie}, in its temporary
+	 * directory. It is named after the cookie, which is saved with the build, so that the config can still be deleted
+	 * after a controller restart, when only the cookie is left to find the collector by.
+	 */
+	public static String configFileName(String envCookie) {
+		return "otel-" + envCookie + ".yaml";
 	}
 
 	/**
