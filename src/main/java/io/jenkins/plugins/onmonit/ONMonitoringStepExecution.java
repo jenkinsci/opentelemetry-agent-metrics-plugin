@@ -92,6 +92,14 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 	 */
 	private transient volatile boolean bodyEnded;
 
+	/**
+	 * Set once the body has been started, and saved with the program, unlike {@link #blocksRestart()}'s state alone:
+	 * that is also true while {@link #onResume()} restarts the processes, so if the controller goes down hard during
+	 * that restart, the next resume must not take the body for one that never started. {@code false} in executions
+	 * saved before this field was added, which then resume as before.
+	 */
+	private volatile boolean bodyStarted;
+
 	ONMonitoringStepExecution(StepContext context, int port, boolean debug, boolean launchCollector, String dashboardUrl, String neAdditionalOptions, String ocAdditionalOptions) {
 		super(context);
 		this.port = port;
@@ -124,6 +132,7 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 				if (!stopping) {
 					getContext().newBodyInvoker().
 							withCallback(new Callback(this)).start();
+					bodyStarted = true;
 					return;
 				}
 			}
@@ -200,7 +209,7 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 
 	@Override
 	public void onResume() {
-		if (blocksRestart()) {
+		if (blocksRestart() && !bodyStarted) {
 			// Jenkins went down while the processes were still being started, which cannot be resumed. Kill them
 			// before failing the step: once it has failed, the enclosing node block may end, and with it the launcher.
 			run(() -> {
@@ -210,7 +219,8 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			return;
 		}
 		// The body is still running: restart the processes. Those from before the restart may still be running (on an
-		// inbound agent, whose JVM survives the restart), so kill them first.
+		// inbound agent, whose JVM survives the restart), so kill them first. This also covers a controller that went
+		// down while an earlier resume was restarting them: blocksRestart() is then true, but the body was running.
 		run(() -> {
 			// Kept for the cleanups below: if the enclosing node block ends during the restart, the step context can no
 			// longer provide a launcher, and without one the processes launched here would be left running.

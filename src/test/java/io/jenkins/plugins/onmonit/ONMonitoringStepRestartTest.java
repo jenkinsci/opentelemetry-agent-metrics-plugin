@@ -170,6 +170,51 @@ class ONMonitoringStepRestartTest {
     }
 
     /**
+     * The controller goes down again while the processes are being restarted after a first restart, with the body
+     * running all along: the next resume restarts the processes again and the body carries on, rather than taking the
+     * still-starting path and failing the build.
+     *
+     * <p>{@code blocksRestart()} is true during that restart and is saved with the program, as during a startup. The
+     * test harness does not wait for it before shutting down, so the second restart stands in for a hard one.
+     */
+    @Test
+    void restartWhileProcessesRestartKeepsBody() throws Throwable {
+        Path gate = tmp.resolve("gate");
+        sessions.then(j -> {
+            Files.writeString(gate, "open");
+            WorkflowJob job = job(j, onAgent(options(gate, null), HeldBuilds.HOLD + "\necho 'after-restarts'"));
+            HeldBuilds.hold(j, job);
+            beforeRestart = awaitMarkers(2);
+            // the collector restarted after the first restart waits for the gate
+            Files.delete(gate);
+        });
+        sessions.then(j -> {
+            // as in the first session: the agent reconnects to this one, and then to the next
+            ExtensionList.lookup(SlaveRestarter.class).clear();
+            keepChannelsOpenOnShutdown();
+            WorkflowRun run = build(j);
+            awaitNewMarkers(2);
+            assertThat(run.isBuilding()).isTrue();
+            beforeRestart = StandIns.markers(markerDir);
+        });
+        sessions.then(j -> {
+            Files.writeString(gate, "open");
+            WorkflowRun run = build(j);
+            // started before the first restart and after the second one
+            awaitOccurrences(run, Messages.ONMonitoringStep_Started(), 2);
+            List<Marker> afterRestart = awaitNewMarkers(2);
+            assertThat(afterRestart)
+                    .extracting(Marker::role)
+                    .containsExactlyInAnyOrder(StandIn.Role.OTELCOL, StandIns.exporterRole());
+            assertThat(run.isBuilding()).isTrue();
+            HeldBuilds.releaseOn(agent(j), run.getParent());
+            j.assertBuildStatusSuccess(j.waitForCompletion(run));
+            j.assertLogContains("after-restarts", run);
+            awaitNothingAlive();
+        });
+    }
+
+    /**
      * Restarting the processes after the controller restart fails (node_exporter starts, otelcol does not): the build
      * log says so, nothing is left running, and the body carries on without metrics instead of being interrupted.
      */
@@ -347,15 +392,21 @@ class ONMonitoringStepRestartTest {
                 .orElseThrow(() -> new AssertionError("no collector among " + markers));
     }
 
+    /**
+     * The test harness closes agent channels before Jenkins shuts down, unlike a real controller, which first suspends
+     * the builds. A start-up still running would then fail the build before it could be resumed.
+     */
+    private static void keepChannelsOpenOnShutdown() {
+        ExtensionList<EndOfTestListener> endOfTest = ExtensionList.lookup(EndOfTestListener.class);
+        endOfTest.remove(endOfTest.get(ChannelShutdownListener.class));
+        assertThat(endOfTest.get(ChannelShutdownListener.class)).isNull();
+    }
+
     /** Creates the inbound agent with label {@code t}, and the stand-ins it gets uploaded. */
     private void agentAndStandIns(JenkinsRule j) throws Exception {
         // Otherwise the agent JVM restarts itself when it reconnects, as it does by default where it can.
         ExtensionList.lookup(SlaveRestarter.class).clear();
-        // The test harness closes agent channels before Jenkins shuts down, unlike a real controller, which first
-        // suspends the builds. A start-up still running would then fail the build before it could be resumed.
-        ExtensionList<EndOfTestListener> endOfTest = ExtensionList.lookup(EndOfTestListener.class);
-        endOfTest.remove(endOfTest.get(ChannelShutdownListener.class));
-        assertThat(endOfTest.get(ChannelShutdownListener.class)).isNull();
+        keepChannelsOpenOnShutdown();
         globalEnv(j, "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317");
         StandIns.writeResourceRoot(TestAgents.jenkinsHomeEnv());
         inboundAgents.createAgent(
