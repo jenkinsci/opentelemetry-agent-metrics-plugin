@@ -493,26 +493,32 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 			return;
 		}
 		TaskListener listener = getContext().get(TaskListener.class);
-		stopProcesses(listener, getLauncher());
+		FilePath workspace = getWorkspace();
+		stopProcesses(listener, getLauncher(), workspace != null ? WorkspaceList.tempDir(workspace) : null);
 		listener.getLogger().println(Messages.ONMonitoringStep_Stopped());
 	}
 
 	/**
 	 * Like {@link #cleanUp()}, but without the step context: stops both processes with {@code launcher}, including
-	 * deleting their temporary files, and forgets them.
+	 * deleting their temporary files, and forgets them. Without the workspace, a collector killed through its cookie
+	 * keeps its config.
 	 */
 	private synchronized void stopWith(Launcher launcher) throws Exception {
 		if (!launchCollector) {
 			return;
 		}
-		stopProcesses(TaskListener.NULL, launcher);
+		stopProcesses(TaskListener.NULL, launcher, null);
 	}
 
 	/**
 	 * Stops each process with {@code launcher}, through its environment cookie if it has no field. Each is stopped
 	 * even if stopping the other fails; the first failure is thrown, with the second added as suppressed.
+	 *
+	 * @param tmpDir the workspace's temporary directory, in which a collector killed through its cookie (after a
+	 *     controller restart, for example) left its config, or {@code null} to leave it.
 	 */
-	private synchronized void stopProcesses(TaskListener listener, Launcher launcher) throws Exception {
+	private synchronized void stopProcesses(TaskListener listener, Launcher launcher, @CheckForNull FilePath tmpDir)
+			throws Exception {
 		Exception failure = null;
 		try {
 			if (nodeExporter != null) {
@@ -530,6 +536,11 @@ public class ONMonitoringStepExecution extends GeneralNonBlockingStepExecution i
 				otelContrib = null;
 			} else {
 				killByCookie(launcher, ExecRemoteOtelContribProcess.PROC_COOKIE_NAME, ocCookie);
+				// The process field is gone, and with it the config's name: delete it by the name the cookie gives.
+				// The config holds the OTLP headers, usually an Authorization token.
+				if (tmpDir != null) {
+					tmpDir.child(ExecRemoteOtelContribProcess.configFileName(ocCookie)).delete();
+				}
 			}
 		} catch (Exception e) {
 			if (failure == null) {

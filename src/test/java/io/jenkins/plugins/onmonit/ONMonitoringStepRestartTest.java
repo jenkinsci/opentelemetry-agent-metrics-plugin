@@ -35,6 +35,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jenkins.slaves.restarter.SlaveRestarter;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
@@ -139,6 +140,8 @@ class ONMonitoringStepRestartTest {
             HeldBuilds.releaseOn(agent(j), run.getParent());
             j.assertBuildStatusSuccess(j.waitForCompletion(run));
             awaitDead(StandIns.markers(markerDir), DEAD);
+            // including the one rendered before the restart, which holds the OTLP headers
+            assertNoCollectorConfigLeft(beforeRestart);
         });
     }
 
@@ -166,6 +169,7 @@ class ONMonitoringStepRestartTest {
             awaitNothingAlive();
             assertThat(StandIns.markers(markerDir)).hasSize(2);
             j.assertLogNotContains("body-ran", run);
+            assertNoCollectorConfigLeft(beforeRestart);
         });
     }
 
@@ -211,6 +215,7 @@ class ONMonitoringStepRestartTest {
             j.assertBuildStatusSuccess(j.waitForCompletion(run));
             j.assertLogContains("after-restarts", run);
             awaitNothingAlive();
+            assertNoCollectorConfigLeft(afterRestart);
         });
     }
 
@@ -390,6 +395,19 @@ class ONMonitoringStepRestartTest {
                 .map(a -> Path.of(a.substring(prefix.length())))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("no collector among " + markers));
+    }
+
+    /**
+     * No collector config is left in the directory the collector among {@code markers} had its config in, which is the
+     * workspace's {@code @tmp}.
+     */
+    private static void assertNoCollectorConfigLeft(List<Marker> markers) throws IOException {
+        Path dir = collectorConfig(markers).getParent();
+        try (Stream<Path> files = Files.list(dir)) {
+            assertThat(files.map(f -> f.getFileName().toString()))
+                    .as("collector configs in " + dir)
+                    .noneMatch(name -> name.startsWith("otel") && name.endsWith(".yaml"));
+        }
     }
 
     /**
